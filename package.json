@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Modest-Human-Brands/nitrotemplate.git"
+    "url": "git+https://github.com/Modest-Human-Brands/mdoc.git"
   },
   "type": "module",
   "private": true,
@@ -32,10 +32,11 @@
     "preview": "nitro preview",
     "start": "node --env-file=.env.prod .output/server/index.mjs",
     "clean": "nitro cleanup",
-    "docker:build": "docker build --build-arg VERSION=dev --build-arg BUILD_TIME=now -t nitrotemplate:dev .",
-    "docker:start": "docker run --detach --name nitrotemplate-dev --env-file .env.prod -p 3500:3000 nitrotemplate:dev"
+    "docker:build": "docker build --build-arg VERSION=dev --build-arg BUILD_TIME=now -t mdoc:dev .",
+    "docker:start": "docker run --detach --name mdoc-dev --env-file .env.prod -p 3500:3000 mdoc:dev"
   },
   "dependencies": {
+    "execa": "^9.6.1",
     "nitro": "^3.0.260415-beta",
     "zod": "^4.3.6"
   },
