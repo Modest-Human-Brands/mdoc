@@ -23,7 +23,14 @@ WORKDIR /app
 
 COPY --from=builder /app/.output ./.output
 
-RUN apk add weasyprint
+RUN apk add --no-cache \
+  weasyprint \
+  ttf-freefont \
+  fontconfig \
+  pango \
+  cairo \
+  libxml2 \
+  libxslt
 
 ENV NODE_ENV=production
 ENV NITRO_APP_VERSION=$VERSION
