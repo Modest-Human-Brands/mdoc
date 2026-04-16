@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.0
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.0.1...v0.1.0)
+
+### 🚀 Enhancements
+
+- ⚠️ Add Quotation.vue component for generating quotations ([efd489d](https://github.com/Modest-Human-Brands/mdoc/commit/efd489d))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️ Add Quotation.vue component for generating quotations ([efd489d](https://github.com/Modest-Human-Brands/mdoc/commit/efd489d))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.0.1
 
 ### 🚀 Enhancements
