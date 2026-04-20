@@ -23,5 +23,3 @@ logs
 .env.*
 !.env.example
 !.env.native
-
-public/assets/tailwind-compiled.css

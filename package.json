@@ -36,9 +36,10 @@
     "docker:start": "docker run --detach --name mdoc-dev --env-file .env.prod -p 3500:3000 mdoc:dev"
   },
   "dependencies": {
-    "@tailwindcss/cli": "^4.2.2",
-    "handlebars": "^4.7.9",
+    "@tailwindcss/postcss": "^4.2.2",
     "nitro": "^3.0.260415-beta",
+    "postcss": "^8.5.10",
+    "std-env": "^4.1.0",
     "tailwindcss": "^4.2.2",
     "unplugin-vue": "^7.1.1",
     "vue": "^3.5.32",
@@ -55,6 +56,11 @@
     "husky": "^9.1.7",
     "prettier": "^3.8.3",
     "typescript": "^6.0.2"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-arm64-musl": "^1.32.0",
+    "lightningcss-linux-x64-gnu": "^1.32.0",
+    "lightningcss-linux-x64-musl": "^1.32.0"
   },
   "trustedDependencies": [
     "@parcel/watcher"

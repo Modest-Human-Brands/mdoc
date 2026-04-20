@@ -8,7 +8,7 @@ COPY nitro.config.ts ./
 ENV NITRO_PRESET=bun
 ENV NITRO_PUBLIC_SITE_URL=$SITE_URL
 
-RUN bun install --frozen-lockfile
+RUN bun install
 
 COPY . .
 

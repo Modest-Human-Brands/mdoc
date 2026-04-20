@@ -1,7 +1,6 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
 import { createSSRApp, type Component } from 'vue'
 import { renderToString } from '@vue/server-renderer'
+import { useStorage } from 'nitro/storage'
 
 import QuotationTemplate from '#document/templates/Quotation.vue'
 // Import other templates here later (e.g., InvoiceTemplate)
@@ -11,10 +10,8 @@ const templates: Record<string, Component> = {
   // 'invoice': InvoiceTemplate
 }
 
-// We define our custom WeasyPrint and fallback styles here instead of in the .vue files
-// to prevent Rolldown from attempting (and failing) to bundle CSS blocks from SFCs.
+/* --- Paged Media Setup --- */
 const printStyles = `
-  /* --- Paged Media Setup --- */
   @page {
       size: A4;
       margin: 45mm 20mm 35mm 20mm; 
@@ -81,16 +78,16 @@ export default async function renderTemplate(templateName: string, data: any): P
 
     const appHtml = await renderToString(app)
 
-    const cssPath = path.resolve(process.cwd(), `${import.meta.env?.NODE_ENV === 'production' ? './.output/' : ''}public/assets/tailwind-compiled.css`)
-    let tailwindCss = ''
+    let tailwindCss: null | string = ''
+    const storage = useStorage()
 
     try {
-      tailwindCss = await fs.readFile(cssPath, 'utf8')
+      tailwindCss = await storage.getItem<string>('assets:tailwind-compiled.css')
+      if (!tailwindCss) throw new Error('Tailwind CSS not found in Nitro storage')
     } catch {
-      console.warn('Tailwind CSS file not found, PDF will render unstyled. Please compile tailwind CSS to public/assets/tailwind-compiled.css')
+      console.warn('Tailwind CSS not found in Nitro storage. PDF will render unstyled.')
     }
 
-    console.log({ tailwindCss })
     return `
       <!DOCTYPE html>
       <html lang="en">
