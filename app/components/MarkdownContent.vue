@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import MDC from '@nuxtjs/mdc/runtime/components/MDC.vue'
+
 const props = defineProps<{ content: string }>()
 </script>
 
@@ -26,7 +28,7 @@ const props = defineProps<{ content: string }>()
 }
 
 .content p {
-  @apply my-2 font-light md:my-4 md:text-[1.125rem] 2xl:text-xl 2xl:leading-relaxed;
+  @apply my-2 md:my-4 md:text-[1.125rem] 2xl:text-xl 2xl:leading-relaxed;
 }
 
 .content > img {

@@ -3,19 +3,11 @@ useHead({
   htmlAttrs: {
     lang: 'en',
   },
-  link: [
-    {
-      rel: 'icon',
-      type: 'image/x-icon',
-      href: '/favicon.ico',
-    },
-  ],
 })
 </script>
 
 <template>
   <NuxtRouteAnnouncer />
-  <NuxtLoadingIndicator color="#0593FA" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
