@@ -1,4 +1,4 @@
-name: Nitro CD
+name: Nuxt CD
 run-name: ${{ github.ref_name }}
 
 permissions:
@@ -20,6 +20,7 @@ env:
   REPO: ${{ github.repository }}
   USERNAME: ${{ vars.USERNAME }}
   VERSION: ${{ github.ref_name }}
+  DATABASE_URL: ${{ vars.DATABASE_URL }}
 
 jobs:
   build:
@@ -41,11 +42,11 @@ jobs:
         uses: docker/setup-qemu-action@v4
 
       - name: 🐋 Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: 🐋 Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v5
         with:
           images: |
             ghcr.io/${{ env.REPO }}
@@ -90,6 +91,7 @@ jobs:
             VERSION=${{ steps.metadata.outputs.version }}
             BUILD_TIME=${{ steps.metadata.outputs.buildtime }}
             SITE_URL=${{ vars.SITE_URL }}
+            CDN_URL=${{ vars.CDN_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -99,3 +101,19 @@ jobs:
           subject-name: ghcr.io/${{ env.REPO }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: false
+
+  # deploy-web:
+  #   needs: build-web
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: 🔀 Deploy to VPS
+  #       uses: appleboy/ssh-action@v1.1.0
+  #       with:
+  #         host: ${{ secrets.VPS_HOST }}
+  #         username: ${{ secrets.VPS_USERNAME }}
+  #         password: ${{ secrets.VPS_PASSWORD }}
+  #         script: |
+  #           cd ~/${{ env.REPO }}
+  #           curl -O https://raw.githubusercontent.com/${{ env.REPO }}/refs/heads/main/docker-compose.prod.yml
+  #           docker stack deploy --compose-file docker-compose.prod.yml modest-human-brands

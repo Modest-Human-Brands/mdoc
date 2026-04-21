@@ -3,12 +3,16 @@ FROM oven/bun:1-alpine AS builder
 WORKDIR /app
 
 COPY package.json bun.lock ./
-COPY nitro.config.ts ./
+COPY nuxt.config.ts ./
+
+ARG SITE_URL
+ARG CDN_URL
 
 ENV NITRO_PRESET=bun
-ENV NITRO_PUBLIC_SITE_URL=$SITE_URL
+ENV NUXT_PUBLIC_SITE_URL=$SITE_URL
+ENV NUXT_PUBLIC_CDN_URL=$CDN_URL
 
-RUN bun install
+RUN bun install --frozen-lockfile
 
 COPY . .
 
@@ -23,18 +27,9 @@ WORKDIR /app
 
 COPY --from=builder /app/.output ./.output
 
-RUN apk add --no-cache \
-  weasyprint \
-  ttf-freefont \
-  fontconfig \
-  pango \
-  cairo \
-  libxml2 \
-  libxslt
-
 ENV NODE_ENV=production
-ENV NITRO_APP_VERSION=$VERSION
-ENV NITRO_APP_BUILD_TIME=$BUILD_TIME
+ENV NUXT_APP_VERSION=$VERSION
+ENV NUXT_APP_BUILD_TIME=$BUILD_TIME
 
 EXPOSE 3000
 

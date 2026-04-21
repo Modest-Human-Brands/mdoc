@@ -1,5 +1,3 @@
-import { defineEventHandler } from 'nitro/h3'
-
 export default defineEventHandler(() => {
   // com.docker.compose.service || com.docker.swarm.task.name
   const node = process.env.HOSTNAME || 'unknown-node'
