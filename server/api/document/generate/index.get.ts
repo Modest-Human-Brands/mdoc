@@ -12,7 +12,7 @@ export default defineEventHandler(() => {
       throw error
     }
 
-    console.error('API api/document/template GET', error)
+    console.error('API api/document/generate GET', error)
 
     throw createError({
       statusCode: 500,
