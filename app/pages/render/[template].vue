@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import InternshipCompletionCertificate_v1 from '~/components/template/internship-completion-certificate_v1.vue'
 import Quotation_v1 from '~/components/template/quotation_v1.vue'
 
 const route = useRoute()
@@ -17,6 +16,5 @@ const data = computed(() => {
 <template>
   <div>
     <Quotation_v1 v-if="route.params.template === 'quotation'" :data="data" />
-    <InternshipCompletionCertificate_v1 v-if="route.params.template === 'internship-completion-certificate'" :data="data" />
   </div>
 </template>

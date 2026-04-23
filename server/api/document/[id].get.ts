@@ -1,0 +1,64 @@
+export default defineEventHandler(async (event) => {
+  try {
+    const id = getRouterParam(event, 'id')
+
+    if (!id) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Missing document ID',
+      })
+    }
+
+    const fileStorage = useStorage('fs')
+
+    // ── Locate the meta sidecar by scanning for the matching UUID ────────────
+    // Meta keys follow the pattern: `template__uuid.pdf.meta.json`
+    const allKeys = await fileStorage.getKeys()
+    const metaKey = allKeys.find((key) => key.endsWith('.meta.json') && key.includes(id))
+
+    if (!metaKey) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: `No document found with ID "${id}"`,
+      })
+    }
+
+    const meta = await fileStorage.getItem<DocumentMeta>(metaKey)
+
+    if (!meta) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: `Metadata missing for document ID "${id}"`,
+      })
+    }
+
+    // ── Stream the PDF back ───────────────────────────────────────────────────
+    const pdfBuffer = await fileStorage.getItemRaw<Buffer>(meta.fileName)
+
+    if (!pdfBuffer) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: `PDF file missing for document ID "${id}"`,
+      })
+    }
+
+    setResponseHeader(event, 'Content-Type', 'application/pdf')
+    setResponseHeader(event, 'Content-Disposition', `inline; filename="${meta.fileName}"`)
+    setResponseHeader(event, 'X-Document-Id', meta.id)
+    setResponseHeader(event, 'X-Document-Template', meta.template)
+    setResponseHeader(event, 'X-Created-At', meta.createdAt)
+
+    return pdfBuffer
+  } catch (error: unknown) {
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
+    }
+
+    console.error('API document/[id] GET', error)
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
+  }
+})

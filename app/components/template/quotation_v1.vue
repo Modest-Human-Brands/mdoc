@@ -47,7 +47,6 @@ withDefaults(defineProps<{ data?: QuotationPayload }>(), {
       </div>
       <div>Website: <a href="https://redcatpictures.com" class="text-blue-700 underline">https://redcatpictures.com</a></div>
     </header>
-
     <section>
       <h2 class="text-2xl font-bold text-center mt-6 mb-8">Photography &amp; Videography Quotation</h2>
 
@@ -104,7 +103,6 @@ withDefaults(defineProps<{ data?: QuotationPayload }>(), {
 
       <p class="text-left mt-6 italic text-gray-600">N.B: This Letter consists of 5 pages including this one. Please sign on all pages.</p>
     </section>
-
     <footer class="relative size-full pt-12 pb-4 mt-16 flex justify-between items-center overflow-hidden">
       <img
         src="https://redcatpictures.com/logo-dark.svg"

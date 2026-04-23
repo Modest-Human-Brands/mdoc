@@ -17,17 +17,25 @@ export interface QuotationPayload {
 
 export interface InternshipCompletionCertificatePayload {
   recipientName: string
-  role: string
-  company: string
+  recipientRole: string
+  scopeOfWork: string
   startDate: string
   endDate: string
-  issueDate: string
-  description: string
-  signatureUrl: string
+  dataOfIssue: string
+  signerSignature: string
   signerName: string
   signerTitle: string
-  logoUrl: string
+  companyName: string
+  companylogoUrl: string
 }
 
 export type TemplatePayload = QuotationPayload | InternshipCompletionCertificatePayload
 export type RequestBody = { template: 'quotation'; data: QuotationPayload } | { template: 'internship-completion-certificate'; data: InternshipCompletionCertificatePayload }
+
+export interface DocumentMeta {
+  id: string
+  template: string
+  label: string
+  fileName: string
+  createdAt: string
+}

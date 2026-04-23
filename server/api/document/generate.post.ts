@@ -1,28 +1,55 @@
-const NUXT_PRIVATE_DOC_RENDER_URL = process.env.NUXT_PRIVATE_DOC_RENDER_URL ?? 'http://doc-gotenberg:3000' //'http://localhost:4710'
+import type { Template } from '@pdfme/common'
+import { text, image } from '@pdfme/schemas'
+import { generate } from '@pdfme/generator'
+import { randomUUID } from 'uncrypto'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<RequestBody>(event)
+  const { data, template } = await readBody<RequestBody>(event)
 
-  if (!(TEMPLATES as readonly string[]).includes(body?.template)) {
+  if (!(TEMPLATES as readonly string[]).includes(template)) {
     throw createError({
       statusCode: 400,
-      statusMessage: `Unknown template "${body?.template}". Valid: ${TEMPLATES.join(', ')}`,
+      statusMessage: `Unknown template "${template}". Valid: ${TEMPLATES.join(', ')}`,
     })
   }
 
-  const html = await renderTemplate(body.template, body.data)
+  const assetStorage = useStorage('asset')
 
-  const form = new FormData()
-  form.append('files', new Blob([html], { type: 'text/html' }), 'index.html')
+  const [templateDesign, font] = await Promise.all([assetStorage.getItem<Template>(`template:${template}-v1.json`), loadFonts(assetStorage)])
 
-  const pdf = await $fetch<ArrayBuffer>('/forms/chromium/convert/html', {
-    baseURL: NUXT_PRIVATE_DOC_RENDER_URL,
-    method: 'POST',
-    body: form,
-    responseType: 'arrayBuffer',
+  if (!templateDesign) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Template design asset not found for "${template}"`,
+    })
+  }
+
+  const inputs = templateRegistry[template].buildInputs(data)
+
+  const pdf = await generate({
+    template: templateDesign,
+    inputs,
+    plugins: { text, image },
+    options: { font },
   })
 
+  // ── Persist to static storage ─────────────────────────────────────────────
+  const id = randomUUID()
+  const fileName = `${template}__${id}.pdf`
+  const fileStorage = useStorage('fs')
+
+  await fileStorage.setItemRaw(fileName, Buffer.from(pdf))
+
+  // Store a small metadata sidecar so the listing endpoint is rich
+  await fileStorage.setItem(`${fileName}.meta.json`, {
+    id,
+    template,
+    label: templateRegistry[template].label,
+    fileName,
+    createdAt: new Date().toISOString(),
+  } satisfies DocumentMeta)
+
   setResponseHeader(event, 'Content-Type', 'application/pdf')
-  setResponseHeader(event, 'Content-Disposition', `inline; filename="${body.template}.pdf"`)
+  setResponseHeader(event, 'Content-Disposition', `inline; filename="${fileName}"`)
   return Buffer.from(pdf)
 })

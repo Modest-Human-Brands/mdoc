@@ -7,7 +7,6 @@ useHead({
 </script>
 
 <template>
-  <NuxtRouteAnnouncer />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

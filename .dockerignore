@@ -32,9 +32,8 @@ coverage
 # Env files
 .env*
 
-# Tauri files
-src-tauri
-
 # Docker files
 .dockerignore
 Dockerfile
+
+static

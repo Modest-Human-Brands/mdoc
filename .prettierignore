@@ -25,3 +25,5 @@ logs
 # Env files
 .env*
 !.env.example
+
+static

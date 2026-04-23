@@ -1,16 +1,18 @@
 export default defineEventHandler(() => {
   try {
-    const config = useRuntimeConfig().app
-    // com.docker.compose.service || com.docker.swarm.task.name
-    const node = import.meta.env.HOSTNAME || 'unknown-node'
+    const templates = TEMPLATES.map((id) => ({
+      id,
+      label: templateRegistry[id].label,
+      description: templateRegistry[id].description,
+    }))
 
-    return { status: 'OK', ...config, node }
+    return { templates }
   } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
 
-    console.error('API health GET', error)
+    console.error('API api/document/template GET', error)
 
     throw createError({
       statusCode: 500,
