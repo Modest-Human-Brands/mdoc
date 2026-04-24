@@ -1,10 +1,5 @@
-/**
- * @file api/document/[id].get.ts
- */
-
 export default defineEventHandler(async (event) => {
   try {
-    // 1. Grab the ID from the route parameters (/api/document/uuid)
     const id = getRouterParam(event, 'id')
 
     if (!id) {
@@ -14,11 +9,9 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const fileStorage = useStorage('fs')
+    const documentStorage = useStorage('document')
 
-    // 2. Fetch all keys to find the one that matches our UUID
-    // We do this because the key name is dynamic: "${template}__${id}.pdf.meta.json"
-    const allKeys = await fileStorage.getKeys()
+    const allKeys = await documentStorage.getKeys()
     const targetKey = allKeys.find((key) => key.includes(id) && key.endsWith('.meta.json'))
 
     if (!targetKey) {
@@ -28,8 +21,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 3. Retrieve and return the specific metadata sidecar
-    const document = await fileStorage.getItem<DocumentMeta>(targetKey)
+    const document = await documentStorage.getItem<DocumentMeta>(targetKey)
 
     if (!document) {
       throw createError({

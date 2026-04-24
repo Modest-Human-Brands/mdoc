@@ -14,9 +14,9 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const assetStorage = useStorage('asset')
+    const documentStorage = useStorage('document')
 
-    const [templateDesign, font] = await Promise.all([assetStorage.getItem<Template>(`template:${template}-v1.json`), loadFonts(assetStorage)])
+    const [templateDesign, font] = await Promise.all([documentStorage.getItem<Template>(`template:${template}-v1.json`), loadFonts(documentStorage)])
 
     if (!templateDesign) {
       throw createError({
@@ -48,7 +48,6 @@ export default defineEventHandler(async (event) => {
       createdAt: new Date().toISOString(),
     } satisfies DocumentMeta)
 
-    // Create the metadata object
     const meta: DocumentMeta = {
       id,
       template,
@@ -57,18 +56,15 @@ export default defineEventHandler(async (event) => {
       createdAt: new Date().toISOString(),
     }
 
-    // Store the metadata sidecar
     await fileStorage.setItem(`${fileName}.meta.json`, meta)
 
-    // ── Response ─────────────────────────────────────────────────────────────
-    // We no longer set PDF headers here because we are returning JSON
     return meta
   } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
 
-    console.error('API api/document/generate POST', error)
+    console.error('API api/document/template POST', error)
 
     throw createError({
       statusCode: 500,

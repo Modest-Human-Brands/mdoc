@@ -6,13 +6,13 @@ export default defineEventHandler(() => {
       description: templateRegistry[id].description,
     }))
 
-    return { templates }
+    return templates
   } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
 
-    console.error('API api/document/generate GET', error)
+    console.error('API api/document/template GET', error)
 
     throw createError({
       statusCode: 500,

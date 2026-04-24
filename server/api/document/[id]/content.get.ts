@@ -1,6 +1,7 @@
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
+    const toDownload = getQuery(event).download
 
     if (!id) {
       throw createError({
@@ -9,11 +10,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const fileStorage = useStorage('fs')
-
-    // ── Locate the meta sidecar by scanning for the matching UUID ────────────
-    // Meta keys follow the pattern: `template__uuid.pdf.meta.json`
-    const allKeys = await fileStorage.getKeys()
+    const documentStorage = useStorage('document')
+    const allKeys = await documentStorage.getKeys()
     const metaKey = allKeys.find((key) => key.endsWith('.meta.json') && key.includes(id))
 
     if (!metaKey) {
@@ -23,7 +21,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const meta = await fileStorage.getItem<DocumentMeta>(metaKey)
+    const meta = await documentStorage.getItem<DocumentMeta>(metaKey)
 
     if (!meta) {
       throw createError({
@@ -32,8 +30,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // ── Stream the PDF back ───────────────────────────────────────────────────
-    const pdfBuffer = await fileStorage.getItemRaw<Buffer>(meta.fileName)
+    const pdfBuffer = await documentStorage.getItemRaw<Buffer>(meta.fileName)
 
     if (!pdfBuffer) {
       throw createError({
@@ -42,8 +39,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const disposition = toDownload !== undefined ? 'attachment' : 'inline'
+
     setResponseHeader(event, 'Content-Type', 'application/pdf')
-    setResponseHeader(event, 'Content-Disposition', `inline; filename="${meta.fileName}"`)
+    setResponseHeader(event, 'Content-Disposition', `${disposition}; filename="${meta.fileName}"`)
+
     setResponseHeader(event, 'X-Document-Id', meta.id)
     setResponseHeader(event, 'X-Document-Template', meta.template)
     setResponseHeader(event, 'X-Created-At', meta.createdAt)

@@ -6,9 +6,9 @@ export default defineNuxtConfig({
   nitro: {
     compressPublicAssets: true,
     storage: {
-      asset: {
+      document: {
         driver: 'fs',
-        base: './server/asset',
+        base: './document',
       },
       fs: {
         driver: 'fs',
