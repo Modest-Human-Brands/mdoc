@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.3
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.2...v0.1.3)
+
+### 💅 Refactors
+
+- Replace document storage with filesystem storage in API handlers ([113eccf](https://github.com/Modest-Human-Brands/mdoc/commit/113eccf))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.2
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.1...v0.1.2)
