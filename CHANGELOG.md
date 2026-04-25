@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.2
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.1...v0.1.2)
+
+### 🚀 Enhancements
+
+- Add document storage and API for internship completion certificates ([e0ab719](https://github.com/Modest-Human-Brands/mdoc/commit/e0ab719))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.1
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.0...v0.1.1)
