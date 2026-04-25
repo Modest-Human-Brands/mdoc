@@ -1,11 +1,10 @@
 export default defineEventHandler(async () => {
   try {
-    const documentStorage = useStorage('document')
-
-    const allKeys = await documentStorage.getKeys()
+    const fsStorage = useStorage('fs')
+    const allKeys = await fsStorage.getKeys()
     const metaKeys = allKeys.filter((key) => key.endsWith('.meta.json'))
 
-    const documents = await Promise.all(metaKeys.map((key) => documentStorage.getItem<DocumentMeta>(key)))
+    const documents = await Promise.all(metaKeys.map((key) => fsStorage.getItem<DocumentMeta>(key)))
 
     const documentsSorted = (documents.filter(Boolean) as DocumentMeta[]).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 

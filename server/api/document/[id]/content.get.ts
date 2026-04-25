@@ -10,8 +10,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const documentStorage = useStorage('document')
-    const allKeys = await documentStorage.getKeys()
+    const fsStorage = useStorage('fs')
+    const allKeys = await fsStorage.getKeys()
     const metaKey = allKeys.find((key) => key.endsWith('.meta.json') && key.includes(id))
 
     if (!metaKey) {
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const meta = await documentStorage.getItem<DocumentMeta>(metaKey)
+    const meta = await fsStorage.getItem<DocumentMeta>(metaKey)
 
     if (!meta) {
       throw createError({
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const pdfBuffer = await documentStorage.getItemRaw<Buffer>(meta.fileName)
+    const pdfBuffer = await fsStorage.getItemRaw<Buffer>(meta.fileName)
 
     if (!pdfBuffer) {
       throw createError({
