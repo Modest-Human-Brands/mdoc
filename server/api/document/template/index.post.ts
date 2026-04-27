@@ -1,7 +1,9 @@
 import type { Template } from '@pdfme/common'
 import { text, image } from '@pdfme/schemas'
 import { generate } from '@pdfme/generator'
+// import { pdf2img } from '@pdfme/converter';
 import { randomUUID } from 'uncrypto'
+import { TEMPLATES } from '~~/shared/types/templates'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -10,65 +12,63 @@ export default defineEventHandler(async (event) => {
     if (!(TEMPLATES as readonly string[]).includes(template)) {
       throw createError({
         statusCode: 400,
-        statusMessage: `Unknown template "${template}". Valid: ${TEMPLATES.join(', ')}`,
+        statusMessage: `Unknown template "${template}"`,
       })
     }
 
     const documentStorage = useStorage('document')
+    const fileStorage = useStorage('fs')
 
     const [templateDesign, font] = await Promise.all([documentStorage.getItem<Template>(`template:${template}-v1.json`), loadFonts(documentStorage)])
 
     if (!templateDesign) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: `Template design asset not found for "${template}"`,
-      })
+      throw createError({ statusCode: 500, statusMessage: 'Template not found' })
     }
 
-    const inputs = templateRegistry[template].buildInputs(data)
-
-    const pdf = await generate({
+    const pdfUint8Array = await generate({
       template: templateDesign,
-      inputs,
+      inputs: templateRegistry[template].buildInputs(data),
       plugins: { text, image },
       options: { font },
     })
 
+    const pdfBuffer = Buffer.from(pdfUint8Array)
     const id = randomUUID()
-    const fileName = `${template}__${id}.pdf`
-    const fileStorage = useStorage('fs')
+    const baseFileName = `${template}__${id}`
+    const pdfFileName = `${baseFileName}.pdf`
+    const imgFileName = `${baseFileName}.png`
 
-    await fileStorage.setItemRaw(fileName, Buffer.from(pdf))
+    // const imgData = await pdf2img(pdfBuffer, {
+    //   imageType: 'jpeg',
+    //   scale: 1,
+    //   range: { start: 0, end: 1 },
+    // })
 
-    await fileStorage.setItem(`${fileName}.meta.json`, {
-      id,
-      template,
-      label: templateRegistry[template].label,
-      fileName,
-      createdAt: new Date().toISOString(),
-    } satisfies DocumentMeta)
+    await Promise.all([
+      fileStorage.setItemRaw(pdfFileName, pdfBuffer),
+      // fileStorage.setItemRaw(imgFileName, Buffer.from(imgData[0]!)),
+    ])
 
     const meta: DocumentMeta = {
       id,
-      template,
-      label: templateRegistry[template].label,
-      fileName,
+      name: templateRegistry[template].label,
+      fileName: pdfFileName,
+      extension: 'pdf',
+      sizeBytes: pdfBuffer.byteLength,
+      templateId: template,
+      previewUrl: `/api/documents/preview/${imgFileName}`,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
 
-    await fileStorage.setItem(`${fileName}.meta.json`, meta)
+    await fileStorage.setItem(`${pdfFileName}.meta.json`, meta)
 
     return meta
   } catch (error: unknown) {
-    if (error instanceof Error && 'statusCode' in error) {
-      throw error
-    }
-
-    console.error('API api/document/template POST', error)
-
+    console.error('Document Generation Error:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
+      statusMessage: 'Failed to generate document and preview',
     })
   }
 })

@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     setResponseHeader(event, 'Content-Disposition', `${disposition}; filename="${meta.fileName}"`)
 
     setResponseHeader(event, 'X-Document-Id', meta.id)
-    setResponseHeader(event, 'X-Document-Template', meta.template)
+    setResponseHeader(event, 'X-Document-Template', meta.templateId)
     setResponseHeader(event, 'X-Created-At', meta.createdAt)
 
     return pdfBuffer

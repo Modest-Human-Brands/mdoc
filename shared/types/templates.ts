@@ -34,8 +34,12 @@ export type RequestBody = { template: 'quotation'; data: QuotationPayload } | { 
 
 export interface DocumentMeta {
   id: string
-  template: string
-  label: string
+  name: string
   fileName: string
+  extension: string
+  sizeBytes: number
+  templateId: string
+  previewUrl: string
   createdAt: string
+  updatedAt: string
 }
