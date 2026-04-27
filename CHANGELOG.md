@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.4
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.3...v0.1.4)
+
+### 🚀 Enhancements
+
+- Enhance document template API with improved metadata structure ([5689a1d](https://github.com/Modest-Human-Brands/mdoc/commit/5689a1d))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.3
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.2...v0.1.3)
