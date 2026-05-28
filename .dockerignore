@@ -35,5 +35,3 @@ coverage
 # Docker files
 .dockerignore
 Dockerfile
-
-static

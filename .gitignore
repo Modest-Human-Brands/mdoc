@@ -1,4 +1,4 @@
-# Nuxt dev/build outputs
+# Nitro dev/build outputs
 .output
 .data
 .nuxt
@@ -18,9 +18,11 @@ logs
 .fleet
 .idea
 
-# Local env files
+# Env files
 .env
 .env.*
 !.env.example
+!.env.native
 
+temp
 static

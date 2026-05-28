@@ -1,13 +1,8 @@
-// @ts-check
-import withNuxt from './.nuxt/eslint.config.mjs'
+import unjs from 'eslint-config-unjs'
 
-export default withNuxt([
-  {
-    ignores: ['static'],
+export default unjs({
+  ignores: ['node_modules', '.output', 'static', 'asset'],
+  rules: {
+    'unicorn/no-anonymous-default-export': 0,
   },
-  {
-    rules: {
-      'vue/html-self-closing': 'off',
-    },
-  },
-])
+})

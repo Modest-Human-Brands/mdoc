@@ -1,4 +1,4 @@
-name: Nuxt CI
+name: Nitro CI
 
 permissions:
   contents: write
@@ -8,9 +8,6 @@ on:
   push:
     branches:
       - develop
-
-env:
-  DATABASE_URL: ${{ vars.DATABASE_URL }}
 
 jobs:
   build:
@@ -27,11 +24,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: 🛠️ Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 'lts/*'
 
       - name: 🛠️ Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -69,7 +61,7 @@ jobs:
           bunx changelogen@latest --bump
 
       - name: 🔀 Create or Update Pull Request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: 'ci(release): update version'
           title: 'ci(release): update version'

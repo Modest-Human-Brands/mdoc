@@ -1,9 +1,15 @@
+import { defineEventHandler, HTTPError } from 'nitro/h3'
+import { templateRegistry } from '~/server/utils/template-registry'
+import zodToJsonSchema from '~/server/utils/zod-to-json-schema'
+
+import '~/templates/document/InternshipCompletionCertificateV1'
+import '~/templates/document/QuotationV1'
+
 export default defineEventHandler(() => {
   try {
-    const templates = TEMPLATES.map((id) => ({
-      id,
-      label: templateRegistry[id].label,
-      description: templateRegistry[id].description,
+    const templates = Object.values(templateRegistry).map((template) => ({
+      id: template.id,
+      variables: template.schema ? zodToJsonSchema(template.schema) : {},
     }))
 
     return templates
@@ -14,7 +20,7 @@ export default defineEventHandler(() => {
 
     console.error('API api/document/template GET', error)
 
-    throw createError({
+    throw new HTTPError({
       statusCode: 500,
       statusMessage: 'Some Unknown Error Found',
     })

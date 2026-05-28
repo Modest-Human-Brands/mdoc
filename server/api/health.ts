@@ -1,20 +1,13 @@
+import { defineEventHandler } from 'nitro/h3'
+
 export default defineEventHandler(() => {
-  try {
-    const config = useRuntimeConfig().app
-    // com.docker.compose.service || com.docker.swarm.task.name
-    const node = import.meta.env.HOSTNAME || 'unknown-node'
+  // com.docker.compose.service || com.docker.swarm.task.name
+  const node = process.env.HOSTNAME || 'unknown-node'
 
-    return { status: 'OK', ...config, node }
-  } catch (error: unknown) {
-    if (error instanceof Error && 'statusCode' in error) {
-      throw error
-    }
-
-    console.error('API health GET', error)
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+  return {
+    status: 'OK',
+    version: process.env.NITRO_APP_VERSION,
+    buildTime: process.env.NITRO_APP_BUILD_TIME,
+    node,
   }
 })

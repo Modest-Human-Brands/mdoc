@@ -1,3 +1,7 @@
+import { defineEventHandler, HTTPError } from 'nitro/h3'
+import { useStorage } from 'nitro/storage'
+import type { DocumentMeta } from '~/server/types/templates'
+
 export default defineEventHandler(async () => {
   try {
     const fsStorage = useStorage('fs')
@@ -16,7 +20,7 @@ export default defineEventHandler(async () => {
 
     console.error('API document/index GET', error)
 
-    throw createError({
+    throw new HTTPError({
       statusCode: 500,
       statusMessage: 'Some Unknown Error Found',
     })

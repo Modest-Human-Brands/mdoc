@@ -1,10 +1,14 @@
+import { defineEventHandler, getRouterParam, getQuery, HTTPError } from 'nitro/h3'
+import { useStorage } from 'nitro/storage'
+import type { DocumentMeta } from '~/server/types/templates'
+
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
     const toDownload = getQuery(event).download
 
     if (!id) {
-      throw createError({
+      throw new HTTPError({
         statusCode: 400,
         statusMessage: 'Missing document ID',
       })
@@ -15,7 +19,7 @@ export default defineEventHandler(async (event) => {
     const metaKey = allKeys.find((key) => key.endsWith('.meta.json') && key.includes(id))
 
     if (!metaKey) {
-      throw createError({
+      throw new HTTPError({
         statusCode: 404,
         statusMessage: `No document found with ID "${id}"`,
       })
@@ -24,7 +28,7 @@ export default defineEventHandler(async (event) => {
     const meta = await fsStorage.getItem<DocumentMeta>(metaKey)
 
     if (!meta) {
-      throw createError({
+      throw new HTTPError({
         statusCode: 404,
         statusMessage: `Metadata missing for document ID "${id}"`,
       })
@@ -33,20 +37,20 @@ export default defineEventHandler(async (event) => {
     const pdfBuffer = await fsStorage.getItemRaw<Buffer>(meta.fileName)
 
     if (!pdfBuffer) {
-      throw createError({
+      throw new HTTPError({
         statusCode: 404,
         statusMessage: `PDF file missing for document ID "${id}"`,
       })
     }
 
-    const disposition = toDownload !== undefined ? 'attachment' : 'inline'
+    const disposition = toDownload === undefined ? 'inline' : 'attachment'
 
-    setResponseHeader(event, 'Content-Type', 'application/pdf')
-    setResponseHeader(event, 'Content-Disposition', `${disposition}; filename="${meta.fileName}"`)
+    event.res.headers.set('Content-Type', 'application/pdf')
+    event.res.headers.set('Content-Disposition', `${disposition}; filename="${meta.fileName}"`)
 
-    setResponseHeader(event, 'X-Document-Id', meta.id)
-    setResponseHeader(event, 'X-Document-Template', meta.templateId)
-    setResponseHeader(event, 'X-Created-At', meta.createdAt)
+    event.res.headers.set('X-Document-Id', meta.id)
+    event.res.headers.set('X-Document-Template', meta.templateId)
+    event.res.headers.set('X-Created-At', meta.createdAt)
 
     return pdfBuffer
   } catch (error: unknown) {
@@ -56,7 +60,7 @@ export default defineEventHandler(async (event) => {
 
     console.error('API document/[id] GET', error)
 
-    throw createError({
+    throw new HTTPError({
       statusCode: 500,
       statusMessage: 'Some Unknown Error Found',
     })
