@@ -4,10 +4,8 @@ import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 const props = defineProps<{
   recipientName: string
   bodyContent: string
-  dataOfIssue: string
-  signerName: string
-  signerTitle: string
-  signerSignature: string
+  organizationName: string
+  organizationBrandingLogo: string
   basePdfBackground: string
 }>()
 
@@ -18,16 +16,13 @@ const styles = {
   recipientText: { fontFamily: 'IslandMoments', fontSize: 56, color: '#1a0a00', textAlign: 'center' as const },
   bodyContainer: { position: 'absolute' as const, left: 106, top: 418, width: 384 },
   bodyText: { fontSize: 12, color: '#1a1a1a', textAlign: 'center' as const, lineHeight: 1.5 },
-  dateContainer: { position: 'absolute' as const, left: 56, top: 673, width: 176, justifyContent: 'center' as const, alignItems: 'center' as const },
-  dateText: { fontSize: 12, textAlign: 'center' as const, color: '#1a1a1a' },
-  signatureImage: { position: 'absolute' as const, left: 382, top: 604, width: 161, height: 54 },
-  titleContainer: { position: 'absolute' as const, left: 370, top: 673, width: 183, justifyContent: 'center' as const, alignItems: 'center' as const },
-  titleText: { fontSize: 12, textAlign: 'center' as const, color: '#1a1a1a' },
+  logoContainer: { position: 'absolute' as const, left: 105, top: 600, width: 386, justifyContent: 'center' as const, alignItems: 'center' as const },
+  logoImage: { height: 120, width: 120, objectFit: 'contain' as const },
 }
 </script>
 
 <template>
-  <Document>
+  <Document title="Internship Completion Certificate" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" orientation="portrait" :style="styles.page">
       <Image :src="basePdfBackground" :style="styles.bgImage" />
 
@@ -39,14 +34,8 @@ const styles = {
         <Text :style="styles.bodyText">{{ bodyContent }}</Text>
       </View>
 
-      <View :style="styles.dateContainer">
-        <Text :style="styles.dateText">{{ dataOfIssue }}</Text>
-      </View>
-
-      <Image :src="signerSignature" :style="styles.signatureImage" />
-
-      <View :style="styles.titleContainer">
-        <Text :style="styles.titleText">{{ signerTitle }}</Text>
+      <View :style="styles.logoContainer">
+        <Image :src="organizationBrandingLogo" :style="styles.logoImage" />
       </View>
     </Page>
   </Document>

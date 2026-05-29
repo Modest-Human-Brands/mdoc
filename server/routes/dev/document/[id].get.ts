@@ -17,12 +17,10 @@ export default defineEventHandler((event) => {
 
   const variables: Record<string, any> = {}
 
-  // Recursive initialization of mock data based on the Zod schema
   function initMockData(shape: any, mockSource: any = {}): any {
     const obj: any = {}
     for (const [key, zodItem] of Object.entries(shape)) {
       let currentDef = zodItem as any
-      // Unwrap .optional(), .nullable()
       while (currentDef?._def?.innerType) currentDef = currentDef._def.innerType
 
       const typeName = currentDef?._def?.typeName || ''
@@ -31,16 +29,24 @@ export default defineEventHandler((event) => {
       } else if (typeName === 'ZodArray') {
         obj[key] = mockSource[key] || []
       } else {
-        // Fallback to empty string for standard inputs if no mock provided
         obj[key] = mockSource[key] === undefined ? '' : mockSource[key]
       }
     }
     return obj
   }
 
-  // FIXED: Now correctly injecting templateDef.placeholders instead of an empty object
   if (templateDef.schema?.shape) {
     Object.assign(variables, initMockData(templateDef.schema.shape, templateDef.placeholders || {}))
+  }
+
+  const signerFieldsMap: Record<string, any[]> = {}
+  const fields = templateDef.signerFields || []
+
+  for (const field of fields) {
+    if (!signerFieldsMap[field.signerOrder]) {
+      signerFieldsMap[field.signerOrder] = []
+    }
+    signerFieldsMap[field.signerOrder].push(field)
   }
 
   const html = `
@@ -52,82 +58,114 @@ export default defineEventHandler((event) => {
     <title>MDoc | PDF Studio - ${templateId}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
   </head>
   <body class="bg-gray-100 overflow-hidden h-screen flex text-gray-800 font-sans">
     
     <div id="app" class="flex w-full h-full">
 
-      <div class="w-2/3 h-full flex flex-col border-r border-gray-300 bg-white">
-        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 flex justify-between items-center shadow-sm z-10">
-           <span>PDF Template: <span class="text-blue-600">${templateId}</span></span>
-           <span class="flex items-center gap-2">
-             <span class="w-2 h-2 rounded-full" :class="socketConnected ? 'bg-green-500' : 'bg-red-500'"></span>
-             <span class="text-xs tracking-wide" :class="socketConnected ? 'text-green-700' : 'text-red-700'">
-                {{ socketConnected ? 'WebSocket Active' : 'Disconnected' }}
-             </span>
-           </span>
+      <div class="w-2/3 h-full flex flex-col border-r border-gray-300 bg-white min-w-0">
+
+        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 flex justify-between items-center shadow-sm z-10 shrink-0">
+          <span>PDF Template: <span class="text-blue-600">${templateId}</span></span>
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" :class="socketConnected ? 'bg-green-500' : 'bg-red-500'"></span>
+            <span class="text-xs tracking-wide" :class="socketConnected ? 'text-green-700' : 'text-red-700'">
+              {{ socketConnected ? 'WebSocket Active' : 'Disconnected' }}
+            </span>
+          </span>
         </div>
-        
-        <div class="flex-1 overflow-auto bg-gray-500 flex justify-center p-8">
-           <div class="bg-white shadow-2xl min-h-[800px] w-full max-w-[800px] border border-gray-200 overflow-hidden relative flex flex-col">
-              
-              <iframe v-if="pdfDataUrl && !errorHtml" :src="pdfDataUrl" class="w-full h-full border-none flex-1"></iframe>
-              
-              <div v-else-if="errorHtml" v-html="errorHtml" class="w-full h-full p-8 bg-white"></div>
-              
-              <div v-else class="flex flex-1 justify-center items-center text-gray-400">
-                Waiting for PDF render...
-              </div>
-              
-              <div v-if="isRendering" class="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-md animate-pulse">
-                Rendering PDF...
-              </div>
-           </div>
+
+        <div class="flex-1 min-h-0 overflow-auto bg-gray-500 p-8 flex flex-col items-center gap-8 relative" id="pdf-scroll-container">
+
+          <div v-if="errorHtml" v-html="errorHtml" class="w-full max-w-[800px] bg-white shadow-2xl p-8 border border-gray-200"></div>
+
+          <div
+            v-for="page in pdfPages"
+            :key="page.pageNumber"
+            class="relative bg-white shadow-2xl shrink-0 border border-gray-200"
+            :style="{ width: page.width + 'px', height: page.height + 'px' }"
+          >
+            <canvas :id="'page-canvas-' + page.pageNumber" class="absolute top-0 left-0 w-full h-full"></canvas>
+
+            <div
+              v-for="field in getFieldsForPage(page.pageNumber)"
+              class="absolute border-2 flex flex-col items-center justify-center text-[10px] font-bold cursor-default backdrop-blur-[1px]"
+              :style="{
+                left: field.x + 'px',
+                bottom: field.y + 'px',
+                width: field.width + 'px',
+                height: field.height + 'px',
+                borderColor: getOrderColor(field.signerOrder).border,
+                backgroundColor: getOrderColor(field.signerOrder).bg,
+                color: getOrderColor(field.signerOrder).text
+              }"
+            >
+              <span class="tracking-widest uppercase">{{ field.type }}</span>
+              <span class="text-[8px] opacity-80 font-normal truncate w-full text-center px-1">{{ field.id }}</span>
+            </div>
+          </div>
+
+          <div v-if="!pdfDataUrl && !errorHtml" class="text-gray-300 font-medium tracking-wide mt-20">
+            Waiting for PDF render...
+          </div>
+
+          <div v-if="isRendering" class="fixed bottom-6 left-6 bg-black bg-opacity-80 text-white text-xs px-4 py-2 rounded-full animate-pulse shadow-lg z-50 flex items-center gap-2">
+            <span class="w-2 h-2 bg-blue-400 rounded-full animate-ping"></span> Compiling PDF Elements...
+          </div>
+
         </div>
       </div>
+      <div class="w-1/3 h-full bg-white flex flex-col min-w-0">
 
-      <div class="w-1/3 h-full bg-white flex flex-col">
-        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 shadow-sm z-10 flex justify-between">
-           <span>Live Variables Editor</span>
-           <span class="text-xs font-normal text-gray-500 mt-1">Zod Schema Extracted</span>
+        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 shadow-sm z-10 flex justify-between items-center shrink-0">
+          <span>Live Variables Editor</span>
+          <span class="text-xs font-normal text-gray-500">Zod Schema Extracted</span>
         </div>
-        <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
-           
-           <editor-node
-             v-for="(val, key) in variables"
-             :key="key"
-             :node-key="key"
-             v-model="variables[key]"
-           ></editor-node>
 
+        <div class="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 bg-white">
+          <editor-node
+            v-for="(val, key) in variables"
+            :key="key"
+            :node-key="key"
+            v-model="variables[key]"
+          ></editor-node>
+
+          <div v-if="Object.keys(variables).length === 0" class="text-sm text-gray-400 italic">
+            No variables defined in schema.
+          </div>
         </div>
+
       </div>
-
-    </div>
+      </div>
 
     <template id="editor-node-template">
       <div class="flex flex-col">
-        <label class="text-xs font-bold uppercase tracking-wider mb-2" :class="isObject ? 'text-blue-500' : 'text-gray-500'">
+        <label
+          class="text-xs font-bold uppercase tracking-wider mb-2"
+          :class="isObject ? 'text-blue-500' : 'text-gray-500'"
+        >
           {{ nodeKey }}
         </label>
-        
+
         <div v-if="isObject" class="pl-4 border-l-2 border-blue-200 ml-1 flex flex-col gap-4 mt-1 mb-2">
-          <editor-node 
-            v-for="(val, key) in modelValue" 
-            :key="key" 
+          <editor-node
+            v-for="(val, key) in modelValue"
+            :key="key"
             :node-key="key"
             :model-value="val"
             @update:model-value="updateNested(key, $event)"
           ></editor-node>
         </div>
-        
+
         <textarea
           v-else-if="isArray"
           class="border border-gray-300 rounded-md p-2.5 text-sm font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all h-24"
           :value="JSON.stringify(modelValue, null, 2)"
           @input="updateArray"
         ></textarea>
-        
+
         <input
           v-else
           type="text"
@@ -160,7 +198,7 @@ export default defineEventHandler((event) => {
           updateArray(e) {
             try {
               this.$emit('update:modelValue', JSON.parse(e.target.value));
-            } catch(err) { /* ignore invalid JSON mid-typing */ } 
+            } catch (err) { /* ignore invalid JSON mid-typing */ }
           }
         }
       };
@@ -169,7 +207,10 @@ export default defineEventHandler((event) => {
         data() {
           return {
             variables: ${JSON.stringify(variables)},
-            pdfDataUrl: null,
+            signerFields: ${JSON.stringify(signerFieldsMap)},
+            pdfDataUrl: false,
+            pdfPages: [],
+          pdfScale: 1.5,
             errorHtml: '',
             ws: null,
             socketConnected: false,
@@ -184,40 +225,112 @@ export default defineEventHandler((event) => {
           connectWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             this.ws = new WebSocket(protocol + '//' + window.location.host + '/api/document/template/preview');
-            
+
             this.ws.onopen = () => {
               this.socketConnected = true;
               this.triggerRender();
             };
-            
+
             this.ws.onclose = () => {
               this.socketConnected = false;
-              setTimeout(() => this.connectWebSocket(), 3000); 
+              setTimeout(() => this.connectWebSocket(), 3000);
             };
 
-            this.ws.onmessage = (event) => {
+            this.ws.onmessage = async (event) => {
               const data = JSON.parse(event.data);
               this.isRendering = false;
-              
+
               if (data.pdfBase64) {
-                this.pdfDataUrl = 'data:application/pdf;base64,' + data.pdfBase64;
+                this.pdfDataUrl = true;
                 this.errorHtml = '';
+                await this.renderPdfClientSide(data.pdfBase64);
               } else if (data.error) {
                 this.errorHtml = '<div style="padding:20px; color:red; font-family:sans-serif;"><b>Compilation Error:</b><br><br>' + data.error + '</div>';
-                this.pdfDataUrl = null;
+                this.pdfDataUrl = false;
+                this.pdfPages = [];
               }
             };
           },
+
+          async renderPdfClientSide(base64Data) {
+            const binaryString = window.atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const loadingTask = pdfjsLib.getDocument({ data: bytes });
+            this._pdfDocument = await loadingTask.promise;
+            const totalPages = this._pdfDocument.numPages;
+
+            // Calculate dynamic scale to fit container height
+            const container = document.getElementById('pdf-scroll-container');
+            const availableHeight = container ? container.clientHeight - 64 : 800; // 64px for p-8 padding
+            const firstPage = await this._pdfDocument.getPage(1);
+            const baseViewport = firstPage.getViewport({ scale: 1.0 });
+            this.pdfScale = availableHeight / baseViewport.height;
+
+            this.pdfPages = [];
+
+            for (let i = 1; i <= totalPages; i++) {
+              const page = await this._pdfDocument.getPage(i);
+              const viewport = page.getViewport({ scale: this.pdfScale });
+              this.pdfPages.push({ pageNumber: i, width: viewport.width, height: viewport.height });
+            }
+
+            this.$nextTick(() => {
+              this.pdfPages.forEach(async (pageData) => {
+                const canvas = document.getElementById('page-canvas-' + pageData.pageNumber);
+                if (canvas) {
+                  canvas.width = pageData.width;
+                  canvas.height = pageData.height;
+                  const page = await this._pdfDocument.getPage(pageData.pageNumber);
+                  const viewport = page.getViewport({ scale: this.pdfScale });
+                  page.render({ canvasContext: canvas.getContext('2d'), viewport });
+                }
+              });
+            });
+          },
+
+          getFieldsForPage(pageNum) {
+            const totalPages = this._pdfDocument ? this._pdfDocument.numPages : 1;
+            const allFields = Object.values(this.signerFields).flat();
+
+            return allFields
+              .filter(field => {
+                let target = field.pageIndex;
+                if (target < 0) target = totalPages + target;
+                return target === (pageNum - 1);
+              })
+              .map(field => ({
+                ...field,
+                x:      field.x      * this.pdfScale,
+                y:      field.y      * this.pdfScale,
+                width:  field.width  * this.pdfScale,
+                height: field.height * this.pdfScale,
+              }));
+          },
+
+          getOrderColor(order) {
+            const colors = [
+              { bg: '#3b82f64d', border: '#3b82f6', text: '#1e3a8a' }, 
+              { bg: '#eab3084d', border: '#eab308', text: '#713f12' }, 
+              { bg: '#22c55e4d', border: '#22c55e', text: '#14532d' },
+            ];
+            return colors[(order - 1) % colors.length] || colors[0];
+          },
+
           triggerRender() {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
               this.isRendering = true;
               this.ws.send(JSON.stringify({
                 templateId: '${templateId}',
-                variables: this.variables
+                variables: this.variables,
               }));
             }
-          }
+          },
         },
+
         watch: {
           variables: {
             deep: true,
@@ -225,14 +338,14 @@ export default defineEventHandler((event) => {
               clearTimeout(this.renderTimeout);
               this.renderTimeout = setTimeout(() => {
                 this.triggerRender();
-              }, 400); 
+              }, 400);
             }
           }
         }
       };
 
       const vueApp = Vue.createApp(App);
-      vueApp.component('editor-node', EditorNode); 
+      vueApp.component('editor-node', EditorNode);
       vueApp.mount('#app');
     </script>
   </body>

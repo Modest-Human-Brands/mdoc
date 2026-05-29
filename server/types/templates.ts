@@ -5,7 +5,11 @@ export const TEMPLATES = ['quotation', 'internship-completion-certificate'] as c
 export type TemplateName = (typeof TEMPLATES)[number]
 
 export type TemplatePayload = QuotationPayload | InternshipCompletionCertificatePayload
-export type RequestBody = { template: 'quotation'; data: QuotationPayload } | { template: 'internship-completion-certificate'; data: InternshipCompletionCertificatePayload }
+
+export type RequestBody = {
+  name: string
+  orgId: string
+} & ({ template: 'quotation'; data: QuotationPayload } | { template: 'internship-completion-certificate'; data: InternshipCompletionCertificatePayload })
 
 export interface DocumentMeta {
   id: string

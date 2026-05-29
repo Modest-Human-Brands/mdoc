@@ -1,6 +1,8 @@
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
-import { useStorage } from 'nitro/storage'
-import type { DocumentMeta } from '~/server/types/templates'
+
+import notion from '~/server/utils/notion'
+import notionTextStringify from '~/server/utils/notion-text-stringify'
+import type { NotionDocument } from '~/server/types'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -13,37 +15,40 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const fsStorage = useStorage('fs')
-    const allKeys = await fsStorage.getKeys()
-    const targetKey = allKeys.find((key) => key.includes(id) && key.endsWith('.meta.json'))
+    const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
 
-    if (!targetKey) {
+    const { properties, created_time, last_edited_time } = document
+
+    const name = notionTextStringify(properties.Name.title)
+
+    return {
+      id: document.id,
+      templateId: properties['Template ID']?.select?.name,
+      name,
+      mimeType: properties['Mime Type']?.select?.name,
+      sizeBytes: properties.SizeBytes?.number,
+      status: properties.Status?.status?.name,
+      previewUrl: `/api/document/${name}/content`,
+      createdAt: created_time,
+      updatedAt: last_edited_time,
+    }
+  } catch (error: any) {
+    console.error(`API /document/[id] GET`, error)
+
+    if (error.code === 'object_not_found' || error.status === 404 || error.code === 'validation_error') {
       throw new HTTPError({
         statusCode: 404,
-        statusMessage: `Document with ID ${id} not found`,
+        statusMessage: 'Document not found',
       })
     }
 
-    const document = await fsStorage.getItem<DocumentMeta>(targetKey)
-
-    if (!document) {
-      throw new HTTPError({
-        statusCode: 404,
-        statusMessage: 'Metadata file is empty or corrupted',
-      })
-    }
-
-    return document
-  } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
 
-    console.error(`API document/[id] GET for ${getRouterParam(event, 'id')}`, error)
-
     throw new HTTPError({
       statusCode: 500,
-      statusMessage: 'Internal Server Error',
+      statusMessage: 'Failed to retrieve document details',
     })
   }
 })
