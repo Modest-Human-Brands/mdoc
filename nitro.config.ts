@@ -18,6 +18,7 @@ export default defineConfig({
     private: {
       notionDbId: '',
       jwtSecret: '',
+      certificateSecret: '',
     },
   },
   storage: {

@@ -64,6 +64,7 @@ registerTemplate({
     return {
       recipientName: data.recipientName || p.recipientName,
       bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${data.recipientRole || p.recipientRole} towards ${data.scopeOfWork || p.scopeOfWork} during ${data.startDate || p.startDate} - ${data.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${data.organization.name || p.organization.name}.`,
+      organizationName: data.organization.name || p.organization.name,
       organizationBrandingLogo: data.organization.branding.logo || p.organization.branding.logo,
       basePdfBackground: './asset/internship-completion-certificate-v1_0001.svg',
     }

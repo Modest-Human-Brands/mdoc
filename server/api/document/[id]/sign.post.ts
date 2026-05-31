@@ -3,8 +3,11 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import mime from 'mime-types'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { SignPdf } from '@signpdf/signpdf'
+import { pdflibAddPlaceholder } from '@signpdf/placeholder-pdf-lib'
+import { P12Signer } from '@signpdf/signer-p12'
 
 import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
@@ -40,21 +43,22 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
+    const fsStorage = useStorage('fs')
+    const config = useRuntimeConfig()
+
     const body = await readBody(event)
     const { sessionToken, fields: inputFields, telemetry } = signSchema.parse(body)
 
-    const config = useRuntimeConfig()
-    const secret = config.private.jwtSecret
     let decodedToken: any
 
     try {
-      decodedToken = jwt.verify(sessionToken, secret)
+      decodedToken = jwt.verify(sessionToken, config.private.jwtSecret)
     } catch {
       throw new HTTPError({ statusCode: 401, statusMessage: 'Session expired or invalid.' })
     }
 
     if (decodedToken.documentId !== id) {
-      throw new HTTPError({ statusCode: 403, statusMessage: 'Token does not match this document.' })
+      throw new HTTPError({ statusCode: 403, statusMessage: 'Token id does not match this document id.' })
     }
 
     const signerEmail = decodedToken.signerEmail
@@ -75,9 +79,19 @@ export default defineEventHandler(async (event) => {
     if (signerIndex === -1) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in queue.' })
     if (currentSigner.status === 'SIGNED') throw new HTTPError({ statusCode: 409, statusMessage: 'Already signed.' })
 
-    const fsStorage = useStorage('fs')
-    const fileName = `${notionTextStringify(document.properties.Name.title)}.${mime.extension(document.properties['Mime Type'].select.name)}`
+    const fileName = `${notionTextStringify(document.properties.Name.title)}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${mime.extension(document.properties['Mime Type'].select.name)}`
+    const currentFileName = `${notionTextStringify(document.properties.Name.title)}-${currentSigner.order}.${mime.extension(document.properties['Mime Type'].select.name)}`
     const signedFileName = `${notionTextStringify(document.properties.Name.title)}-signed.${mime.extension(document.properties['Mime Type'].select.name)}`
+
+    currentSigner.status = 'SIGNED'
+    currentSigner.signedAt = new Date().toISOString()
+    currentSigner.telemetry = telemetry
+
+    const pendingSigners = signers.filter((s: any) => s.status === 'PENDING')
+    const isCompleted = pendingSigners.length === 0
+    const nextStatus = isCompleted ? 'Completed' : 'Partially Signed'
+    const nextSignerEmail = isCompleted ? null : pendingSigners[0].email
+
     const pdfBuffer = await fsStorage.getItemRaw<Buffer>(fileName)
 
     if (!pdfBuffer) {
@@ -91,12 +105,24 @@ export default defineEventHandler(async (event) => {
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     pdfDoc.setProducer('MDoc')
 
+    const certificateBuffer = await fsStorage.getItemRaw('certificate.p12')
+    const signer = new P12Signer(certificateBuffer, { passphrase: config.private.certificateSecret })
+
+    if (isCompleted) {
+      pdflibAddPlaceholder({
+        pdfDoc: pdfDoc,
+        reason: 'The user is decalaring consent.',
+        contactInfo: currentSigner.email,
+        name: currentSigner.name,
+        location: 'Global',
+      })
+    }
+
     const targetTemplate = templateRegistry[templateId]
     const allFields = targetTemplate?.signerFields || []
     const signatureFields = allFields.filter((f) => f.signerOrder === currentSigner.order)
 
     for (const field of signatureFields) {
-      // Handle negative indexing (e.g., -1 = last page)
       const pageIdx = field.pageIndex < 0 ? pages.length + field.pageIndex : field.pageIndex
       const page = pages[pageIdx]
       const textOptions = { font: helveticaFont, size: field.fontSize || 12, color: rgb(0, 0, 0) }
@@ -193,17 +219,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const updatedPdfBytes = await pdfDoc.save()
-    await fsStorage.setItemRaw(signedFileName, updatedPdfBytes)
+    let signedPdfBuffer: Uint8Array = await pdfDoc.save()
 
-    currentSigner.status = 'SIGNED'
-    currentSigner.signedAt = new Date().toISOString()
-    currentSigner.telemetry = telemetry
+    if (isCompleted) {
+      const pdfWithPlaceholderBytes = await pdfDoc.save()
+      signedPdfBuffer = await new SignPdf().sign(pdfWithPlaceholderBytes, signer)
+    }
 
-    const pendingSigners = signers.filter((s: any) => s.status === 'PENDING')
-    const isCompleted = pendingSigners.length === 0
-    const nextStatus = isCompleted ? 'Completed' : 'Partially Signed'
-    const nextSignerEmail = isCompleted ? null : pendingSigners[0].email
+    await fsStorage.setItemRaw(isCompleted ? signedFileName : currentFileName, signedPdfBuffer)
 
     await notion.pages.update({
       page_id: id,
