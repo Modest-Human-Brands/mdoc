@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.1.4
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.3...v0.1.4)
+
+### 🚀 Enhancements
+
+- Enhance document template API with improved metadata structure ([5689a1d](https://github.com/Modest-Human-Brands/mdoc/commit/5689a1d))
+- Add templates for quotation and internship completion certificate ([ab1b2a6](https://github.com/Modest-Human-Brands/mdoc/commit/ab1b2a6))
+- Enhance document generation/siging ([683aa52](https://github.com/Modest-Human-Brands/mdoc/commit/683aa52))
+- Integrate signpdf library for document signing and add certificate secret ([94f97fe](https://github.com/Modest-Human-Brands/mdoc/commit/94f97fe))
+- Implement void document functionality with PDF watermarking and status update ([575f71a](https://github.com/Modest-Human-Brands/mdoc/commit/575f71a))
+- Enhance document retrieval by validating path parameters with Zod ([46961ab](https://github.com/Modest-Human-Brands/mdoc/commit/46961ab))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.3
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.2...v0.1.3)
