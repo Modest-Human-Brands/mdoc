@@ -79,9 +79,12 @@ export default defineEventHandler(async (event) => {
     if (signerIndex === -1) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in queue.' })
     if (currentSigner.status === 'SIGNED') throw new HTTPError({ statusCode: 409, statusMessage: 'Already signed.' })
 
-    const fileName = `${notionTextStringify(document.properties.Name.title)}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${mime.extension(document.properties['Mime Type'].select.name)}`
-    const currentFileName = `${notionTextStringify(document.properties.Name.title)}-${currentSigner.order}.${mime.extension(document.properties['Mime Type'].select.name)}`
-    const signedFileName = `${notionTextStringify(document.properties.Name.title)}-signed.${mime.extension(document.properties['Mime Type'].select.name)}`
+    const baseTitle = notionTextStringify(document.properties.Name.title)
+    const ext = mime.extension(document.properties['Mime Type'].select.name)
+
+    const fileName = `${baseTitle}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${ext}`
+    const currentFileName = `${baseTitle}-${currentSigner.order}.${ext}`
+    const signedFileName = `${baseTitle}-signed.${ext}`
 
     currentSigner.status = 'SIGNED'
     currentSigner.signedAt = new Date().toISOString()

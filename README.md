@@ -408,14 +408,14 @@
 | **9**  | `POST /api/document/:id/remind`      | 5. Workflow Interruption & Control      | **Low-Medium**: Requires integration with an outbound notification service (SMTP or MCoordinate webhook).                                                                               | ⬜ **Pending** |
 | **10** | `POST /api/document/:id/envelope`    | 3. Envelope Routing & Signer Access     | **Medium**: State machine initialization. Validates signer arrays, builds the routing queue, locks the document, and transitions state to `SENT`.                                       | ✅ **Done**    |
 | **11** | `POST /api/webhooks/subscriptions`   | 7. Cross-Service Integration & Archival | **Medium**: Database writes coupled with registering jobs in a background worker queue (e.g., BullMQ) for future async dispatch.                                                        | ⬜ **Pending** |
-| **12** | `POST /api/document/:id/void`        | 5. Workflow Interruption & Control      | **Medium-High**: Halts the state machine queue and requires manipulating an existing PDF in-memory to stamp a visual "VOID" watermark across pages.                                     | ⬜ **Pending** |
+| **12** | `POST /api/document/:id/void`        | 5. Workflow Interruption & Control      | **Medium-High**: Halts the state machine queue and requires manipulating an existing PDF in-memory to stamp a visual "VOID" watermark across pages.                                     | ✅ **Done**    |
 | **13** | `POST /api/document/:id/attachments` | 4. Execution & Attachments              | **High**: Handles `multipart/form-data`, file sanitization/malware checks, limits file sizing, and manages secure temporary uploads.                                                    | ⬜ **Pending** |
 | **14** | `POST /api/document/:id/export/s3`   | 7. Cross-Service Integration & Archival | **High**: Complex networking and security. Requires AWS SDK integration, handling KMS encryption, piping large streams, and applying custom S3 metadata tags.                           | ⬜ **Pending** |
 | **15** | `POST /api/document/:id/sign`        | 4. Execution & Attachments              | **Very High**: The core engine. Requires token validation, loading the PDF into memory, mapping X/Y coordinates, image scaling/flattening, DB telemetry logging, and queue advancement. | ✅ **Done**    |
 | **16** | `GET /api/document/:id/audit-trail`  | 6. Audit & Compliance                   | **Expert**: Requires dynamic PDF generation from database event logs, drawing structured tables, and safely appending those new pages to the _existing_ signed PDF binary.              | ⬜ **Pending** |
 | **17** | `GET /api/document/:id/verify`       | 6. Audit & Compliance                   | **Expert**: Pure cryptography. Requires hashing the final PDF binary, extracting existing X.509 digital certificates, and comparing checksums to definitively prove immutability.       | ⬜ **Pending** |
 
-Progress = 10/17 = 58%
+Progress = 11/17 = 64%
 
 ## License
 
