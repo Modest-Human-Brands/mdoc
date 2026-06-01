@@ -1,10 +1,13 @@
-import { defineEventHandler, getRouterParams, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getValidatedRouterParams, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
+import { z } from 'zod'
 
 import '~/templates/document'
 
-export default defineEventHandler((event) => {
-  const { id: templateId } = getRouterParams(event)
+const pathParamsSchema = z.object({ id: z.string() })
+
+export default defineEventHandler(async (event) => {
+  const { id: templateId } = await getValidatedRouterParams(event, pathParamsSchema)
 
   if (!templateId) {
     throw new HTTPError({ statusCode: 400, statusMessage: 'Missing templateId parameter.' })
