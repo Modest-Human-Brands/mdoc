@@ -35,6 +35,10 @@ export interface NotionDocument {
       type: 'relation'
       relation: { id: string }[]
     }
+    Project: {
+      type: 'relation'
+      relation: { id: string }[]
+    }
     'Template ID': {
       type: 'select'
       select: {
@@ -72,6 +76,18 @@ export interface NotionDocument {
     'Next Signer': {
       type: 'email'
       email: string
+    }
+    Category: {
+      type: 'multi_select'
+      multi_select: { name: string }[]
+    }
+    'Created by': {
+      type: 'created_by'
+      created_by: { id: string }
+    }
+    'Last edited by': {
+      type: 'last_edited_by'
+      last_edited_by: { id: string }
     }
   }
 }

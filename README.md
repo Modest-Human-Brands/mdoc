@@ -94,32 +94,58 @@
 
 ### `GET /api/document`
 
-**Description:** Retrieve metadata for all documents accessible to the authenticated user. Supports pagination and status filtering (`?status=DRAFT|SENT|COMPLETED|VOID`).
+**Description:** Retrieve metadata for all documents accessible to the authenticated user. Supports pagination (`?limit=50&offset=0`).
 
 **Output (JSON):**
 
 ```json
-[
-  {
-    "id": "c0e6ccef-71fe-4849-99bd-616d3545f2e1",
-    "name": "Internship Completion Certificate",
-    "fileName": "internship-completion-certificate__c0e6ccef.pdf",
-    "extension": "pdf",
-    "sizeBytes": 896601,
-    "status": "COMPLETED",
-    "templateId": "internship-completion-certificate",
-    "previewUrl": "/api/documents/preview/internship-completion-certificate__c0e6ccef.png",
-    "createdAt": "2026-04-27T12:11:26.733Z",
-    "updatedAt": "2026-04-27T12:11:26.733Z"
+{
+  "results": [
+    {
+      "id": "c0e6ccef-71fe-4849-99bd-616d3545f2e1",
+      "templateId": "internship-completion-certificate",
+      "name": "Internship Completion Certificate",
+      "mimeType": "application/pdf",
+      "sizeBytes": 896601,
+      "status": "Completed",
+      "organizationId": null,
+      "projectId": null,
+      "categories": [],
+      "previewUrl": "/api/document/Internship Completion Certificate/content",
+      "createdAt": "2026-04-27T12:11:26.733Z",
+      "updatedAt": "2026-04-27T12:11:26.733Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "limit": 50,
+    "offset": 0
   }
-]
+}
 ```
 
 ### `GET /api/document/:id`
 
 **Description:** Get exhaustive metadata for a specific document, including its current signature workflow status and signer queue.
 
-**Output (JSON):** _(Standard Document Metadata Object)_
+**Output (JSON):**
+
+```json
+{
+  "id": "371ee3b0-289a-81d0-9e6b-e539d914d969",
+  "templateId": "internship-completion-certificate",
+  "name": "RCP-C-0-0",
+  "mimeType": "application/pdf",
+  "sizeBytes": 501459,
+  "status": "Completed",
+  "organizationId": null,
+  "projectId": null,
+  "categories": [],
+  "previewUrl": "/api/document/RCP-C-0-0/content",
+  "createdAt": "2026-05-31T10:21:00.000Z",
+  "updatedAt": "2026-05-31T10:21:00.000Z"
+}
+```
 
 ### `PATCH /api/document/:id`
 
