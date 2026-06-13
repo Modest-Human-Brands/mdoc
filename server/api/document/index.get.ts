@@ -4,8 +4,8 @@ import { z } from 'zod'
 
 import notion from '~/server/utils/notion'
 import notionQueryDb from '~/server/utils/notion-query-db'
-import type { NotionDB, NotionDocument } from '~/server/types'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import type { NotionContact, NotionDB, NotionDocument, NotionProject } from '~/server/types'
 
 const queryParamsSchema = z.object({
   limit: z.string().optional(),
@@ -27,23 +27,38 @@ export default defineEventHandler(async (event) => {
     const total = documents.length
     const paginatedContent = documents.slice(offset, offset + limit)
 
-    const results = paginatedContent.map(({ id, properties, created_time, last_edited_time }) => {
-      const name = notionTextStringify(properties.Name.title)
-      return {
-        id,
-        templateId: properties['Template ID'].select.name,
-        name,
-        mimeType: properties['Mime Type'].select.name,
-        sizeBytes: properties.SizeBytes.number,
-        status: properties.Status.status.name,
-        organizationId: properties.Organization?.relation?.[0]?.id || null,
-        projectId: properties.Project?.relation?.[0]?.id || null,
-        categories: properties.Category?.multi_select?.map((c) => c.name) || [],
-        previewUrl: `/api/document/${name}/content`,
-        createdAt: created_time,
-        updatedAt: last_edited_time,
-      }
-    })
+    const results = await Promise.all(
+      paginatedContent.map(async ({ id, properties, created_time, last_edited_time }) => {
+        const name = notionTextStringify(properties.Name.title)
+
+        const project = (await notion.pages.retrieve({ page_id: properties.Project.relation[0].id })) as unknown as NotionProject
+        const contact = (await notion.pages.retrieve({ page_id: project.properties.Contact.relation[0].id })) as unknown as NotionContact
+
+        return {
+          id,
+          templateId: properties['Template ID'].select.name,
+          name,
+          mimeType: properties['Mime Type'].select.name,
+          sizeBytes: properties.SizeBytes.number,
+          status: properties.Status.status.name,
+          contact: {
+            index: contact.properties.Index?.number,
+            name: notionTextStringify(contact.properties.Name.title),
+            avatar: contact.icon?.type === 'external' ? contact.icon.external.url : undefined,
+          },
+          project: {
+            index: project.properties.Index?.number,
+            name: notionTextStringify(project.properties.Name.title),
+            slug: project.properties.Slug.formula.string,
+            status: project.properties.Status.status.name,
+          },
+          organizationId: properties.Organization?.relation?.[0]?.id || null,
+          previewUrl: `/api/document/${name}/content`,
+          createdAt: created_time,
+          updatedAt: last_edited_time,
+        }
+      })
+    )
 
     return {
       results,

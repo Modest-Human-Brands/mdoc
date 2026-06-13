@@ -27,4 +27,7 @@ export default defineConfig({
       base: './static',
     },
   },
+  routeRules: {
+    '/api/document/**/content': { cors: true },
+  },
 })

@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
       organizationId: properties.Organization?.relation?.[0]?.id || null,
       projectId: properties.Project?.relation?.[0]?.id || null,
       categories: properties.Category?.multi_select?.map((c: any) => c.name) || [],
-      previewUrl: `/api/document/${name}/content`,
+      previewUrl: `/api/document/${document.id}/content`,
       createdAt: created_time,
       updatedAt: last_edited_time,
     }
