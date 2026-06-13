@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.5
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.4...v0.1.5)
+
+### 🚀 Enhancements
+
+- **api:** Enhance document API with project and contact details ([c871ded](https://github.com/Modest-Human-Brands/mdoc/commit/c871ded))
+
+### 🏡 Chore
+
+- Update dependencies and improve document API response ([f66139f](https://github.com/Modest-Human-Brands/mdoc/commit/f66139f))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.4
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.3...v0.1.4)
