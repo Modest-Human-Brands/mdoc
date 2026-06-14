@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
   </head>
   <body class="bg-gray-100 overflow-hidden h-screen flex text-gray-800 font-sans">
     
-    <div id="app" class="flex w-full h-full">
+    <div id="app" class="flex size-full">
 
       <div class="w-2/3 h-full flex flex-col border-r border-gray-300 bg-white min-w-0">
 
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
             class="relative bg-white shadow-2xl shrink-0 border border-gray-200"
             :style="{ width: page.width + 'px', height: page.height + 'px' }"
           >
-            <canvas :id="'page-canvas-' + page.pageNumber" class="absolute top-0 left-0 w-full h-full"></canvas>
+            <canvas :id="'page-canvas-' + page.pageNumber" class="absolute top-0 left-0 size-full"></canvas>
 
             <div
               v-for="field in getFieldsForPage(page.pageNumber)"
