@@ -73,9 +73,9 @@ export default defineEventHandler(async (event) => {
         <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 flex justify-between items-center shadow-sm z-10 shrink-0">
           <span>PDF Template: <span class="text-blue-600">${templateId}</span></span>
           <span class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full" :class="socketConnected ? 'bg-green-500' : 'bg-red-500'"></span>
-            <span class="text-xs tracking-wide" :class="socketConnected ? 'text-green-700' : 'text-red-700'">
-              {{ socketConnected ? 'WebSocket Active' : 'Disconnected' }}
+            <span class="w-2 h-2 rounded-full" :class="isRendering ? 'bg-blue-500 animate-pulse' : 'bg-green-500'"></span>
+            <span class="text-xs tracking-wide" :class="isRendering ? 'text-blue-700' : 'text-green-700'">
+              {{ isRendering ? 'Rendering...' : 'Live Sync Active' }}
             </span>
           </span>
         </div>
@@ -213,48 +213,16 @@ export default defineEventHandler(async (event) => {
             signerFields: ${JSON.stringify(signerFieldsMap)},
             pdfDataUrl: false,
             pdfPages: [],
-          pdfScale: 1.5,
+            pdfScale: 1.5,
             errorHtml: '',
-            ws: null,
-            socketConnected: false,
             isRendering: false,
             renderTimeout: null
           }
         },
         mounted() {
-          this.connectWebSocket();
+          this.triggerRender();
         },
         methods: {
-          connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            this.ws = new WebSocket(protocol + '//' + window.location.host + '/api/document/template/preview');
-
-            this.ws.onopen = () => {
-              this.socketConnected = true;
-              this.triggerRender();
-            };
-
-            this.ws.onclose = () => {
-              this.socketConnected = false;
-              setTimeout(() => this.connectWebSocket(), 3000);
-            };
-
-            this.ws.onmessage = async (event) => {
-              const data = JSON.parse(event.data);
-              this.isRendering = false;
-
-              if (data.pdfBase64) {
-                this.pdfDataUrl = true;
-                this.errorHtml = '';
-                await this.renderPdfClientSide(data.pdfBase64);
-              } else if (data.error) {
-                this.errorHtml = '<div style="padding:20px; color:red; font-family:sans-serif;"><b>Compilation Error:</b><br><br>' + data.error + '</div>';
-                this.pdfDataUrl = false;
-                this.pdfPages = [];
-              }
-            };
-          },
-
           async renderPdfClientSide(base64Data) {
             const binaryString = window.atob(base64Data);
             const bytes = new Uint8Array(binaryString.length);
@@ -298,12 +266,36 @@ export default defineEventHandler(async (event) => {
           getFieldsForPage(pageNum) {
             const totalPages = this._pdfDocument ? this._pdfDocument.numPages : 1;
             const allFields = Object.values(this.signerFields).flat();
+            const currentIdx = pageNum - 1;
 
             return allFields
               .filter(field => {
-                let target = field.pageIndex;
-                if (target < 0) target = totalPages + target;
-                return target === (pageNum - 1);
+                const pIdx = field.pageIndex;
+                const resolveIdx = (idx) => (idx < 0 ? totalPages + idx : idx);
+
+                if (typeof pIdx === 'number') {
+                  return currentIdx === resolveIdx(pIdx);
+                } else if (Array.isArray(pIdx)) {
+                  return pIdx.some(idx => currentIdx === resolveIdx(idx));
+                } else if (typeof pIdx === 'string') {
+                  if (pIdx === 'all') return true;
+                  if (pIdx === 'all-except-last') return currentIdx < (totalPages - 1);
+                  if (pIdx === 'odd') return currentIdx % 2 === 0;
+                  if (pIdx === 'even') return currentIdx % 2 !== 0;
+                  if (pIdx.startsWith('*/')) {
+                    const step = parseInt(pIdx.replace('*/', ''), 10);
+                    if (!isNaN(step) && step > 0) return currentIdx % step === 0;
+                  } else if (pIdx.includes(',')) {
+                    const indices = pIdx.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                    return indices.some(idx => currentIdx === resolveIdx(idx));
+                  } else if (pIdx.includes('-')) {
+                    const parts = pIdx.split('-').map(s => parseInt(s.trim(), 10));
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                      return currentIdx >= resolveIdx(parts[0]) && currentIdx <= resolveIdx(parts[1]);
+                    }
+                  }
+                }
+                return false;
               })
               .map(field => ({
                 ...field,
@@ -323,13 +315,36 @@ export default defineEventHandler(async (event) => {
             return colors[(order - 1) % colors.length] || colors[0];
           },
 
-          triggerRender() {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              this.isRendering = true;
-              this.ws.send(JSON.stringify({
-                templateId: '${templateId}',
-                variables: this.variables,
-              }));
+          async triggerRender() {
+            this.isRendering = true;
+            this.errorHtml = '';
+            
+            try {
+              const res = await fetch('/api/document/template/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  templateId: '${templateId}',
+                  variables: this.variables,
+                })
+              });
+              
+              const data = await res.json();
+              
+              if (data.pdfBase64) {
+                this.pdfDataUrl = true;
+                await this.renderPdfClientSide(data.pdfBase64);
+              } else if (data.error) {
+                this.errorHtml = '<div style="padding:20px; color:red; font-family:sans-serif;"><b>Compilation Error:</b><br><br>' + data.error + '</div>';
+                this.pdfDataUrl = false;
+                this.pdfPages = [];
+              }
+            } catch (err) {
+              this.errorHtml = '<div style="padding:20px; color:red; font-family:sans-serif;"><b>Network Error:</b><br><br>' + err.message + '</div>';
+              this.pdfDataUrl = false;
+              this.pdfPages = [];
+            } finally {
+              this.isRendering = false;
             }
           },
         },

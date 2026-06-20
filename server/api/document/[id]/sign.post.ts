@@ -4,7 +4,7 @@ import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
 import mime from 'mime-types'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage } from 'pdf-lib'
 import { SignPdf } from '@signpdf/signpdf'
 import { pdflibAddPlaceholder } from '@signpdf/placeholder-pdf-lib'
 import { P12Signer } from '@signpdf/signer-p12'
@@ -13,6 +13,88 @@ import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { templateRegistry } from '~/server/utils/template-registry'
+
+function resolveTargetPages(pIdx: string | number | number[], pages: PDFPage[]): PDFPage[] {
+  let targetPages: PDFPage[] = []
+  const total = pages.length
+  const resolveIdx = (idx: number) => (idx < 0 ? total + idx : idx)
+
+  if (typeof pIdx === 'number') {
+    targetPages = [pages[resolveIdx(pIdx)]]
+  } else if (Array.isArray(pIdx)) {
+    targetPages = pIdx.map((idx) => pages[resolveIdx(idx)])
+  } else if (typeof pIdx === 'string') {
+    switch (pIdx) {
+      case 'all': {
+        targetPages = pages
+
+        break
+      }
+      case 'all-except-last': {
+        targetPages = pages.slice(0, -1)
+
+        break
+      }
+      case 'odd': {
+        targetPages = pages.filter((_, i) => i % 2 === 0)
+
+        break
+      }
+      case 'even': {
+        targetPages = pages.filter((_, i) => i % 2 !== 0)
+
+        break
+      }
+      default: {
+        if (pIdx.startsWith('*/')) {
+          const step = Number.parseInt(pIdx.replace('*/', ''), 10)
+          if (!Number.isNaN(step) && step > 0) {
+            targetPages = pages.filter((_, i) => i % step === 0)
+          }
+        } else if (pIdx.includes(',')) {
+          const indices = pIdx
+            .split(',')
+            .map((s) => Number.parseInt(s.trim(), 10))
+            .filter((n) => !Number.isNaN(n))
+          targetPages = indices.map((idx) => pages[resolveIdx(idx)])
+        } else if (pIdx.includes('-')) {
+          const parts = pIdx.split('-').map((s) => Number.parseInt(s.trim(), 10))
+          if (parts.length === 2 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1])) {
+            targetPages = pages.slice(resolveIdx(parts[0]), resolveIdx(parts[1]) + 1)
+          }
+        }
+      }
+    }
+  }
+  return targetPages
+}
+
+// --- ISOLATED UTILITY: DRY Drawing Helpers ---
+async function drawBase64Image(pdfDoc: PDFDocument, targetPages: PDFPage[], field: any, base64String: string) {
+  const b64 = base64String.replace(/^data:image\/(png|jpeg);base64,/, '')
+  const image = await pdfDoc.embedPng(Buffer.from(b64, 'base64'))
+  const dims = image.scaleToFit(field.width, field.height)
+
+  for (const page of targetPages) {
+    page.drawImage(image, {
+      x: field.x + (field.width - dims.width) / 2,
+      y: field.y + (field.height - dims.height) / 2,
+      width: dims.width,
+      height: dims.height,
+    })
+  }
+}
+
+function drawCenteredText(targetPages: PDFPage[], field: any, text: string, font: PDFFont, baseOptions: any) {
+  const textWidth = font.widthOfTextAtSize(text, field.fontSize || 12)
+  for (const page of targetPages) {
+    page.drawText(text, {
+      x: field.x + (field.width - textWidth) / 2,
+      y: field.y + field.height / 2 - (field.fontSize || 12) / 3,
+      ...baseOptions,
+    })
+  }
+}
 
 const signSchema = z.object({
   sessionToken: z.string(),
@@ -38,6 +120,7 @@ interface SignerDetails {
   }
 }
 
+// --- MAIN HANDLER ---
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
@@ -114,7 +197,7 @@ export default defineEventHandler(async (event) => {
     if (isCompleted) {
       pdflibAddPlaceholder({
         pdfDoc: pdfDoc,
-        reason: 'The user is decalaring consent.',
+        reason: 'The user is declaring consent.',
         contactInfo: currentSigner.email,
         name: currentSigner.name,
         location: 'Global',
@@ -125,71 +208,34 @@ export default defineEventHandler(async (event) => {
     const allFields = targetTemplate?.signerFields || []
     const signatureFields = allFields.filter((f) => f.signerOrder === currentSigner.order)
 
+    // --- APPLY SIGNATURE FIELDS ---
     for (const field of signatureFields) {
-      const pageIdx = field.pageIndex < 0 ? pages.length + field.pageIndex : field.pageIndex
-      const page = pages[pageIdx]
+      const targetPages = resolveTargetPages(field.pageIndex, pages)
       const textOptions = { font: helveticaFont, size: field.fontSize || 12, color: rgb(0, 0, 0) }
 
       switch (field.type) {
-        case 'SIGNATURE': {
-          const sigVal = inputFields[field.id]
-          if (field.required && !sigVal) throw new HTTPError({ statusCode: 400, statusMessage: `Signature image is required for field: ${field.id}` })
-          if (sigVal && typeof sigVal === 'string') {
-            const b64 = sigVal.replace(/^data:image\/(png|jpeg);base64,/, '')
-            const signatureImage = await pdfDoc.embedPng(Buffer.from(b64, 'base64'))
-
-            const dims = signatureImage.scaleToFit(field.width, field.height)
-            page.drawImage(signatureImage, {
-              x: field.x + (field.width - dims.width) / 2,
-              y: field.y + (field.height - dims.height) / 2,
-              width: dims.width,
-              height: dims.height,
-            })
-          }
-          break
-        }
-
+        case 'SIGNATURE':
         case 'INITIALS': {
-          const initVal = inputFields[field.id]
-          if (field.required && !initVal) throw new HTTPError({ statusCode: 400, statusMessage: `Initials image is required for field: ${field.id}` })
-          if (initVal && typeof initVal === 'string') {
-            const b64 = initVal.replace(/^data:image\/(png|jpeg);base64,/, '')
-            const initialsImage = await pdfDoc.embedPng(Buffer.from(b64, 'base64'))
-            const dims = initialsImage.scaleToFit(field.width, field.height)
-            page.drawImage(initialsImage, {
-              x: field.x + (field.width - dims.width) / 2,
-              y: field.y + (field.height - dims.height) / 2,
-              width: dims.width,
-              height: dims.height,
-            })
+          const imgVal = inputFields[field.id]
+          if (field.required && !imgVal) throw new HTTPError({ statusCode: 400, statusMessage: `Image is required for field: ${field.id}` })
+          if (imgVal && typeof imgVal === 'string') {
+            await drawBase64Image(pdfDoc, targetPages, field, imgVal)
           }
           break
         }
 
         case 'DATE': {
-          const textVal = new Date().toLocaleDateString()
-          const textWidth = helveticaFont.widthOfTextAtSize(textVal, field.fontSize || 12)
-          page.drawText(textVal, { x: field.x + (field.width - textWidth) / 2, y: field.y + field.height / 2 - (field.fontSize || 12) / 3, ...textOptions })
+          drawCenteredText(targetPages, field, new Date().toLocaleDateString(), helveticaFont, textOptions)
           break
         }
 
         case 'NAME': {
-          // Auto-fill from queue data
-          const signerName = currentSigner.name
-          const textWidth = helveticaBold.widthOfTextAtSize(signerName, field.fontSize || 12)
-          page.drawText(signerName, {
-            x: field.x + (field.width - textWidth) / 2,
-            y: field.y + field.height / 2 - (field.fontSize || 12) / 3,
-            font: helveticaBold,
-            size: field.fontSize || 12,
-            color: rgb(0, 0, 0),
-          })
+          drawCenteredText(targetPages, field, currentSigner.name, helveticaBold, { ...textOptions, font: helveticaBold })
           break
         }
 
         case 'EMAIL': {
-          const textWidth = helveticaFont.widthOfTextAtSize(currentSigner.email, field.fontSize || 12)
-          page.drawText(currentSigner.email, { x: field.x + (field.width - textWidth) / 2, y: field.y + field.height / 2 - (field.fontSize || 12) / 3, ...textOptions })
+          drawCenteredText(targetPages, field, currentSigner.email, helveticaFont, textOptions)
           break
         }
 
@@ -197,8 +243,7 @@ export default defineEventHandler(async (event) => {
           const textVal = inputFields[field.id]
           if (field.required && !textVal) throw new HTTPError({ statusCode: 400, statusMessage: `Field ${field.id} is required.` })
           if (textVal && typeof textVal === 'string') {
-            const textWidth = helveticaFont.widthOfTextAtSize(textVal, field.fontSize || 12)
-            page.drawText(textVal, { x: field.x + (field.width - textWidth) / 2, y: field.y + field.height / 2 - (field.fontSize || 12) / 3, ...textOptions })
+            drawCenteredText(targetPages, field, textVal, helveticaFont, textOptions)
           }
           break
         }
@@ -208,14 +253,7 @@ export default defineEventHandler(async (event) => {
           if (field.required && !isChecked) throw new HTTPError({ statusCode: 400, statusMessage: `Checkbox ${field.id} must be checked.` })
           if (isChecked === true) {
             const checkSize = field.height * 0.8
-            const textWidth = helveticaBold.widthOfTextAtSize('X', checkSize)
-            page.drawText('X', {
-              x: field.x + (field.width - textWidth) / 2,
-              y: field.y + field.height / 2 - checkSize / 3,
-              font: helveticaBold,
-              size: checkSize,
-              color: rgb(0, 0, 0),
-            })
+            drawCenteredText(targetPages, field, 'X', helveticaBold, { ...textOptions, font: helveticaBold, size: checkSize })
           }
           break
         }
@@ -247,7 +285,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error(`API /document/id/sign POST`, error)
 
-    if (error instanceof z.ZodError) throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid payload', data: error.errors })
+    if (error instanceof z.ZodError) throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid payload', data: error })
     if (error instanceof HTTPError) throw error
     throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to execute signature engine' })
   }

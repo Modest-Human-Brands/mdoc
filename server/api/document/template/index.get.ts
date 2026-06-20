@@ -2,8 +2,7 @@ import { defineEventHandler, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
 import zodToJsonSchema from '~/server/utils/zod-to-json-schema'
 
-import '~/templates/document/InternshipCompletionCertificateV1'
-import '~/templates/document/QuotationV1'
+import '~/templates/document'
 
 export default defineEventHandler(() => {
   try {

@@ -31,20 +31,22 @@ const props = defineProps<{
 }>()
 
 const styles = {
-  page: { padding: '40 40 120 40', fontSize: 12, color: '#1a1a1a', lineHeight: 1.4 },
-  footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
-  footerText: { fontSize: 12, fontWeight: 'bold' as const },
+  page: { padding: '40 40 120 40', fontSize: 12, color: '#1a1a1a', lineHeight: 1.4, fontStyle: 'normal' as const },
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 30 },
   logoSection: { width: '50%' },
   metaSection: { width: '50%', alignItems: 'flex-end' as const },
+  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 10 },
+  pageFooterText: { fontSize: 12, color: '#888888' },
+  footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
+  footerText: { fontSize: 12, fontWeight: 'bold' as const },
   titleContainer: { marginBottom: 15, alignItems: 'flex-end' as const },
-  metaGridRow: { flexDirection: 'row' as const, width: 200, marginTop: 6 },
+  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 6 },
   metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
   metaGridValue: { flex: 1, fontSize: 12 },
-  infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '15 40', marginBottom: 30 },
+  infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '15 40' },
   bannerCol: { flex: 1, paddingRight: 10 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
-  sectionTitle: { fontSize: 24, fontWeight: 'bold' as const, marginBottom: 15 },
+  sectionTitle: { fontSize: 24, textAlign: 'center' as const, fontWeight: 'bold' as const },
   tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 8, marginBottom: 12 },
   tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 12 },
   colName: { flex: 2, paddingRight: 10, fontWeight: 'bold' as const, fontSize: 12 },
@@ -61,11 +63,11 @@ const styles = {
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
   accountValue: { fontSize: 12, color: '#555' },
   termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 20, marginBottom: 8, color: '#000' },
-  termParagraph: { marginBottom: 10, color: '#444', fontSize: 12 },
-  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 20 },
-  acceptanceSub: { fontSize: 12, marginBottom: 40 },
-  accGridHeader: { flexDirection: 'row' as const, backgroundColor: '#f2f2f2', marginHorizontal: -40, padding: '12 40', fontWeight: 'bold' as const, marginBottom: 20 },
-  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 25 },
+  termParagraph: { color: '#444', fontSize: 12 },
+  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 20, marginTop: 20 },
+  acceptanceSub: { fontSize: 12, marginBottom: 20 },
+  accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '12 40', fontWeight: 'bold' as const, marginBottom: 20 },
+  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 30 },
   accCol: { flex: 1, fontSize: 12 },
   accNote: { fontSize: 12, color: '#555', marginTop: 50, textAlign: 'center' as const },
 }
@@ -74,24 +76,21 @@ const styles = {
 <template>
   <Document title="Quotation" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
-      <View fixed :style="styles.footer">
-        <Text :style="styles.footerText">Signature: ________________________</Text>
-        <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
+      <View fixed :style="styles.pageFooter">
+        <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
       <View :style="styles.headerRow">
         <View :style="styles.logoSection">
-          <Image :src="organizationLogo" :style="{ width: 80, marginBottom: 15 }" />
+          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 15 }" />
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
           <Text :style="{ color: '#555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
         </View>
 
         <View :style="styles.metaSection">
           <View :style="styles.titleContainer">
-            <Text :style="{ fontSize: 16, fontWeight: 'bold', maxLines: 1, textOverflow: 'ellipsis' }">
-              {{ projectTitle }}
-            </Text>
-            <Text :style="{ fontSize: 16, fontWeight: 'bold', color: organizationColorPrimary, marginTop: 10 }">Quotation</Text>
+            <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">Quotation Agreement</Text>
+            <Text :style="{ fontSize: 12, marginTop: 16 }">Photography & Videography</Text>
           </View>
 
           <View :style="styles.metaGridRow">
@@ -127,7 +126,7 @@ const styles = {
         </View>
       </View>
 
-      <Text :style="styles.sectionTitle">DELIVERABLES</Text>
+      <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">DELIVERABLES</Text>
       <View :style="styles.tableHeader">
         <Text :style="styles.colName">Name of service</Text>
         <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
@@ -179,12 +178,11 @@ const styles = {
     </Page>
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
-      <View fixed :style="styles.footer">
-        <Text :style="styles.footerText">Signature: ________________________</Text>
-        <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
+      <View fixed :style="styles.pageFooter">
+        <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
-      <Text :style="styles.sectionTitle">TERMS & CONDITIONS</Text>
+      <Text :style="{ ...styles.sectionTitle, marginBottom: 40 }">TERMS & CONDITIONS</Text>
       <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
         <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
         <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
@@ -203,9 +201,11 @@ const styles = {
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 
-      <Text :style="styles.acceptanceTitle">Acceptance of Quotation</Text>
-      <Text :style="styles.acceptanceSub"> I, ____________________________________________________, accept the quotation and agree to the terms and conditions stated above. </Text>
-
+      <Text :style="styles.acceptanceTitle">Acceptance of Terms</Text>
+      <Text :style="styles.acceptanceSub">
+        I, <Text>{{ clientName }}</Text
+        >, accept the agreement structure and choose to execute the project under the terms and conditions detailed above.
+      </Text>
       <View :style="styles.accGridHeader">
         <Text :style="styles.accCol">For {{ organizationName }}</Text>
         <Text :style="styles.accCol">For Client</Text>
@@ -228,7 +228,7 @@ const styles = {
         <Text :style="styles.accCol">Place:</Text>
       </View>
 
-      <Text :render="(ctx) => `N.B: This Letter consists of ${ctx.totalPages} pages including this one. Please sign on all pages.`" :style="styles.accNote" />
+      <Text :render="(ctx) => `N.B: This Letter consists of ${ctx.totalPages} pages including this one. Please sign on all pages.`" :style="styles.accNote"></Text>
     </Page>
   </Document>
 </template>

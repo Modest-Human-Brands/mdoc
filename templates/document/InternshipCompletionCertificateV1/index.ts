@@ -6,15 +6,15 @@ export const internshipCompletionCertificateSchema = z.object({
   recipientName: z.string(),
   recipientRole: z.string(),
   scopeOfWork: z.string(),
-  startDate: z.string(),
-  endDate: z.string(),
+  startDate: z.date(),
+  endDate: z.date(),
   organization: z.object({
     id: z.string(),
     name: z.string(),
     address: z.string(),
     website: z.string(),
     branding: z.object({
-      logo: z.string(),
+      logo: z.url(),
       color: z.object({
         primary: z.string(),
         accent: z.string(),
@@ -54,6 +54,7 @@ registerTemplate({
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
     { name: 'IslandMoments', path: './asset/IslandMoments-Regular.ttf' },
+    { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
   ],
   schema: internshipCompletionCertificateSchema,
   placeholders,

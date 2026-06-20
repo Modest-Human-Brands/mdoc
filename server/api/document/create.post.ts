@@ -2,6 +2,7 @@ import { h, type Component } from 'vue'
 import { renderToFile } from '@ceereals/vue-pdf'
 import { defineEventHandler, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
+import { useStorage } from 'nitro/storage'
 
 import notion from '~/server/utils/notion'
 import type { NotionDB } from '~/server/types'
@@ -9,7 +10,6 @@ import { templateRegistry } from '~/server/utils/template-registry'
 import { TEMPLATES, type RequestBody } from '~/server/types/templates'
 
 import '~/templates/document'
-import { useStorage } from 'nitro/storage'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     const notionDbId = JSON.parse(config.private.notionDbId) as unknown as NotionDB
     const fsStorage = useStorage('fs')
 
-    const { data: rawData, template: templateId, name: fileName, orgId } = (await readBody<RequestBody>(event))!
+    const { name: fileName, template: templateId, data: rawData, orgId, projectId, contactId } = (await readBody<RequestBody & { projectId?: string; contactId?: string; orgId?: string }>(event))!
 
     if (!(TEMPLATES as readonly string[]).includes(templateId)) {
       throw new HTTPError({
@@ -42,15 +42,30 @@ export default defineEventHandler(async (event) => {
 
     const file = await fsStorage.getItemRaw<Buffer<ArrayBufferLike>>(`${fileName}.pdf`)
 
+    // Dynamically build properties to handle optional relations
+    const notionProperties: any = {
+      Name: { title: [{ text: { content: fileName } }] },
+      'Template ID': { select: { name: templateId } },
+      'Mime Type': { select: { name: 'application/pdf' } },
+      SizeBytes: { number: file?.byteLength || 0 },
+      Status: { status: { name: 'Draft' } },
+    }
+
+    if (orgId) {
+      notionProperties.Organization = { relation: [{ id: orgId }] }
+    }
+
+    if (projectId) {
+      notionProperties.Project = { relation: [{ id: projectId }] }
+    }
+
+    if (contactId) {
+      notionProperties.Contact = { relation: [{ id: contactId }] }
+    }
+
     const record = await notion.pages.create({
       parent: { data_source_id: notionDbId.document },
-      properties: {
-        Name: { title: [{ text: { content: fileName } }] },
-        'Template ID': { select: { name: templateId } },
-        'Mime Type': { select: { name: 'application/pdf' } },
-        SizeBytes: { number: file?.byteLength || 0 },
-        Status: { status: { name: 'Draft' } },
-      },
+      properties: notionProperties,
     })
 
     return {

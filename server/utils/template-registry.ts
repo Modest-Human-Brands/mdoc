@@ -9,7 +9,7 @@ export type FieldType = 'SIGNATURE' | 'INITIALS' | 'DATE' | 'TEXT' | 'NAME' | 'E
 export interface DocumentField {
   id: string
   type: FieldType
-  pageIndex: number
+  pageIndex: number | number[] | string
   x: number
   y: number
   width: number
