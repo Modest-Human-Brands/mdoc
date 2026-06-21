@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.6
+
+### 🚀 Enhancements
+
+- Enhance document handling and update schemas for improved data structure ([207079f](https://github.com/Modest-Human-Brands/mdoc/commit/207079f))
+
+### 🏡 Chore
+
+- Apply code fixes [skip ci] ([e34deb6](https://github.com/Modest-Human-Brands/mdoc/commit/e34deb6))
+
+### ❤️ Contributors
+
+- Shba007 ([@shba007](https://github.com/shba007))
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.5
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.4...v0.1.5)
