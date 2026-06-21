@@ -3,12 +3,21 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 
 export const contractSchema = z.object({
-  contractorName: z.string(),
-  contractorTitle: z.string(),
-  projectName: z.string(),
-  shootDates: z.date(),
-  location: z.string(),
-  callTime: z.date(),
+  contact: z.object({
+    name: z.string(),
+    title: z.string(),
+    address: z.string(),
+    email: z.email('Invalid client email'),
+    phone: z.string(),
+  }),
+  project: z.object({
+    title: z.string(),
+    quoteNumber: z.string(),
+    quoteDate: z.date(),
+    quoteExpiry: z.date(),
+    shootDate: z.date(),
+    shootLocation: z.string(),
+  }),
   deliverables: z.array(z.string()),
   totalAmount: z.number(),
   agreementDate: z.date(),
@@ -32,15 +41,24 @@ export const contractSchema = z.object({
 export type ContractPayload = z.infer<typeof contractSchema>
 
 const placeholders: ContractPayload = {
-  contractorName: 'Jane Doe',
-  contractorTitle: 'Lead Cinematographer',
-  projectName: 'Summer Collection Campaign',
-  shootDates: 'August 15 - August 17, 2026',
-  location: 'Studio A, 123 Creative Lane, Mumbai',
-  callTime: '08:00 AM',
+  contact: {
+    name: 'Jane Doe',
+    title: 'Lead Cinematographer',
+    address: '1007 Mountain Drive, Gotham',
+    email: 'billing@wayne.ent',
+    phone: '+1 555-0199',
+  },
+  project: {
+    title: 'Photography and Videography',
+    quoteNumber: 'QT-2026-089',
+    quoteDate: new Date(),
+    quoteExpiry: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    shootDate: new Date(),
+    shootLocation: 'Gotham City',
+  },
   deliverables: ['1x 60-second highlight video (4K resolution)', '50 edited high-resolution photographs', 'Delivery of all raw footage and unedited image files'],
-  totalAmount: '₹ 1,50,000',
-  agreementDate: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
+  totalAmount: 150_000,
+  agreementDate: new Date(),
   organization: {
     id: 'modest-human-brands',
     name: 'Modest Human Brands',
@@ -80,13 +98,13 @@ registerTemplate({
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
 
       agreementDate: rawData.agreementDate || p.agreementDate,
-      contractorName: rawData.contractorName || p.contractorName,
-      contractorTitle: rawData.contractorTitle || p.contractorTitle,
+      contractorName: rawData.contact.name || p.contact.name,
+      contractorTitle: rawData.contact.title || p.contact.title,
 
-      projectName: rawData.projectName || p.projectName,
-      shootDates: rawData.shootDates || p.shootDates,
-      location: rawData.location || p.location,
-      callTime: rawData.callTime || p.callTime,
+      projectName: rawData.project.title || p.project.title,
+      shootDates: rawData.project.shootDate || p.project.shootDate,
+      location: rawData.project.shootLocation || p.project.shootLocation,
+      callTime: rawData.project.shootDate || p.project.shootDate,
       deliverables: rawData.deliverables && rawData.deliverables.length > 0 ? rawData.deliverables : p.deliverables,
       totalAmount: rawData.totalAmount || p.totalAmount,
     }
@@ -94,7 +112,7 @@ registerTemplate({
 
   signerFields: [
     {
-      id: 'contractor-signature-footer',
+      id: 'contractor-signature',
       type: 'SIGNATURE',
       signerOrder: 1,
       pageIndex: 'all-except-last',

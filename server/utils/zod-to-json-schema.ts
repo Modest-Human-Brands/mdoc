@@ -1,35 +1,80 @@
-export default function parseSchemaVariables(schema: any): Record<string, any> {
-  const variables: Record<string, any> = {}
+import { z } from 'zod'
 
-  if (!schema?.shape) return variables
+export default function parseSchemaVariables(schema: z.ZodTypeAny): Record<string, any> {
+  // 1. Convert the Zod Schema into a standard JSON Schema
+  const jsonSchema = z.toJSONSchema(schema, {
+    // Prevent unrepresentable types (like z.date) from throwing an error
+    unrepresentable: 'any',
 
-  for (const [key, zodItem] of Object.entries(schema.shape)) {
-    let currentDef = zodItem as any
+    // Override the conversion rules to safely handle Dates
+    override: (ctx) => {
+      // Check if the current node is a Date safely
+      const isDate = ctx.zodSchema instanceof z.ZodDate || (ctx.zodSchema as any)._def?.typeName === 'ZodDate' || (ctx.zodSchema as any)._zod?.def?.type === 'date'
 
-    while (currentDef?._def?.innerType) {
-      currentDef = currentDef._def.innerType
-    }
-
-    const typeName = currentDef?._def?.typeName || currentDef?.constructor?.name || 'any'
-    const cleanType = typeName.replace('Zod', '').toLowerCase()
-
-    if (cleanType === 'object') {
-      variables[key] = parseSchemaVariables(currentDef)
-    } else if (cleanType === 'array' && currentDef._def?.type) {
-      let arrayElem = currentDef._def.type
-      while (arrayElem?._def?.innerType) arrayElem = arrayElem._def.innerType
-
-      const elemTypeName = arrayElem?._def?.typeName || arrayElem?.constructor?.name || 'any'
-      const cleanElemType = elemTypeName.replace('Zod', '').toLowerCase()
-
-      if (cleanElemType === 'object') {
-        variables[key] = [parseSchemaVariables(arrayElem)]
-      } else {
-        variables[key] = `array<${cleanElemType}>`
+      if (isDate) {
+        ctx.jsonSchema.type = 'date'
       }
-    } else {
-      variables[key] = cleanType
-    }
+    },
+  })
+
+  // 2. Map the clean JSON Schema back to your custom variable format
+  const mapped = mapJsonSchemaToVariables(jsonSchema)
+
+  // Ensure we always return an object at the root level
+  return typeof mapped === 'object' && !Array.isArray(mapped) ? mapped : {}
+}
+
+// --- Helper Function ---
+function mapJsonSchemaToVariables(jsonSchema: any): any {
+  if (!jsonSchema) return 'any'
+
+  // Extract core types out of unions (e.g., handling z.nullable())
+  if (jsonSchema.anyOf || jsonSchema.oneOf) {
+    const validTypes = (jsonSchema.anyOf || jsonSchema.oneOf).filter((s: any) => s.type !== 'null')
+    if (validTypes.length > 0) return mapJsonSchemaToVariables(validTypes[0])
   }
-  return variables
+
+  // Handle Arrays
+  if (jsonSchema.type === 'array') {
+    const items = jsonSchema.items
+
+    if (items && items.type === 'object') {
+      // Array of objects (fixes your `deliverables` issue) -> [{ ... }]
+      return [mapJsonSchemaToVariables(items)]
+    } else if (items && items.type) {
+      // Primitive arrays -> "array<string>"
+      return `array<${items.type}>`
+    }
+    return 'array<any>'
+  }
+
+  // Handle Objects
+  if (jsonSchema.type === 'object') {
+    if (jsonSchema.properties) {
+      const obj: Record<string, any> = {}
+      for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
+        obj[key] = mapJsonSchemaToVariables(propSchema)
+      }
+      return obj
+    }
+    // Fallback for z.record() or untyped objects -> "record"
+    if (jsonSchema.additionalProperties !== false) {
+      return 'record'
+    }
+    return 'object'
+  }
+
+  // Handle Special Formats (e.g., z.email() or z.url())
+  if (jsonSchema.type === 'string' && jsonSchema.format) {
+    if (jsonSchema.format === 'email') return 'email'
+    if (jsonSchema.format === 'uri') return 'url'
+  }
+
+  // Handle Primitives (string, number, boolean, date)
+  if (jsonSchema.type) {
+    return jsonSchema.type
+  }
+
+  // Default fallback
+  return 'any'
 }

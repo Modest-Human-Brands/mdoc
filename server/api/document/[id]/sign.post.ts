@@ -225,7 +225,7 @@ export default defineEventHandler(async (event) => {
         }
 
         case 'DATE': {
-          drawCenteredText(targetPages, field, new Date().toLocaleDateString(), helveticaFont, textOptions)
+          drawCenteredText(targetPages, field, new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }), helveticaFont, textOptions)
           break
         }
 

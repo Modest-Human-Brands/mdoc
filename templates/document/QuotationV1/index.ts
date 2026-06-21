@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { marked } from 'marked'
 
 export const quotationSchema = z.object({
-  client: z.object({
+  contact: z.object({
     name: z.string(),
     address: z.string(),
     email: z.email('Invalid client email'),
@@ -79,7 +79,7 @@ interface ParsedTerm {
 }
 
 const placeholders: QuotationPayload = {
-  client: {
+  contact: {
     name: 'Wayne Enterprises',
     address: '1007 Mountain Drive, Gotham',
     email: 'billing@wayne.ent',
@@ -88,9 +88,9 @@ const placeholders: QuotationPayload = {
   project: {
     title: 'Photography and Videography',
     quoteNumber: 'QT-2026-089',
-    quoteDate: new Date().toLocaleDateString(),
-    quoteExpiry: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-    shootDate: 'TBD',
+    quoteDate: new Date(),
+    quoteExpiry: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    shootDate: new Date(),
     shootLocation: 'Gotham City',
   },
   deliverables: [
@@ -104,7 +104,7 @@ const placeholders: QuotationPayload = {
   },
   accountDetails: {
     accountName: 'Red Cat Pictures',
-    accountNumber: '1234567890',
+    accountNumber: 1_234_567_890,
     bankName: 'HDFC Bank',
     ifscCode: 'HDFC0001234',
   },
@@ -227,6 +227,7 @@ Continued use of Services after modifications constitutes acceptance of the revi
 ### 14. MSME Registration
 
 “RED CAT PICTURES” is a registered MSME (Micro, Small and Medium Enterprise) under the laws of India.`,
+    lastUpdated: new Date(),
   },
   organization: {
     id: 'modest-human-brands',
@@ -291,10 +292,8 @@ registerTemplate({
     const rawTerms = rawData.terms?.content || p.terms.content
     const parsedTerms: ParsedTerm[] = []
 
-    // 1. Generate an AST token array from the markdown string
     const tokens = marked.lexer(rawTerms)
 
-    // 2. Helper to strip inline markdown (bold/italics) for the PDF text renderer
     const cleanText = (text: string) => {
       return text
         .replace(/\*\*(.*?)\*\*/g, '$1')
@@ -302,7 +301,6 @@ registerTemplate({
         .trim()
     }
 
-    // 3. Map the markdown tokens directly to your Vue component's expected schema
     for (const token of tokens) {
       switch (token.type) {
         case 'heading': {
@@ -311,14 +309,13 @@ registerTemplate({
           break
         }
         case 'paragraph': {
-          // Replace internal newlines with spaces to maintain continuous sentences
           const flatText = token.text.replace(/\n/g, ' ')
           parsedTerms.push({ type: 'paragraph', text: cleanText(flatText) })
 
           break
         }
         case 'list': {
-          const items = token.items.map((item) => {
+          const items = token.items.map((item: { text: string }) => {
             const flatText = item.text.replace(/\n/g, ' ')
             return cleanText(flatText)
           })
@@ -326,11 +323,9 @@ registerTemplate({
 
           break
         }
-        // No default
       }
     }
 
-    // Returning a purely FLATTENED object
     return {
       organizationName: org?.name || p.organization!.name,
       organizationAddress: org?.address || p.organization!.address,
@@ -339,11 +334,11 @@ registerTemplate({
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
 
-      clientName: rawData.client?.name || p.client.name,
-      clientAddress: rawData.client?.address || p.client.address,
+      clientName: rawData.contact?.name || p.contact.name,
+      clientAddress: rawData.contact?.address || p.contact.address,
 
-      contactPhone: rawData.client?.phone || p.client.phone,
-      contactEmail: rawData.client?.email || p.client.email,
+      contactPhone: rawData.contact?.phone || p.contact.phone,
+      contactEmail: rawData.contact?.email || p.contact.email,
 
       shootDate: rawData.project?.shootDate || p.project.shootDate,
       shootAddress: rawData.project?.shootLocation || p.project.shootLocation,
@@ -370,7 +365,7 @@ registerTemplate({
   },
   signerFields: [
     {
-      id: 'client-signature-footer',
+      id: 'client-signature',
       type: 'SIGNATURE',
       signerOrder: 1,
       pageIndex: 'all-except-last',

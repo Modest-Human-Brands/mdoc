@@ -122,9 +122,8 @@ export default defineEventHandler(async (event) => {
       </div>
       <div class="w-1/3 h-full bg-white flex flex-col min-w-0">
 
-        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 shadow-sm z-10 flex justify-between items-center shrink-0">
+        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 shadow-sm z-10 flex justify-start items-center shrink-0">
           <span>Live Variables Editor</span>
-          <span class="text-xs font-normal text-gray-500">Zod Schema Extracted</span>
         </div>
 
         <div class="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 bg-white">

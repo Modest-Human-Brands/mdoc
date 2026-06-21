@@ -31,14 +31,13 @@ export default defineEventHandler(async (event) => {
       paginatedContent.map(async ({ id, properties, created_time, last_edited_time }) => {
         const name = notionTextStringify(properties.Name.title)
 
-        // Default 'Misc' folder setup for standalone documents
         let projectDetails = { index: null as number | null, name: 'Misc', slug: 'misc', status: 'N/A' }
         let contactDetails = null
 
         const projectId = properties.Project?.relation?.[0]?.id
-        let inheritedContactId = properties.Contact?.relation?.[0]?.id // Check doc-level contact first
+        const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
+        let contactId = project.properties.Contact.relation[0].id
 
-        // If part of a project, fetch the project details
         if (projectId) {
           const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
           projectDetails = {
@@ -48,15 +47,13 @@ export default defineEventHandler(async (event) => {
             status: project.properties.Status?.status?.name || 'N/A',
           }
 
-          // Fallback: If document doesn't have a specific contact, inherit from the project
-          if (!inheritedContactId) {
-            inheritedContactId = project.properties.Contact?.relation?.[0]?.id
+          if (!contactId) {
+            contactId = project.properties.Contact?.relation?.[0]?.id
           }
         }
 
-        // If we found a contact (either direct or inherited), fetch it
-        if (inheritedContactId) {
-          const contact = (await notion.pages.retrieve({ page_id: inheritedContactId })) as unknown as NotionContact
+        if (contactId) {
+          const contact = (await notion.pages.retrieve({ page_id: contactId })) as unknown as NotionContact
           contactDetails = {
             index: contact.properties.Index?.number || null,
             name: notionTextStringify(contact.properties.Name.title),

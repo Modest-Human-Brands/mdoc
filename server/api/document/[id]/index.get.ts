@@ -2,7 +2,7 @@ import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
 
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
-import type { NotionDocument } from '~/server/types'
+import type { NotionDocument, NotionProject, NotionContact } from '~/server/types'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,6 +20,43 @@ export default defineEventHandler(async (event) => {
     const { properties, created_time, last_edited_time } = document
 
     const name = notionTextStringify(properties.Name.title)
+    const projectId = properties.Project?.relation?.[0]?.id || null
+    let projectData = null
+
+    if (projectId) {
+      try {
+        const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
+        let contactData = null
+        const contactId = project.properties.Contact?.relation?.[0]?.id
+
+        if (contactId) {
+          const contact = (await notion.pages.retrieve({ page_id: contactId })) as unknown as NotionContact
+          contactData = {
+            id: contact.id,
+            name: notionTextStringify(contact.properties.Name.title),
+            email: contact.properties.Email?.email || null,
+          }
+        }
+
+        projectData = {
+          id: project.id,
+          name: notionTextStringify(project.properties.Name.title),
+          contact: contactData,
+        }
+      } catch (error) {
+        console.error(`Failed to fetch nested project/contact for document ${id}`, error)
+      }
+    }
+
+    const routingQueueRaw = notionTextStringify(properties['Routing Queue']?.rich_text)
+    let routingQueue = []
+    if (routingQueueRaw) {
+      try {
+        routingQueue = JSON.parse(routingQueueRaw)
+      } catch {
+        //
+      }
+    }
 
     return {
       id: document.id,
@@ -29,29 +66,26 @@ export default defineEventHandler(async (event) => {
       sizeBytes: properties.SizeBytes?.number,
       status: properties.Status?.status?.name,
       organizationId: properties.Organization?.relation?.[0]?.id || null,
-      projectId: properties.Project?.relation?.[0]?.id || null,
+      projectId,
+      project: projectData,
+      routingType: properties['Routing Type']?.select?.name || null,
+      nextSigner: properties['Next Signer']?.email || null,
+      routingQueue,
       categories: properties.Category?.multi_select?.map((c: any) => c.name) || [],
       previewUrl: `/api/document/${document.id}/content`,
       createdAt: created_time,
       updatedAt: last_edited_time,
     }
   } catch (error: any) {
-    console.error(`API /document/[id] GET`, error)
-
-    if (error.code === 'object_not_found' || error.status === 404 || error.code === 'validation_error') {
-      throw new HTTPError({
-        statusCode: 404,
-        statusMessage: 'Document not found',
-      })
-    }
-
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
 
+    console.error(`API /document/[id] GET`, error)
+
     throw new HTTPError({
       statusCode: 500,
-      statusMessage: 'Failed to retrieve document details',
+      statusMessage: 'Some Unknown Error Found',
     })
   }
 })

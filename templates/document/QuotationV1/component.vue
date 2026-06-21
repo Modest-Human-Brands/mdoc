@@ -19,12 +19,12 @@ const props = defineProps<{
   projectIssuedDate: string
   projectExpiryDate: string
   deliverables: { title: string; points: string[]; amount: string }[]
-  financialsSubtotal: string
+  financialsSubtotal: number
   financialsDiscountLabel: string
   financialsDiscountAmount: string
-  financialsTotalCost: string
+  financialsTotalCost: number
   accountName: string
-  accountNumber: string
+  accountNumber: number
   bankName: string
   ifscCode: string
   parsedTerms: { type: string; text?: string; items?: string[] }[]
@@ -77,6 +77,8 @@ const styles = {
   <Document title="Quotation" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
+        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -99,11 +101,27 @@ const styles = {
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
-            <Text :style="styles.metaGridValue">{{ projectIssuedDate }}</Text>
+            <Text :style="styles.metaGridValue">
+              {{
+                new Date(projectIssuedDate).toLocaleDateString('en-IN', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              }}
+            </Text>
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
-            <Text :style="styles.metaGridValue">{{ projectExpiryDate }}</Text>
+            <Text :style="styles.metaGridValue">
+              {{
+                new Date(projectExpiryDate).toLocaleDateString('en-IN', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              }}
+            </Text>
           </View>
         </View>
       </View>
@@ -121,7 +139,16 @@ const styles = {
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Shoot Details</Text>
-          <Text :style="{ fontSize: 12 }">Date: {{ shootDate }}</Text>
+          <Text :style="{ fontSize: 12 }">
+            Date:
+            {{
+              new Date(shootDate).toLocaleDateString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            }}
+          </Text>
           <Text :style="{ fontSize: 12 }">Address: {{ shootAddress }}</Text>
         </View>
       </View>
@@ -179,6 +206,8 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
+        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -198,6 +227,8 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
+        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 

@@ -1,4 +1,4 @@
-import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
@@ -24,14 +24,17 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
-    const body = await readBody(event)
-    const { signers, routingType, expiresInDays } = envelopeSchema.parse(body)
+    const { signers, routingType, expiresInDays } = await readValidatedBody(event, envelopeSchema)
+
+    console.log({ id, signers, routingType, expiresInDays })
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
     const currentStatus = document.properties.Status.status.name
 
+    console.log({ currentStatus })
+
     if (currentStatus !== 'Ready') {
-      throw new HTTPError({ statusCode: 403, statusMessage: `Cannot route document. Document need to be in Ready status. Current status is ${currentStatus}` })
+      throw new HTTPError({ statusCode: 403, statusMessage: `Document need to be in Ready status. Currently ${currentStatus}` })
     }
 
     const sortedSigners = signers.sort((a, b) => a.order - b.order)
@@ -56,12 +59,16 @@ export default defineEventHandler(async (event) => {
       nextSigner: nextSigner.email,
       queueSize: sortedSigners.length,
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
+    }
+
     console.error(`API /document/id/envelope POST`, error)
 
-    if (error instanceof z.ZodError) {
-      throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid routing payload', data: error.errors })
-    }
-    throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to create envelope' })
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })

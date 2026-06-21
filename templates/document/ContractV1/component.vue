@@ -8,13 +8,13 @@ const props = defineProps<{
   organizationFont: string
   organizationColorPrimary: string
   organizationColorAccent: string
-  agreementDate: string
+  agreementDate: Date
   contractorName: string
   contractorTitle: string
   projectName: string
-  shootDates: string
+  shootDates: Date
   location: string
-  callTime: string
+  callTime: Date
   deliverables: string[]
   totalAmount: string
 }>()
@@ -61,6 +61,8 @@ const styles = {
   <Document title="Contract" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
+        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -79,7 +81,9 @@ const styles = {
 
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Date</Text>
-            <Text :style="styles.metaGridValue">{{ agreementDate }}</Text>
+            <Text :style="styles.metaGridValue">
+              {{ agreementDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+            </Text>
           </View>
         </View>
       </View>
@@ -93,17 +97,19 @@ const styles = {
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Project Details</Text>
           <Text :style="{ fontSize: 12 }">{{ projectName }}</Text>
-          <Text :style="{ fontSize: 12 }">Date: {{ shootDates }}</Text>
+          <Text :style="{ fontSize: 12 }"> Date: {{ shootDates.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text>
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Logistics</Text>
           <Text :style="{ fontSize: 12 }">{{ location }}</Text>
-          <Text :style="{ fontSize: 12 }">Call Time: {{ callTime }}</Text>
+          <Text :style="{ fontSize: 12 }"> Call Time: {{ callTime.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text>
         </View>
       </View>
 
       <Text :style="styles.introText">
-        This Agreement is entered into as of <Text :style="styles.bold">{{ agreementDate }}</Text
+        This Agreement is entered into as of
+        <Text :style="styles.bold">
+          {{ agreementDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text
         >, by and between <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
       </Text>
 
@@ -187,17 +193,19 @@ const styles = {
         <Text :style="styles.sectionHeader">6. Liability & Indemnification</Text>
         <Text :style="styles.paragraph"
           ><Text :style="styles.bold">Data Loss:</Text> The Service Provider shall implement standard backup protocols (e.g., dual memory card recording). In the unlikely event of total media failure
-          or loss of footage due to equipment malfunction, the Service Provider’s liability shall be limited to the forfeiture of the agreed fee.</Text
+          or loss of footage due to equipment malfunction, the Service Provider's liability shall be limited to the forfeiture of the agreed fee.</Text
         >
         <Text :style="styles.paragraph"
           ><Text :style="styles.bold">Indemnity:</Text> The Service Provider agrees to indemnify and hold harmless the Company from any claims, damages, or liabilities arising out of the Service
-          Provider’s negligence or breach of this Agreement.</Text
+          Provider's negligence or breach of this Agreement.</Text
         >
       </View>
     </Page>
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
+        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 

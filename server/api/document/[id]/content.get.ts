@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     if (!pdfBuffer) {
       throw new HTTPError({
         statusCode: 404,
-        statusMessage: `PDF file missing for document ID "${id}"`,
+        statusMessage: 'Missing pdf file missing',
       })
     }
 

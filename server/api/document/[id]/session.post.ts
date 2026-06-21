@@ -63,13 +63,11 @@ export default defineEventHandler(async (event) => {
       { expiresIn: `${expiresInMinutes}m` }
     )
 
-    const magicLink = `/api/document/${id}/sign?token=${token}`
-
     return {
       signer: targetSigner.email,
       expiresAt: new Date(Date.now() + expiresInMinutes * 60_000).toISOString(),
       token,
-      magicLink,
+      magicLink: `/envelope/${id}?token=${token}`,
     }
   } catch (error: any) {
     console.error(`API /document/id/session POST`, error)

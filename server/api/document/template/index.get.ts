@@ -9,6 +9,7 @@ export default defineEventHandler(() => {
     const templates = Object.values(templateRegistry).map((template) => ({
       id: template.id,
       variables: template.schema ? zodToJsonSchema(template.schema) : {},
+      signerFields: template.signerFields,
     }))
 
     return templates
