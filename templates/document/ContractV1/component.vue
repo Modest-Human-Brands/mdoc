@@ -108,9 +108,8 @@ const styles = {
 
       <Text :style="styles.introText">
         This Agreement is entered into as of
-        <Text :style="styles.bold">
-          {{ agreementDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text
-        >, by and between <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
+        <Text :style="styles.bold"> {{ agreementDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text>, by and between
+        <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
       </Text>
 
       <View :style="styles.section">
