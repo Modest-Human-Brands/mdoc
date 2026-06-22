@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.7
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.6...v0.1.7)
+
+### 🚀 Enhancements
+
+- Enhance document handling with improved error messages and session verification ([c605444](https://github.com/Modest-Human-Brands/mdoc/commit/c605444))
+- Enhance document handling with JSON storage and session management improvements ([c545306](https://github.com/Modest-Human-Brands/mdoc/commit/c545306))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.6
 
 ### 🚀 Enhancements
