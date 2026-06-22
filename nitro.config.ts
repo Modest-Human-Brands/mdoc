@@ -15,6 +15,9 @@ export default defineConfig({
       version: '',
       buildTime: '',
     },
+    public: {
+      siteUrl: '',
+    },
     private: {
       notionDbId: '',
       jwtSecret: '',
