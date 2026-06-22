@@ -1,4 +1,4 @@
-import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
@@ -13,14 +13,13 @@ const sessionSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    const id = getRouterParam(event, 'id')
-    if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
+    const envelopeId = getRouterParam(event, 'id')
+    if (!envelopeId) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
     const config = useRuntimeConfig()
-    const body = await readBody(event)
-    const { signerEmail, expiresInMinutes } = sessionSchema.parse(body)
+    const { signerEmail, expiresInMinutes } = await readValidatedBody(event, sessionSchema)
 
-    const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    const document = (await notion.pages.retrieve({ page_id: envelopeId })) as unknown as NotionDocument
     const currentStatus = document.properties.Status.status.name
     const queueData = notionTextStringify(document.properties['Routing Queue'].rich_text)
 
@@ -55,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
     const token = jwt.sign(
       {
-        documentId: id,
+        documentId: envelopeId,
         signerEmail: targetSigner.email,
         role: targetSigner.role,
       },
@@ -67,7 +66,6 @@ export default defineEventHandler(async (event) => {
       signer: targetSigner.email,
       expiresAt: new Date(Date.now() + expiresInMinutes * 60_000).toISOString(),
       token,
-      magicLink: `${config.public.siteUrl}/doc/envelope/${id}?token=${token}`,
     }
   } catch (error: any) {
     console.error(`API /document/id/session POST`, error)
