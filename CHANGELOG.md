@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.9
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.8...v0.1.9)
+
+### 🚀 Enhancements
+
+- Implement session verification endpoint with JWT validation ([4f7fe23](https://github.com/Modest-Human-Brands/mdoc/commit/4f7fe23))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.8
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.7...v0.1.8)
