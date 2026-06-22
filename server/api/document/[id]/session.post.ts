@@ -8,7 +8,7 @@ import notionTextStringify from '~/server/utils/notion-text-stringify'
 
 const sessionSchema = z.object({
   signerEmail: z.email(),
-  expiresInMinutes: z.number().max(1440).default(60),
+  expiresInMinutes: z.number().default(60),
 })
 
 export default defineEventHandler(async (event) => {
@@ -75,6 +75,7 @@ export default defineEventHandler(async (event) => {
     if (error instanceof z.ZodError) {
       throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid session payload' })
     }
+
     if (error instanceof HTTPError) throw error
     throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to generate secure session' })
   }

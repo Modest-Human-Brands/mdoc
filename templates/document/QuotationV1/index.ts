@@ -116,7 +116,7 @@ If you disagree with any provision herein, discontinue use of our Services immed
 ### 2. Service Scope & Delivery
 
 - **Delivery Timeline:**
-Photographs and videos will be delivered within 10–20 days from the shoot date.
+Photographs and videos will be delivered within 10-20 days from the shoot date.
 Delivery commences only after the second instalment is received.
 - **Deliverables Release:**
 Deliverables are only released post second instalment.

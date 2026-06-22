@@ -1,4 +1,5 @@
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
+import { useStorage } from 'nitro/storage'
 
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
@@ -14,6 +15,7 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Document ID is required',
       })
     }
+    const fsStorage = useStorage('fs')
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
 
@@ -58,6 +60,13 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    let rawData = null
+    try {
+      rawData = await fsStorage.getItem(`${name}.json`)
+    } catch {
+      // Silently fail if JSON doesn't exist (e.g. for older documents)
+    }
+
     return {
       id: document.id,
       templateId: properties['Template ID']?.select?.name,
@@ -75,6 +84,7 @@ export default defineEventHandler(async (event) => {
       previewUrl: `/api/document/${document.id}/content`,
       createdAt: created_time,
       updatedAt: last_edited_time,
+      rawData,
     }
   } catch (error: any) {
     if (error instanceof Error && 'statusCode' in error) {
