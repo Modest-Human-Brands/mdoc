@@ -35,11 +35,10 @@ export default defineEventHandler(async (event) => {
         let contactDetails = null
 
         const projectId = properties.Project?.relation?.[0]?.id
-        const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
-        let contactId = project.properties.Contact.relation[0].id
 
         if (projectId) {
           const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
+          const contactId = project.properties.Contact.relation[0].id
           projectDetails = {
             index: project.properties.Index?.number || null,
             name: notionTextStringify(project.properties.Name.title),
@@ -47,17 +46,13 @@ export default defineEventHandler(async (event) => {
             status: project.properties.Status?.status?.name || 'N/A',
           }
 
-          if (!contactId) {
-            contactId = project.properties.Contact?.relation?.[0]?.id
-          }
-        }
-
-        if (contactId) {
-          const contact = (await notion.pages.retrieve({ page_id: contactId })) as unknown as NotionContact
-          contactDetails = {
-            index: contact.properties.Index?.number || null,
-            name: notionTextStringify(contact.properties.Name.title),
-            avatar: contact.icon?.type === 'external' ? contact.icon.external.url : undefined,
+          if (contactId) {
+            const contact = (await notion.pages.retrieve({ page_id: contactId })) as unknown as NotionContact
+            contactDetails = {
+              index: contact.properties.Index?.number || null,
+              name: notionTextStringify(contact.properties.Name.title),
+              avatar: contact.icon?.type === 'external' ? contact.icon.external.url : undefined,
+            }
           }
         }
 

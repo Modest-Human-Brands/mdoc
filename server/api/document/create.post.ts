@@ -42,7 +42,6 @@ export default defineEventHandler(async (event) => {
 
     const file = await fsStorage.getItemRaw<Buffer<ArrayBufferLike>>(`${fileName}.pdf`)
 
-    // Dynamically build properties to handle optional relations
     const notionProperties: any = {
       Name: { title: [{ text: { content: fileName } }] },
       'Template ID': { select: { name: templateId } },

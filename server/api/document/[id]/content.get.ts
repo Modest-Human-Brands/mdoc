@@ -18,25 +18,58 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const { properties, created_time, last_edited_time } = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    const { properties, created_time, last_edited_time } = document
+
+    const baseTitle = notionTextStringify(properties.Name.title)
+    const ext = mime.extension(properties['Mime Type'].select.name) || 'pdf'
+    const currentStatus = properties.Status?.status?.name
+
+    // Intelligently resolve the active PDF layer based on cryptographic progression
+    let targetFileName = `${baseTitle}.${ext}`
+
+    if (currentStatus === 'Completed') {
+      targetFileName = `${baseTitle}-signed.${ext}`
+    } else if (currentStatus === 'Partially Signed') {
+      const queueRaw = notionTextStringify(properties['Routing Queue']?.rich_text)
+      if (queueRaw) {
+        try {
+          const signers = JSON.parse(queueRaw)
+          const signedOrders = signers.filter((s: any) => s.status === 'SIGNED').map((s: any) => s.order)
+
+          if (signedOrders.length > 0) {
+            const maxSignedOrder = Math.max(...signedOrders)
+            targetFileName = `${baseTitle}-${maxSignedOrder}.${ext}`
+          }
+        } catch {
+          // Fallback to baseline if queue fails to parse
+        }
+      }
+    }
 
     const disposition = toDownload === undefined ? 'inline' : 'attachment'
 
     event.res.headers.set('Content-Type', properties['Mime Type'].select.name)
-    event.res.headers.set('Content-Disposition', `${disposition}; filename="${notionTextStringify(properties.Name.title)}"`)
+    event.res.headers.set('Content-Disposition', `${disposition}; filename="${targetFileName}"`)
     event.res.headers.set('X-Document-Id', id)
     event.res.headers.set('X-Document-Template', properties['Template ID'].select.name)
+    event.res.headers.set('X-Document-Status', currentStatus)
     event.res.headers.set('X-Created-At', created_time)
     event.res.headers.set('X-Updated-At', last_edited_time)
 
     const fsStorage = useStorage('fs')
+    let pdfBuffer = await fsStorage.getItemRaw<Buffer>(targetFileName)
 
-    const pdfBuffer = await fsStorage.getItemRaw<Buffer>(`${notionTextStringify(properties.Name.title)}.${mime.extension(properties['Mime Type'].select.name)}`)
+    // Robust Fallback: If the stamped file is missing from disk, gracefully drop back to baseline
+    if (!pdfBuffer && targetFileName !== `${baseTitle}.${ext}`) {
+      console.warn(`Target file "${targetFileName}" missing, falling back to baseline "${baseTitle}.${ext}"`)
+      pdfBuffer = await fsStorage.getItemRaw<Buffer>(`${baseTitle}.${ext}`)
+    }
 
     if (!pdfBuffer) {
       throw new HTTPError({
         statusCode: 404,
-        statusMessage: 'Missing pdf file missing',
+        statusMessage: `PDF file missing for document ID "${id}"`,
       })
     }
 

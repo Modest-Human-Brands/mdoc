@@ -8,13 +8,13 @@ const props = defineProps<{
   organizationFont: string
   organizationColorPrimary: string
   organizationColorAccent: string
-  agreementDate: Date
+  agreementDate: string
   contractorName: string
   contractorTitle: string
   projectName: string
-  shootDates: Date
+  shootDates: string
   location: string
-  callTime: Date
+  callTime: string
   deliverables: string[]
   totalAmount: string
 }>()
@@ -82,7 +82,13 @@ const styles = {
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Date</Text>
             <Text :style="styles.metaGridValue">
-              {{ agreementDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+              {{
+                new Date(agreementDate).toLocaleDateString('en-IN', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              }}
             </Text>
           </View>
         </View>
@@ -97,19 +103,44 @@ const styles = {
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Project Details</Text>
           <Text :style="{ fontSize: 12 }">{{ projectName }}</Text>
-          <Text :style="{ fontSize: 12 }"> Date: {{ shootDates.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text>
+          <Text :style="{ fontSize: 12 }">
+            Date:
+            {{
+              new Date(shootDates).toLocaleDateString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            }}
+          </Text>
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Logistics</Text>
           <Text :style="{ fontSize: 12 }">{{ location }}</Text>
-          <Text :style="{ fontSize: 12 }"> Call Time: {{ callTime.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text>
+          <Text :style="{ fontSize: 12 }">
+            Call Time:
+            {{
+              new Date(callTime).toLocaleDateString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            }}
+          </Text>
         </View>
       </View>
 
       <Text :style="styles.introText">
         This Agreement is entered into as of
-        <Text :style="styles.bold"> {{ agreementDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }} </Text>, by and between
-        <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
+        <Text :style="styles.bold">
+          {{
+            new Date(agreementDate).toLocaleDateString('en-IN', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          }} </Text
+        >, by and between <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
       </Text>
 
       <View :style="styles.section">

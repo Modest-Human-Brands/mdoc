@@ -180,7 +180,7 @@ registerTemplate({
       required: true,
     },
     {
-      id: 'company-name-autofill',
+      id: 'company-name',
       type: 'NAME',
       signerOrder: 2,
       pageIndex: -1,
@@ -203,7 +203,7 @@ registerTemplate({
       required: true,
     },
     {
-      id: 'company-city-input',
+      id: 'company-city',
       type: 'TEXT',
       signerOrder: 2,
       pageIndex: -1,
