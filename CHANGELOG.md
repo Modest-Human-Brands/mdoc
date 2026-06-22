@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.8
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.7...v0.1.8)
+
+### 🩹 Fixes
+
+- Add public site URL configuration for magic link generation ([c6f572e](https://github.com/Modest-Human-Brands/mdoc/commit/c6f572e))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.7
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.6...v0.1.7)
