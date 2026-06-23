@@ -67,9 +67,10 @@ type DeliverableInput = QuotationPayload['deliverables'][number]
 
 interface ComputedDeliverable {
   title: string
+  description: string
   points: string[]
-  amountRaw: number
-  amount: string
+  quantity: number
+  amount: number
 }
 
 interface ParsedTerm {
@@ -94,7 +95,7 @@ const placeholders: QuotationPayload = {
     shootLocation: 'Gotham City',
   },
   deliverables: [
-    { title: 'Premium Brand Strategy', quantity: 1, rate: 5000, points: [] },
+    { title: 'Premium Brand Strategy', quantity: 1, rate: 5000, description: 'Premium Brand Strategy' },
     { title: 'UI/UX Design System', quantity: 1, rate: 8500, points: [] },
   ],
   financials: {
@@ -103,7 +104,7 @@ const placeholders: QuotationPayload = {
     isDiscountPercentage: false,
   },
   accountDetails: {
-    accountName: 'Red Cat Pictures',
+    accountName: 'Modest Human Brands',
     accountNumber: 1_234_567_890,
     bankName: 'HDFC Bank',
     ifscCode: 'HDFC0001234',
@@ -263,15 +264,19 @@ registerTemplate({
       const qty = item.quantity || 1
       const rate = item.rate || 0
       const rowTotal = qty * rate
+
       return {
-        title: item.title || item.description || 'Service',
+        title: item.title ?? '',
+        description: item.description ?? '',
         points: Array.isArray(item.points) ? item.points.filter((pt: string) => pt.trim() !== '') : [],
-        amountRaw: rowTotal,
-        amount: rowTotal.toLocaleString('en-IN'),
+        quantity: item.quantity ?? 0,
+        amount: rowTotal,
       }
     })
 
-    const subtotal = computedDeliverables.reduce((acc: number, curr: ComputedDeliverable) => acc + curr.amountRaw, 0)
+    console.log({ rawData: rawData.deliverables, p: p.deliverables, computedDeliverables })
+
+    const subtotal = computedDeliverables.reduce((acc: number, curr: ComputedDeliverable) => acc + curr.amount, 0)
 
     let discountAmount = 0
     const financials = rawData.financials || p.financials
@@ -350,10 +355,10 @@ registerTemplate({
 
       deliverables: computedDeliverables,
 
-      financialsSubtotal: subtotal.toLocaleString('en-IN'),
+      financialsSubtotal: subtotal,
       financialsDiscountLabel: financials?.discountLabel || (discountAmount > 0 ? 'Discount' : ''),
       financialsDiscountAmount: discountAmount > 0 ? `- ${discountAmount.toLocaleString('en-IN')}` : '',
-      financialsTotalCost: total.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
+      financialsTotalCost: total,
 
       accountName: rawData.accountDetails?.accountName || p.accountDetails.accountName,
       accountNumber: rawData.accountDetails?.accountNumber || p.accountDetails.accountNumber,

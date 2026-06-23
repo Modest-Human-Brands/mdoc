@@ -18,7 +18,7 @@ const props = defineProps<{
   projectQuoteNumber: string
   projectIssuedDate: string
   projectExpiryDate: string
-  deliverables: { title: string; points: string[]; amount: string }[]
+  deliverables: { title: string; description: string; points: string[]; quantity: number; amount: number }[]
   financialsSubtotal: number
   financialsDiscountLabel: string
   financialsDiscountAmount: string
@@ -58,8 +58,8 @@ const styles = {
   bulletText: { flex: 1, color: '#555', fontSize: 12, lineHeight: 1.4 },
   financialRow: { flexDirection: 'row' as const, marginTop: 10 },
   financialTotalRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '12 40', marginTop: 15 },
-  accountBox: { flexDirection: 'row' as const, marginTop: 40, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#eee' },
-  accountCol: { flex: 1, paddingRight: 10 },
+  accountBox: { flexDirection: 'row' as const, marginTop: 40, paddingTop: 20 },
+  accountCol: { paddingRight: 10, whitespace: 'nowrap' },
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
   accountValue: { fontSize: 12, color: '#555' },
   termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 20, marginBottom: 8, color: '#000' },
@@ -157,23 +157,30 @@ const styles = {
       <View :style="styles.tableHeader">
         <Text :style="styles.colName">Name of service</Text>
         <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
+        <Text :style="styles.colAmount">Quantity</Text>
         <Text :style="styles.colAmount">Amount</Text>
       </View>
 
       <View v-for="(item, index) in deliverables" :key="index" :style="styles.tableRow" :wrap="false">
         <Text :style="styles.colName">{{ item.title }}</Text>
         <View :style="styles.colDesc">
-          <View v-for="(point, pIndex) in item.points" :key="pIndex" :style="styles.bulletRow">
-            <Text :style="styles.bullet">•</Text>
-            <Text :style="styles.bulletText">{{ point }}</Text>
+          <View v-if="item.points.length">
+            <View v-for="(point, pIndex) in item.points" :key="pIndex" :style="styles.bulletRow">
+              <Text :style="styles.bullet">•</Text>
+              <Text :style="styles.bulletText">{{ point }}</Text>
+            </View>
+          </View>
+          <View v-else>
+            <Text :style="styles.bulletText">{{ item.description }}</Text>
           </View>
         </View>
+        <Text :style="styles.colAmount">{{ item.quantity }}</Text>
         <Text :style="styles.colAmount">{{ item.amount }}</Text>
       </View>
 
       <View :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Subtotal</Text>
-        <Text :style="styles.colAmount">{{ financialsSubtotal }}</Text>
+        <Text :style="styles.colAmount">{{ financialsSubtotal.toLocaleString('en-IN') }}</Text>
       </View>
       <View v-if="financialsDiscountAmount" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#888', fontSize: 12 }">{{ financialsDiscountLabel }}</Text>
@@ -181,23 +188,28 @@ const styles = {
       </View>
       <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33' }" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Total</Text>
-        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ financialsTotalCost }}</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{
+          financialsTotalCost.toLocaleString('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+          })
+        }}</Text>
       </View>
 
       <View :style="styles.accountBox" :wrap="false">
-        <View :style="styles.accountCol">
+        <View :style="{ ...styles.accountCol, flex: 6 }">
           <Text :style="styles.accountLabel">Account Name</Text>
           <Text :style="styles.accountValue">{{ accountName }}</Text>
         </View>
-        <View :style="styles.accountCol">
+        <View :style="{ ...styles.accountCol, flex: 4 }">
           <Text :style="styles.accountLabel">Account Number</Text>
           <Text :style="styles.accountValue">{{ accountNumber }}</Text>
         </View>
-        <View :style="styles.accountCol">
+        <View :style="{ ...styles.accountCol, flex: 3 }">
           <Text :style="styles.accountLabel">Bank Name</Text>
           <Text :style="styles.accountValue">{{ bankName }}</Text>
         </View>
-        <View :style="styles.accountCol">
+        <View :style="{ ...styles.accountCol, flex: 3 }">
           <Text :style="styles.accountLabel">IFSC Code</Text>
           <Text :style="styles.accountValue">{{ ifscCode }}</Text>
         </View>

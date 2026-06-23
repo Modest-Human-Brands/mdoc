@@ -8,14 +8,11 @@ import notionTextStringify from '~/server/utils/notion-text-stringify'
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
-    console.log({ id })
 
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
     const config = useRuntimeConfig()
     const { sessionToken } = await readBody<{ sessionToken: string }>(event)
-
-    console.log({ sessionToken })
 
     if (!sessionToken) {
       throw new HTTPError({ statusCode: 400, statusMessage: 'Session token is required' })

@@ -26,12 +26,8 @@ export default defineEventHandler(async (event) => {
 
     const { signers, routingType, expiresInDays } = await readValidatedBody(event, envelopeSchema)
 
-    console.log({ id, signers, routingType, expiresInDays })
-
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
     const currentStatus = document.properties.Status.status.name
-
-    console.log({ currentStatus })
 
     if (currentStatus !== 'Ready') {
       throw new HTTPError({ statusCode: 403, statusMessage: `Document need to be in Ready status. Currently ${currentStatus}` })
@@ -51,8 +47,6 @@ export default defineEventHandler(async (event) => {
         'Next Signer': { email: nextSigner.email },
       },
     })
-
-    // (Optional: Trigger email/MCoordinate webhook to notify nextSigner here)
 
     return {
       status: 'Sent',
