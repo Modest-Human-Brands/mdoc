@@ -223,7 +223,7 @@
 ```json
 {
   "signerEmail": "shreeja@example.com",
-  "expiresInMinutes": 60
+  "expiresInDays": 60
 }
 ```
 
