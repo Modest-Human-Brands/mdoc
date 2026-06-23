@@ -274,8 +274,6 @@ registerTemplate({
       }
     })
 
-    console.log({ rawData: rawData.deliverables, p: p.deliverables, computedDeliverables })
-
     const subtotal = computedDeliverables.reduce((acc: number, curr: ComputedDeliverable) => acc + curr.amount, 0)
 
     let discountAmount = 0
