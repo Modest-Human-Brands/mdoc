@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.10
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.9...v0.1.10)
+
+### 🏡 Chore
+
+- Remove debug logging from deliverables processing ([0143e69](https://github.com/Modest-Human-Brands/mdoc/commit/0143e69))
+
+### 🎨 Styles
+
+- Enhance quotation template structure and improve deliverable details ([100bf3c](https://github.com/Modest-Human-Brands/mdoc/commit/100bf3c))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.9
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.8...v0.1.9)
