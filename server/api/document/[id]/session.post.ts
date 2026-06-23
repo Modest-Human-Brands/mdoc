@@ -8,7 +8,9 @@ import notionTextStringify from '~/server/utils/notion-text-stringify'
 
 const sessionSchema = z.object({
   signerEmail: z.email(),
-  expiresInDays: z.number().default(60),
+  expiresIn: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+    message: 'Invalid date format for expiresIn',
+  }),
 })
 
 export default defineEventHandler(async (event) => {
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (!envelopeId) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
     const config = useRuntimeConfig()
-    const { signerEmail, expiresInDays } = await readValidatedBody(event, sessionSchema)
+    const { signerEmail, expiresIn } = await readValidatedBody(event, sessionSchema)
 
     const document = (await notion.pages.retrieve({ page_id: envelopeId })) as unknown as NotionDocument
     const currentStatus = document.properties.Status.status.name
@@ -50,6 +52,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // Calculate the difference in seconds from right now to the target date
+    const expirationDate = new Date(expiresIn)
+    const expiresInSeconds = Math.floor((expirationDate.getTime() - Date.now()) / 1000)
+
+    if (expiresInSeconds <= 0) {
+      throw new HTTPError({ statusCode: 400, statusMessage: 'Expiration date must be in the future.' })
+    }
+
     const token = jwt.sign(
       {
         documentId: envelopeId,
@@ -57,12 +67,12 @@ export default defineEventHandler(async (event) => {
         role: targetSigner.role,
       },
       config.private.jwtSecret,
-      { expiresIn: `${expiresInDays}d` }
+      { expiresIn: expiresInSeconds }
     )
 
     return {
       signer: targetSigner.email,
-      expiresAt: new Date(Date.now() + expiresInDays * 86_400_000).toISOString(),
+      expiresAt: expirationDate.toISOString(),
       token,
     }
   } catch (error: any) {

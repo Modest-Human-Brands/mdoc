@@ -15,7 +15,6 @@ export const quotationSchema = z.object({
     title: z.string(),
     quoteNumber: z.string(),
     quoteDate: z.date(),
-    quoteExpiry: z.date(),
     shootDate: z.date(),
     shootLocation: z.string(),
   }),
@@ -45,6 +44,7 @@ export const quotationSchema = z.object({
     content: z.string(),
     lastUpdated: z.date(),
   }),
+  expiresIn: z.date(),
   organization: z.object({
     id: z.string(),
     name: z.string(),
@@ -93,7 +93,6 @@ const placeholders: QuotationPayload = {
     title: 'Photography and Videography',
     quoteNumber: 'QT-2026-089',
     quoteDate: new Date(),
-    quoteExpiry: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     shootDate: new Date(),
     shootLocation: 'Gotham City',
   },
@@ -233,6 +232,7 @@ Continued use of Services after modifications constitutes acceptance of the revi
 “RED CAT PICTURES” is a registered MSME (Micro, Small and Medium Enterprise) under the laws of India.`,
     lastUpdated: new Date(),
   },
+  expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   organization: {
     id: 'modest-human-brands',
     name: 'Modest Human Brands',
@@ -355,7 +355,7 @@ registerTemplate({
       projectTitle: rawData.project?.title || p.project.title,
       projectQuoteNumber: rawData.project?.quoteNumber || p.project.quoteNumber,
       projectIssuedDate: rawData.project?.quoteDate || p.project.quoteDate,
-      projectExpiryDate: rawData.project?.quoteExpiry || p.project.quoteExpiry,
+      expiresIn: rawData.expiresIn || p.expiresIn,
 
       deliverables: computedDeliverables,
 

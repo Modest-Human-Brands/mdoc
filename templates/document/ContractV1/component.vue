@@ -17,6 +17,7 @@ const props = defineProps<{
   callTime: string
   deliverables: string[]
   totalAmount: string
+  expiresIn: string
 }>()
 
 const styles = {

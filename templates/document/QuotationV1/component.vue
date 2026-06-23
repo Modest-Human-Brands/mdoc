@@ -18,7 +18,6 @@ const props = defineProps<{
   projectTitle: string
   projectQuoteNumber: string
   projectIssuedDate: string
-  projectExpiryDate: string
   deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number; amount: number }[]
   financialsSubtotal: number
   financialsDiscountLabel: string
@@ -29,6 +28,7 @@ const props = defineProps<{
   bankName: string
   ifscCode: string
   parsedTerms: { type: string; text?: string; items?: string[] }[]
+  expiresIn: string
 }>()
 
 const styles = {
@@ -118,7 +118,7 @@ const styles = {
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
             <Text :style="styles.metaGridValue">
               {{
-                new Date(projectExpiryDate).toLocaleDateString('en-IN', {
+                new Date(expiresIn).toLocaleDateString('en-IN', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
