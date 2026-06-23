@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.12
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.11...v0.1.12)
+
+### 🚀 Enhancements
+
+- Add pricing model to quotation schema and update deliverable handling ([8f1c69c](https://github.com/Modest-Human-Brands/mdoc/commit/8f1c69c))
+- Update session handling to use expiresIn for expiration date and adjust related components ([3a8c5d2](https://github.com/Modest-Human-Brands/mdoc/commit/3a8c5d2))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.11
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.10...v0.1.11)
