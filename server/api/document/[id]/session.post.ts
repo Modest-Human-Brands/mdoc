@@ -50,15 +50,13 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const secret = config.private.jwtSecret
-
     const token = jwt.sign(
       {
         documentId: envelopeId,
         signerEmail: targetSigner.email,
         role: targetSigner.role,
       },
-      secret,
+      config.private.jwtSecret,
       { expiresIn: `${expiresInDays}d` }
     )
 

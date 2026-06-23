@@ -2,6 +2,7 @@
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 
 const props = defineProps<{
+  pricingModel: 'project' | 'day'
   organizationName: string
   organizationAddress: string
   organizationLogo: string
@@ -18,7 +19,7 @@ const props = defineProps<{
   projectQuoteNumber: string
   projectIssuedDate: string
   projectExpiryDate: string
-  deliverables: { title: string; description: string; points: string[]; quantity: number; amount: number }[]
+  deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number; amount: number }[]
   financialsSubtotal: number
   financialsDiscountLabel: string
   financialsDiscountAmount: string
@@ -50,9 +51,11 @@ const styles = {
   tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 8, marginBottom: 12 },
   tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 12 },
   colName: { flex: 2, paddingRight: 10, fontWeight: 'bold' as const, fontSize: 12 },
-  colDesc: { flex: 4, paddingRight: 10 },
+  colDesc: { flex: 3.5, paddingRight: 10 },
+  colRate: { flex: 1.5, textAlign: 'right' as const, fontSize: 12 },
+  colQty: { flex: 1, textAlign: 'center' as const, fontSize: 12 },
   colAmount: { flex: 1.5, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
-  colLeftSpan: { flex: 6, paddingRight: 20 },
+  colLeftSpan: { flex: 8, paddingRight: 20 },
   bulletRow: { flexDirection: 'row' as const, marginBottom: 6 },
   bullet: { width: 12, color: '#555', fontSize: 12 },
   bulletText: { flex: 1, color: '#555', fontSize: 12, lineHeight: 1.4 },
@@ -155,9 +158,10 @@ const styles = {
 
       <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">DELIVERABLES</Text>
       <View :style="styles.tableHeader">
-        <Text :style="styles.colName">Name of service</Text>
+        <Text :style="styles.colName">{{ pricingModel === 'day' ? 'Role / Phase' : 'Name of Service' }}</Text>
         <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
-        <Text :style="styles.colAmount">Quantity</Text>
+        <Text :style="{ ...styles.colRate, fontWeight: 'bold', fontSize: 12 }">{{ pricingModel === 'day' ? 'Day Rate' : 'Unit Price' }}</Text>
+        <Text :style="{ ...styles.colQty, fontWeight: 'bold', fontSize: 12 }">{{ pricingModel === 'day' ? 'Days' : 'Qty' }}</Text>
         <Text :style="styles.colAmount">Amount</Text>
       </View>
 
@@ -174,8 +178,9 @@ const styles = {
             <Text :style="styles.bulletText">{{ item.description }}</Text>
           </View>
         </View>
-        <Text :style="styles.colAmount">{{ item.quantity }}</Text>
-        <Text :style="styles.colAmount">{{ item.amount }}</Text>
+        <Text :style="styles.colRate">{{ item.rate.toLocaleString('en-IN') }}</Text>
+        <Text :style="styles.colQty">{{ item.quantity }}</Text>
+        <Text :style="styles.colAmount">{{ item.amount.toLocaleString('en-IN') }}</Text>
       </View>
 
       <View :style="styles.financialRow" :wrap="false">

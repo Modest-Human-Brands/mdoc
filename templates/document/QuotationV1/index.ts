@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { marked } from 'marked'
 
 export const quotationSchema = z.object({
+  pricingModel: z.enum(['project', 'day']).optional(),
   contact: z.object({
     name: z.string(),
     address: z.string(),
@@ -23,7 +24,7 @@ export const quotationSchema = z.object({
       title: z.string().optional(),
       description: z.string().optional(),
       points: z.array(z.string()).optional(),
-      quantity: z.number().min(1).optional(),
+      quantity: z.number().min(0).optional(),
       rate: z.number().min(0).optional(),
     })
   ),
@@ -69,6 +70,7 @@ interface ComputedDeliverable {
   title: string
   description: string
   points: string[]
+  rate: number
   quantity: number
   amount: number
 }
@@ -80,6 +82,7 @@ interface ParsedTerm {
 }
 
 const placeholders: QuotationPayload = {
+  pricingModel: 'project',
   contact: {
     name: 'Wayne Enterprises',
     address: '1007 Mountain Drive, Gotham',
@@ -261,15 +264,16 @@ registerTemplate({
     const orgBranding = org?.branding || p.organization!.branding
 
     const computedDeliverables: ComputedDeliverable[] = (rawData.deliverables || p.deliverables).map((item: DeliverableInput) => {
-      const qty = item.quantity || 1
-      const rate = item.rate || 0
+      const qty = item.quantity ?? 1
+      const rate = item.rate ?? 0
       const rowTotal = qty * rate
 
       return {
         title: item.title ?? '',
         description: item.description ?? '',
         points: Array.isArray(item.points) ? item.points.filter((pt: string) => pt.trim() !== '') : [],
-        quantity: item.quantity ?? 0,
+        rate: rate,
+        quantity: qty,
         amount: rowTotal,
       }
     })
@@ -330,6 +334,8 @@ registerTemplate({
     }
 
     return {
+      pricingModel: rawData.pricingModel || p.pricingModel || 'project',
+
       organizationName: org?.name || p.organization!.name,
       organizationAddress: org?.address || p.organization!.address,
       organizationLogo: safeLogoUrl,

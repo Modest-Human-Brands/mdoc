@@ -69,10 +69,18 @@ function resolveTargetPages(pIdx: string | number | number[], pages: PDFPage[]):
   return targetPages
 }
 
-// --- ISOLATED UTILITY: DRY Drawing Helpers ---
 async function drawBase64Image(pdfDoc: PDFDocument, targetPages: PDFPage[], field: any, base64String: string) {
-  const b64 = base64String.replace(/^data:image\/(png|jpeg);base64,/, '')
-  const image = await pdfDoc.embedPng(Buffer.from(b64, 'base64'))
+  const isJpeg = base64String.startsWith('data:image/jpeg') || base64String.startsWith('data:image/jpg')
+  const b64 = base64String.replace(/^data:image\/(png|jpeg|jpg);base64,/, '')
+  const buffer = Buffer.from(b64, 'base64')
+
+  let image
+  if (isJpeg) {
+    image = await pdfDoc.embedJpg(buffer)
+  } else {
+    image = await pdfDoc.embedPng(buffer)
+  }
+
   const dims = image.scaleToFit(field.width, field.height)
 
   for (const page of targetPages) {
@@ -208,7 +216,6 @@ export default defineEventHandler(async (event) => {
     const allFields = targetTemplate?.signerFields || []
     const signatureFields = allFields.filter((f) => f.signerOrder === currentSigner.order)
 
-    // --- APPLY SIGNATURE FIELDS ---
     for (const field of signatureFields) {
       const targetPages = resolveTargetPages(field.pageIndex, pages)
       const textOptions = { font: helveticaFont, size: field.fontSize || 12, color: rgb(0, 0, 0) }
