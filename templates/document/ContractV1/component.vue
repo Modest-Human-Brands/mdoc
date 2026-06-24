@@ -16,26 +16,24 @@ const props = defineProps<{
   location: string
   callTime: string
   deliverables: string[]
-  totalAmount: string
+  totalAmount: number
   expiresIn: string
 }>()
 
 const styles = {
-  page: { padding: '40 40 120 40', fontSize: 12, color: '#1a1a1a', lineHeight: 1.4, fontStyle: 'normal' as const },
+  page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', lineHeight: 1.4, fontStyle: 'normal' as const },
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 30 },
   logoSection: { width: '50%' },
   metaSection: { width: '50%', alignItems: 'flex-end' as const },
   titleContainer: { marginBottom: 15, alignItems: 'flex-end' as const },
   documentTitle: { fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const },
   documentSubtitle: { fontSize: 12, marginTop: 16 },
-
   metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 6 },
   metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
   metaGridValue: { flex: 1, fontSize: 12 },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '15 40', marginBottom: 25 },
   bannerCol: { flex: 1, paddingRight: 10 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
-
   introText: { fontSize: 11, marginBottom: 15 },
   bold: { fontWeight: 'bold' as const, color: '#000000' },
   section: { marginBottom: 15 },
@@ -44,7 +42,6 @@ const styles = {
   list: { marginLeft: 10, marginTop: 5, marginBottom: 10 },
   listItem: { flexDirection: 'row' as const, marginBottom: 4 },
   bullet: { width: 15, color: props.organizationColorPrimary },
-
   pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 10 },
   pageFooterText: { fontSize: 12, color: '#888888' },
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
@@ -150,8 +147,7 @@ const styles = {
 
         <View :style="styles.list">
           <View v-for="(item, index) in deliverables" :key="index" :style="styles.listItem">
-            <Text :style="styles.bullet">•</Text>
-            <Text>{{ item }}</Text>
+            <Text>• {{ item }}</Text>
           </View>
         </View>
       </View>
@@ -163,16 +159,14 @@ const styles = {
         >
         <View :style="styles.list">
           <View :style="styles.listItem">
-            <Text :style="styles.bullet">•</Text>
             <Text
-              ><Text :style="styles.bold">Balance:</Text> After the Company receives the final payment amount from the client, the agreed payment will be given to the Service Provider within 2-3
+              >•<Text :style="styles.bold">Balance:</Text> After the Company receives the final payment amount from the client, the agreed payment will be given to the Service Provider within 2-3
               business days.</Text
             >
           </View>
           <View :style="styles.listItem">
-            <Text :style="styles.bullet">•</Text>
             <Text
-              ><Text :style="styles.bold">Expenses:</Text> The Company shall not reimburse the Service Provider for out-of-pocket expenses (e.g., travel, parking, equipment rentals) incurred during
+              >•<Text :style="styles.bold">Expenses:</Text> The Company shall not reimburse the Service Provider for out-of-pocket expenses (e.g., travel, parking, equipment rentals) incurred during
               the project if not decided formally via mail or other channel.</Text
             >
           </View>
@@ -184,16 +178,14 @@ const styles = {
         <Text :style="styles.paragraph">All photographs, videos, raw files, and deliverables created by the Service Provider under this Agreement shall be considered a "work made for hire."</Text>
         <View :style="styles.list">
           <View :style="styles.listItem">
-            <Text :style="styles.bullet">•</Text>
             <Text
-              ><Text :style="styles.bold">Company Rights:</Text> {{ organizationName }} shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The
+              >•<Text :style="styles.bold">Company Rights:</Text> {{ organizationName }} shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The
               Company has the unrestricted right to use, edit, distribute, and publish the media across all platforms globally and in perpetuity.</Text
             >
           </View>
           <View :style="styles.listItem">
-            <Text :style="styles.bullet">•</Text>
             <Text
-              ><Text :style="styles.bold">Portfolio Rights:</Text> The Service Provider may use the final, publicly released media for their personal portfolio, website, and social media promotion,
+              >•<Text :style="styles.bold">Portfolio Rights:</Text> The Service Provider may use the final, publicly released media for their personal portfolio, website, and social media promotion,
               provided they credit the Company and the Company gave them permission to do so.</Text
             >
           </View>
@@ -237,7 +229,7 @@ const styles = {
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
         <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
         <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
-        <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
+        <!-- <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" /> -->
       </View>
 
       <Text :style="styles.acceptanceTitle">Acceptance of Terms</Text>
@@ -268,7 +260,9 @@ const styles = {
         <Text :style="styles.accCol">Place:</Text>
       </View>
 
-      <Text :render="(ctx) => `N.B: This Agreement consists of ${ctx.totalPages} pages including this one. Please initial and sign where indicated.`" :style="styles.accNote"></Text>
+      <!-- <Text
+        :render="(ctx) => `N.B: This Agreement consists of ${ctx.totalPages} pages including this one. Please initial and sign where indicated.`"
+        :style="styles.accNote"></Text> -->
     </Page>
   </Document>
 </template>

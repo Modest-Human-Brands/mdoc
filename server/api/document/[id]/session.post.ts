@@ -52,7 +52,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Calculate the difference in seconds from right now to the target date
     const expirationDate = new Date(expiresIn)
     const expiresInSeconds = Math.floor((expirationDate.getTime() - Date.now()) / 1000)
 

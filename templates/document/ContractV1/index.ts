@@ -96,21 +96,18 @@ registerTemplate({
       organizationFont: orgBranding?.font || p.organization!.branding!.font,
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
-
       agreementDate: rawData.agreementDate || p.agreementDate,
       contractorName: rawData.contact.name || p.contact.name,
       contractorTitle: rawData.contact.title || p.contact.title,
-      expiresIn: rawData.expiresIn || p.expiresIn,
-
+      expiresIn: (rawData.expiresIn || p.expiresIn).toDateString(),
       projectName: rawData.project.title || p.project.title,
-      shootDates: rawData.project.shootDate || p.project.shootDate,
+      shootDates: (rawData.project.shootDate || p.project.shootDate).toDateString(),
       location: rawData.project.shootLocation || p.project.shootLocation,
-      callTime: rawData.project.shootDate || p.project.shootDate,
+      callTime: (rawData.project.shootDate || p.project.shootDate).toDateString(),
       deliverables: rawData.deliverables && rawData.deliverables.length > 0 ? rawData.deliverables : p.deliverables,
       totalAmount: rawData.totalAmount || p.totalAmount,
     }
   },
-
   signerFields: [
     {
       id: 'contractor-signature',

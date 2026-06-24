@@ -13,22 +13,25 @@ const props = defineProps<{
   clientAddress: string
   contactPhone: string
   contactEmail: string
-  shootDate: string
-  shootAddress: string
   projectTitle: string
-  projectQuoteNumber: string
+  projectInvoiceNumber: string
+  projectQuotationNumber: string
   projectIssuedDate: string
+  dueDate: string
   deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number; amount: number }[]
   financialsSubtotal: number
   financialsDiscountLabel: string
   financialsDiscountAmount: string
-  financialsTotalCost: number
+  financialsTaxLabel: string
+  financialsTaxAmount: string
+  financialsGrandTotal: number
+  financialsAmountPaid: string
+  financialsAmountDue: number
+  paymentStatus: 'PAID' | 'UNPAID' | 'PARTIALLY PAID'
   accountName: string
   accountNumber: number
   bankName: string
   ifscCode: string
-  parsedTerms: { type: string; text?: string; items?: string[] }[]
-  expiresIn: string
 }>()
 
 const styles = {
@@ -36,14 +39,12 @@ const styles = {
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 30 },
   logoSection: { width: '50%' },
   metaSection: { width: '50%', alignItems: 'flex-end' as const },
-  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 10 },
-  pageFooterText: { fontSize: 12, color: '#888888' },
-  footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
-  footerText: { fontSize: 12, fontWeight: 'bold' as const },
+  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const, paddingTop: 10 },
+  pageFooterText: { fontSize: 12, color: '#888888', fontWeight: 'bold' as const },
   titleContainer: { marginBottom: 15, alignItems: 'flex-end' as const },
   metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 6 },
   metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
-  metaGridValue: { flex: 1, fontSize: 12 },
+  metaGridValue: { flex: 1, fontSize: 12, textAlign: 'right' as const },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '15 40' },
   bannerCol: { flex: 1, paddingRight: 10 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
@@ -60,29 +61,37 @@ const styles = {
   bullet: { width: 12, color: '#555', fontSize: 12 },
   bulletText: { flex: 1, color: '#555', fontSize: 12, lineHeight: 1.4 },
   financialRow: { flexDirection: 'row' as const, marginTop: 10 },
-  financialTotalRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '12 40', marginTop: 15 },
+  financialTotalRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '12 40', marginTop: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  financialDueRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '12 40' },
   accountBox: { flexDirection: 'row' as const, marginTop: 40, paddingTop: 20 },
-  accountCol: { paddingRight: 10, whitespace: 'nowrap' },
+  accountCol: { paddingRight: 10, whitespace: 'nowrap' as const },
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
   accountValue: { fontSize: 12, color: '#555' },
-  termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 20, marginBottom: 8, color: '#000' },
-  termParagraph: { color: '#444', fontSize: 12 },
-  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 20, marginTop: 20 },
-  acceptanceSub: { fontSize: 12, marginBottom: 20 },
-  accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '12 40', fontWeight: 'bold' as const, marginBottom: 20 },
-  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 30 },
-  accCol: { flex: 1, fontSize: 12 },
-  accNote: { fontSize: 12, color: '#555', marginTop: 50, textAlign: 'center' as const },
+  stampContainer: { position: 'absolute' as const, top: 500, left: 0, right: 0, alignItems: 'center' as const, zIndex: -1 },
+  stampText: { fontSize: 64, fontWeight: 'bold' as const, opacity: 0.3, whitespace: 'nowrap', transform: 'rotate(-45deg)' },
+  systemNoticeText: { fontSize: 12, color: '#888888', textAlign: 'right' as const, width: '100%' },
 }
 </script>
 
 <template>
-  <Document title="Quotation" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
+  <Document title="Invoice" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
+      <View :style="styles.stampContainer" fixed>
+        <Text
+          :style="[
+            styles.stampText,
+            {
+              color: paymentStatus === 'PAID' ? '#22c55e' : paymentStatus === 'PARTIALLY PAID' ? '#eab308' : '#ef4444',
+            },
+          ]">
+          {{ paymentStatus }}
+        </Text>
+      </View>
+
       <View fixed :style="styles.pageFooter">
         <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
         <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
-        <Text :style="styles.pageFooterText">Signature: ______________________</Text>
+        <Text :style="styles.systemNoticeText"> This is a computer generated electronic invoice. </Text>
       </View>
 
       <View :style="styles.headerRow">
@@ -94,16 +103,20 @@ const styles = {
 
         <View :style="styles.metaSection">
           <View :style="styles.titleContainer">
-            <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">Quotation Agreement</Text>
-            <Text :style="{ fontSize: 12, marginTop: 16 }">Photography & Videography</Text>
+            <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">INVOICE</Text>
+            <Text :style="{ fontSize: 12, marginTop: 16, textAlign: 'right' }">{{ projectTitle }}</Text>
           </View>
 
           <View :style="styles.metaGridRow">
-            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Quote nr.</Text>
-            <Text :style="styles.metaGridValue">{{ projectQuoteNumber }}</Text>
+            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Invoice nr.</Text>
+            <Text :style="styles.metaGridValue">{{ projectInvoiceNumber }}</Text>
+          </View>
+          <View v-if="projectQuotationNumber" :style="styles.metaGridRow">
+            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Quotation nr.</Text>
+            <Text :style="styles.metaGridValue">{{ projectQuotationNumber }}</Text>
           </View>
           <View :style="styles.metaGridRow">
-            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
+            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Date of Issue</Text>
             <Text :style="styles.metaGridValue">
               {{
                 new Date(projectIssuedDate).toLocaleDateString('en-IN', {
@@ -115,15 +128,9 @@ const styles = {
             </Text>
           </View>
           <View :style="styles.metaGridRow">
-            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
+            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Due Date</Text>
             <Text :style="styles.metaGridValue">
-              {{
-                new Date(expiresIn).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              }}
+              {{ new Date(dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) }}
             </Text>
           </View>
         </View>
@@ -132,7 +139,7 @@ const styles = {
       <View :style="{ ...styles.infoBanner, backgroundColor: organizationColorAccent + '33' }">
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Bill to</Text>
-          <Text :style="{ fontSize: 12 }">{{ clientName }}</Text>
+          <Text :style="{ fontSize: 12, fontWeight: 'bold' }">{{ clientName }}</Text>
           <Text :style="{ fontSize: 12 }">{{ clientAddress }}</Text>
         </View>
         <View :style="styles.bannerCol">
@@ -140,23 +147,9 @@ const styles = {
           <Text :style="{ fontSize: 12 }">Phone No: {{ contactPhone }}</Text>
           <Text :style="{ fontSize: 12 }">Email: {{ contactEmail }}</Text>
         </View>
-        <View :style="styles.bannerCol">
-          <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Shoot Details</Text>
-          <Text :style="{ fontSize: 12 }">
-            Date:
-            {{
-              new Date(shootDate).toLocaleDateString('en-IN', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            }}
-          </Text>
-          <Text :style="{ fontSize: 12 }">Address: {{ shootAddress }}</Text>
-        </View>
       </View>
 
-      <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">DELIVERABLES</Text>
+      <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">BILLING BREAKDOWN</Text>
       <View :style="styles.tableHeader">
         <Text :style="styles.colName">{{ pricingModel === 'day' ? 'Role / Phase' : 'Name of Service' }}</Text>
         <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
@@ -187,18 +180,32 @@ const styles = {
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Subtotal</Text>
         <Text :style="styles.colAmount">{{ financialsSubtotal.toLocaleString('en-IN') }}</Text>
       </View>
+
       <View v-if="financialsDiscountAmount" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#888', fontSize: 12 }">{{ financialsDiscountLabel }}</Text>
         <Text :style="{ ...styles.colAmount, color: '#888' }">{{ financialsDiscountAmount }}</Text>
       </View>
-      <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33' }" :wrap="false">
-        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Total</Text>
-        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{
-          financialsTotalCost.toLocaleString('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-          })
-        }}</Text>
+
+      <View v-if="financialsTaxAmount" :style="styles.financialRow" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, fontSize: 12 }">{{ financialsTaxLabel }}</Text>
+        <Text :style="styles.colAmount">{{ financialsTaxAmount }}</Text>
+      </View>
+
+      <View :style="{ ...styles.financialRow, marginTop: 15 }" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Total</Text>
+        <Text :style="{ ...styles.colAmount, fontWeight: 'bold' }">{{ financialsGrandTotal.toLocaleString('en-IN') }}</Text>
+      </View>
+
+      <View v-if="financialsAmountPaid" :style="styles.financialRow" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, color: '#00a63e', fontSize: 12 }">Payments Made</Text>
+        <Text :style="{ ...styles.colAmount, color: '#00A63E' }">- {{ financialsAmountPaid }}</Text>
+      </View>
+
+      <View
+        :style="{ ...styles.financialDueRow, backgroundColor: paymentStatus === 'PAID' ? '#22c55e22' : paymentStatus === 'PARTIALLY PAID' ? '#eab30822' : organizationColorAccent + '33' }"
+        :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Amount Due (INR)</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">₹{{ financialsAmountDue.toLocaleString('en-IN') }}</Text>
       </View>
 
       <View :style="styles.accountBox" :wrap="false">
@@ -219,64 +226,6 @@ const styles = {
           <Text :style="styles.accountValue">{{ ifscCode }}</Text>
         </View>
       </View>
-    </Page>
-
-    <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
-      <View fixed :style="styles.pageFooter">
-        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
-        <Text :style="styles.pageFooterText">Signature: ______________________</Text>
-      </View>
-
-      <Text :style="{ ...styles.sectionTitle, marginBottom: 40 }">TERMS & CONDITIONS</Text>
-      <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
-        <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
-        <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
-
-        <View v-if="block.type === 'list'">
-          <View v-for="(item, iIndex) in block.items" :key="iIndex" :style="styles.bulletRow">
-            <Text :style="styles.bullet">-</Text>
-            <Text :style="styles.bulletText">{{ item }}</Text>
-          </View>
-        </View>
-      </View>
-    </Page>
-
-    <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
-      <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
-        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
-        <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
-      </View>
-
-      <Text :style="styles.acceptanceTitle">Acceptance of Terms</Text>
-      <Text :style="styles.acceptanceSub">
-        I, <Text>{{ clientName }}</Text
-        >, accept the agreement structure and choose to execute the project under the terms and conditions detailed above.
-      </Text>
-      <View :style="styles.accGridHeader">
-        <Text :style="styles.accCol">For {{ organizationName }}</Text>
-        <Text :style="styles.accCol">For Client</Text>
-      </View>
-
-      <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Signature:</Text>
-        <Text :style="styles.accCol">Signature:</Text>
-      </View>
-      <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Name:</Text>
-        <Text :style="styles.accCol">Name:</Text>
-      </View>
-      <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Date:</Text>
-        <Text :style="styles.accCol">Date:</Text>
-      </View>
-      <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Place:</Text>
-        <Text :style="styles.accCol">Place:</Text>
-      </View>
-
-      <Text :render="(ctx) => `N.B: This Letter consists of ${ctx.totalPages} pages including this one. Please sign on all pages.`" :style="styles.accNote"></Text>
     </Page>
   </Document>
 </template>

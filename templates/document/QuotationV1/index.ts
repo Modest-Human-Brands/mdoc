@@ -112,124 +112,7 @@ const placeholders: QuotationPayload = {
     ifscCode: 'HDFC0001234',
   },
   terms: {
-    content: `### 1. Introduction 
-By using our photography/videography services (“Services”), you agree to comply with these Terms & Conditions (“Terms”), including our Privacy Policy.
-If you disagree with any provision herein, discontinue use of our Services immediately.
-
-### 2. Service Scope & Delivery
-
-- **Delivery Timeline:**
-Photographs and videos will be delivered within 10-20 days from the shoot date.
-Delivery commences only after the second instalment is received.
-- **Deliverables Release:**
-Deliverables are only released post second instalment.
-- **Data Liability:**
-RED CAT PICTURES is not liable for data loss after one month from the shoot date.
-Clients are advised to provide a hard drive on the shoot day for immediate backup.
-- **Digital Delivery:**
-All deliverables will be provided via our secure RED CAT Drive and remain accessible for 30 days from the date of delivery.
-For any storage holding beyond 30 days, additional charges will apply.
-- **Project Scope Changes:**
-Any modification, substitution, or update to the originally quoted deliverables, services, or shoot specifications after quotation approval will require a revised quotation, with corresponding adjustments to project timeline and budget.
-The shoot or production will be held until such changes are documented and mutually agreed, and any additional costs or delays arising therefrom will be borne by the client.
-
-### 3. Shoot Arrangements & Supervision
-
-- **Client Presence:**
-A Client/Agency representative must be present during the shoot.
-No changes or objections are entertained post-shoot.
-- **Editing Revisions:**
-One round of editing revisions is included in the package.
-Any further requests for edits or modifications will be subject to additional charges.
-- **Reshoot Policy:**
-All reshoot requests, regardless of the reason, will incur separate charges as per RED CAT PICTURES’ current rates.
-No complimentary reshoots are provided.
-- **Creative Supervision:**
-Interference in the creative process may impact the outcome;
-RED CAT PICTURES shall not be held liable for artistic dissatisfaction.
-
-### 4. Payment Terms
-
-- **Structure:**
-    - 20% advance payment at booking confirmation (shoot finalization).
-    - 70% due post shoot completion.
-    - Advance payment must be completed at least 1 day prior to the scheduled shoot date.
-    - Remaining 10% upon delivery of final materials.
-- **Banking Policy:**
-All transactions must be conducted via bank transfer (NEFT/IMPS/RTGS/UPI).
-No cash payments are accepted.
-- **Clearances:**
-Payment clearance is required prior to any corrections or changes in final deliverables.
-- **Travel & Accommodation:**
-Charges, if applicable, must be paid in advance.
-- **Invoice Disputes:**
-Any dispute with invoices must be raised within 7 days of issue.
-- **Due Date:**
-All dues must be cleared within 7 days of final delivery; failure may put invoice and deliverables on hold.
-
-### 5. Cancellations & Postponements
-
-- **Advance Payment:**
-Non-refundable in case of cancellation or postponement initiated by the Client/Agency.
-- **Shoot Date Changes:**
-Date can be rescheduled only once within 29 days of advance payment.
-Failure to book a date in this window results in cancellation.
-
-### 6. Pricing & Adjustments
-
-- **Budget:**
-Once the project is finalized with advance payment, budget is non-negotiable by the client.
-- **Large Scale Projects:**
-For multi-individual projects, budget may increase to meet desired outcomes.
-- **Fee Variance:**
-RED CAT PICTURES reserves the right to reasonably adjust fee structures; taxes and applicable conversions extra.
-
-### 7. Copyrights & Usage
-
-- **Copyright Law Compliance:**
-In accordance with the Copyright Act, 1957, RED CAT PICTURES retains original rights to all images and videos produced.
-- **License Grant:**
-The client receives a lifetime usage license for delivered materials.
-- **Promotional Use:**
-RED CAT PICTURES reserves the right to use the end client’s brand name and logo, as well as final materials, for promotional purposes—including display on our website, social media, blogs, and marketing platforms—unless a separate written agreement states otherwise.
-- **Content Ownership:**
-Clients may not reverse engineer or misuse any platform/IP belonging to RED CAT PICTURES.
-
-### 8. Travel & Logistics
-
-- **Arrangements:**
-The client is responsible for arranging necessary travel, accommodation, and meals for the production team.
-- **Team Welfare:**
-The production team is entitled to regular meal breaks during production hours.
-
----
-
-### 9. Payments
-
-All payments and transactions must be conducted via banking channels only; cash payments are not accepted.
-
-### 10. Behavior & Termination
-
-- **Conduct:**
-Misconduct or inappropriate behavior towards RED CAT PICTURES personnel is grounds for immediate termination of services without liability or refund.
-
-### 11. Indemnification
-
-Clients indemnify and hold RED CAT PICTURES harmless from any claims, costs, or losses arising from use, misuse, or breach of these Terms.
-
-### 12. Governing Law
-
-These Terms are governed by the laws of India.
-Jurisdiction for disputes lies exclusively with the courts in Kolkata.
-
-### 13. Changes To Terms
-
-RED CAT PICTURES may modify these Terms at any time.
-Continued use of Services after modifications constitutes acceptance of the revised Terms.
-
-### 14. MSME Registration
-
-“RED CAT PICTURES” is a registered MSME (Micro, Small and Medium Enterprise) under the laws of India.`,
+    content: `### 1. Introduction\n\nBy using our photography/videography services (“Services”), you agree to comply with these Terms & Conditions (“Terms”), including our Privacy Policy. If you disagree with any provision herein, discontinue use of our Services immediately.\n\n### 2. Service Scope & Delivery\n\n- **Delivery Timeline:**\nPhotos and videos will be delivered within 10–20 days from the 2nd instalment.\nDelivery commences only after the second instalment is received.\n- **Deliverables Release:**\nDeliverables are only released post second instalment.\n- **Data Liability:**\nRED CAT PICTURES is not liable for data loss after one month from the shoot date.\nClients are advised to provide a hard drive on the shoot day for immediate backup.\n- **Digital Delivery:**\nAll deliverables will be provided via our secure RED CAT Drive and remain accessible for 6 months from the date of delivery.\nFor any storage holding beyond 6 months, additional charges will apply.\n- **Project Scope Changes:**\nAny modification, substitution, or update to the originally quoted deliverables, services, or shoot specifications after quotation approval will require a revised quotation, with corresponding adjustments to project timeline and budget.\nThe shoot or production will be held until such changes are documented and mutually agreed, and any additional costs or delays arising therefrom will be borne by the client.\n\n### 3. Shoot Arrangements & Supervision\n\n- **Editing Revisions:**\nEditing will begin only after a coordination meeting between the client and our team to review the brief, scope, and revision expectations. Once the final requirements are confirmed in writing via email, we will proceed with the editing work. Two rounds of editing revisions are included; any additional edits or modification requests beyond these two rounds will be subject to additional charges.\n- **Reshoot Policy:**\nAll reshoot requests except of Technical errors, regardless of the reason, will incur separate charges as per RED CAT PICTURES’ current rates.\nFree reshoots are provided only for technical errors when the client has explicitly specified requirements via mail and they were not met. This includes:\n    - Incorrect aspect ratio (when specified by client)\n    - Wrong product usage (when specified by client)\n    - Incorrect video duration (when specified by client)\n    - Other technical specifications explicitly provided by client in the brief\n\n    Clients must provide all technical requirements upfront. Any technical details not included in the original brief cannot be grounds for a free reshoot. Creative differences, subjective preferences, or changes in vision do not qualify as technical errors and are not eligible for free reshoots.\n\n- **Creative Supervision:**\nInterference in the creative process may impact the outcome;\nRED CAT PICTURES shall not be held liable for artistic dissatisfaction.\n\n### 4. Payment Terms\n\n- **Structure:**\n    - 20% advance payment at booking confirmation (shoot finalization).\n    - 70% due post shoot completion.\n    - Remaining 10% upon delivery of final materials.\n    - Advance payment must be completed at least 1 day prior to the scheduled shoot date.\n- **Banking Policy:**\nAll transactions must be conducted via bank transfer (NEFT/IMPS/RTGS/UPI).\nNo cash payments are accepted.\n- **Clearances:**\nPayment clearance is required prior to any corrections or changes in final deliverables.\n- **Travel & Accommodation:**\nCharges, if applicable, must be paid in advance.\n- **Invoice Disputes:**\nAny dispute with invoices must be raised within 7 days of issue.\n- **Due Date:**\nAll dues must be cleared within 7 days of final delivery; failure may put invoice and deliverables on hold.\n\n### 5. Cancellations & Postponements\n\n- **Advance Payment:**\nNon-refundable in case of cancellation or postponement initiated by the Client/Agency.\n- **Shoot Date Changes:**\nDate can be rescheduled only once within 29 days of advance payment.\nFailure to book a date in this window results in cancellation.\n\n### 6. Pricing & Adjustments\n\n- **Budget:**\nOnce the project is finalized with advance payment, budget is non-negotiable by the client.\n- **Large Scale Projects:**\nFor multi-individual projects, budget may increase to meet desired outcomes.\n- **Fee Variance:**\nRED CAT PICTURES reserves the right to reasonably adjust fee structures; taxes and applicable conversions extra.\n\n### 7. Copyrights & Usage\n\n- Copyright Law Compliance:\nIn accordance with the Copyright Act, 1957, RED CAT PICTURES retains original rights to all images and videos produced.\n- License Grant:\nThe client receives a lifetime commercial usage license for delivered materials.\n- **Promotional Use:**\nRED CAT PICTURES reserves the right to use the end client’s brand name and logo for promotional purposes-including display on our website, social media, blogs, and marketing platforms-unless a separate written agreement states otherwise.\n- **Content Ownership:**\nClients may not reverse engineer or misuse any platform/IP belonging to RED CAT PICTURES.\n\n### 8. Travel & Logistics\n\n- **Arrangements:**\nThe client is responsible for arranging necessary travel, accommodation, and meals for the production team for outside studio shoot.\n- **Team Welfare:**\nThe production team is entitled to regular meal breaks during production hours.\n\n### 9. Payments\n\nAll payments and transactions must be conducted via banking channels only; cash payments are not accepted.\n\n### 10. Behaviour & Termination\n\n- **Conduct:**\nMisconduct or inappropriate behaviour towards RED CAT PICTURES personnel is grounds for immediate termination of services without liability or refund.\n\n### 11. Indemnification\n\nClients indemnify and hold RED CAT PICTURES harmless from any claims, costs, or losses arising from use, misuse, or breach of these Terms.\n\n### 12. Governing Law\n\nThese Terms are governed by the laws of India.\nJurisdiction for disputes lies exclusively with the courts in Kolkata.\n\n### 13. Changes To Terms\n\nRED CAT PICTURES may modify these Terms at any time.\nContinued use of Services after modifications constitutes acceptance of the revised Terms.\n\n### 14. MSME Registration\n\n“RED CAT PICTURES” is a registered MSME (Micro, Small and Medium Enterprise) under the laws of India. Udyam Registration Number UDYAM-WB-18-0156360`,
     lastUpdated: new Date(),
   },
   expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -335,40 +218,31 @@ registerTemplate({
 
     return {
       pricingModel: rawData.pricingModel || p.pricingModel || 'project',
-
       organizationName: org?.name || p.organization!.name,
       organizationAddress: org?.address || p.organization!.address,
       organizationLogo: safeLogoUrl,
       organizationFont: orgBranding?.font || p.organization!.branding!.font,
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
-
       clientName: rawData.contact?.name || p.contact.name,
       clientAddress: rawData.contact?.address || p.contact.address,
-
       contactPhone: rawData.contact?.phone || p.contact.phone,
       contactEmail: rawData.contact?.email || p.contact.email,
-
-      shootDate: rawData.project?.shootDate || p.project.shootDate,
+      shootDate: (rawData.project?.shootDate || p.project.shootDate).toDateString(),
       shootAddress: rawData.project?.shootLocation || p.project.shootLocation,
-
       projectTitle: rawData.project?.title || p.project.title,
       projectQuoteNumber: rawData.project?.quoteNumber || p.project.quoteNumber,
-      projectIssuedDate: rawData.project?.quoteDate || p.project.quoteDate,
-      expiresIn: rawData.expiresIn || p.expiresIn,
-
+      projectIssuedDate: (rawData.project?.quoteDate || p.project.quoteDate).toDateString(),
+      expiresIn: (rawData.expiresIn || p.expiresIn).toDateString(),
       deliverables: computedDeliverables,
-
       financialsSubtotal: subtotal,
       financialsDiscountLabel: financials?.discountLabel || (discountAmount > 0 ? 'Discount' : ''),
       financialsDiscountAmount: discountAmount > 0 ? `- ${discountAmount.toLocaleString('en-IN')}` : '',
       financialsTotalCost: total,
-
       accountName: rawData.accountDetails?.accountName || p.accountDetails.accountName,
       accountNumber: rawData.accountDetails?.accountNumber || p.accountDetails.accountNumber,
       bankName: rawData.accountDetails?.bankName || p.accountDetails.bankName,
       ifscCode: rawData.accountDetails?.ifscCode || p.accountDetails.ifscCode,
-
       parsedTerms,
     }
   },
