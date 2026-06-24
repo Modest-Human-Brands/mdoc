@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.13
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.12...v0.1.13)
+
+### 🚀 Enhancements
+
+- Add Invoice template and integrate with existing document templates ([17b4835](https://github.com/Modest-Human-Brands/mdoc/commit/17b4835))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.12
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.11...v0.1.12)
