@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.15
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.14...v0.1.15)
+
+### 🩹 Fixes
+
+- Standardize date formatting to use toISOString across session and sign handlers ([ee99c85](https://github.com/Modest-Human-Brands/mdoc/commit/ee99c85))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.14
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.13...v0.1.14)
