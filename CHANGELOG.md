@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.14
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.13...v0.1.14)
+
+### 🩹 Fixes
+
+- Update date formatting to use toDateString for consistency in session and sign handlers ([55222d1](https://github.com/Modest-Human-Brands/mdoc/commit/55222d1))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.13
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.12...v0.1.13)
