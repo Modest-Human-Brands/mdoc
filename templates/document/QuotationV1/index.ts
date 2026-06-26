@@ -1,7 +1,8 @@
 import Component from './component.vue'
 import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
-import { parseMarkdown, type ParsedTerm } from '~/server/utils/markdown-parser.ts'
+import parseMarkdown from '~/server/utils/parse-markdown.ts'
+import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
 
 export const quotationSchema = z.object({
   pricingModel: z.enum(['project', 'day']).optional(),

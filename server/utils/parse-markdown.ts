@@ -11,7 +11,7 @@ export interface ParsedTerm {
   items?: ParsedListItem[]
 }
 
-export function parseMarkdown(rawMarkdown: string): ParsedTerm[] {
+export default function (rawMarkdown: string): ParsedTerm[] {
   const parsedTerms: ParsedTerm[] = []
   const tokens = marked.lexer(rawMarkdown)
 

@@ -9,8 +9,8 @@ import { SignPdf } from '@signpdf/signpdf'
 import { pdflibAddPlaceholder } from '@signpdf/placeholder-pdf-lib'
 import { P12Signer } from '@signpdf/signer-p12'
 
-import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
+import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { templateRegistry } from '~/server/utils/template-registry'
 
@@ -128,7 +128,6 @@ interface SignerDetails {
   }
 }
 
-// --- MAIN HANDLER ---
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
@@ -178,13 +177,13 @@ export default defineEventHandler(async (event) => {
     const signedFileName = `${baseTitle}-signed.${ext}`
 
     currentSigner.status = 'SIGNED'
-    currentSigner.signedAt = new Date().toDateString()
+    currentSigner.signedAt = new Date().toISOString()
     currentSigner.telemetry = telemetry
 
-    const pendingSigners = signers.filter((s: any) => s.status === 'PENDING')
+    const pendingSigners = signers.filter((s) => s.status === 'PENDING')
     const isCompleted = pendingSigners.length === 0
     const nextStatus = isCompleted ? 'Completed' : 'Partially Signed'
-    const nextSignerEmail = isCompleted ? null : pendingSigners[0].email
+    const nextSigner = isCompleted ? null : pendingSigners[0]
 
     const pdfBuffer = await fsStorage.getItemRaw<Buffer>(fileName)
 
@@ -281,13 +280,15 @@ export default defineEventHandler(async (event) => {
       properties: {
         Status: { status: { name: nextStatus } },
         'Routing Queue': { rich_text: [{ text: { content: JSON.stringify(signers) } }] },
-        'Next Signer': { email: nextSignerEmail },
+        'Next Signer': { email: nextSigner!.email },
       },
     })
 
     return {
+      id,
       documentStatus: nextStatus,
-      nextSigner: nextSignerEmail,
+      currentSigner,
+      nextSigner,
     }
   } catch (error: any) {
     console.error(`API /document/id/sign POST`, error)
