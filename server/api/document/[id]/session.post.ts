@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       signer: targetSigner.email,
-      expiresAt: expirationDate.toISOString(),
+      expiresAt: expirationDate.toDateString(),
       token,
     }
   } catch (error: any) {

@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { computed } from 'vue'
 
 const props = defineProps<{
   pricingModel: 'project' | 'day'
   organizationName: string
+  organizationLegalName: string
+  organizationEntityType: string
+  organizationTradeRelationship: string
+  organizationGstin?: string
+  organizationPan?: string
   organizationAddress: string
   organizationLogo: string
   organizationFont: string
@@ -13,66 +19,81 @@ const props = defineProps<{
   clientAddress: string
   contactPhone: string
   contactEmail: string
-  shootDate: string
+  shootDate: string | Date
   shootAddress: string
   projectTitle: string
   projectQuoteNumber: string
-  projectIssuedDate: string
-  deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number; amount: number }[]
-  financialsSubtotal: number
-  financialsDiscountLabel: string
-  financialsDiscountAmount: string
-  financialsTotalCost: number
+  projectIssuedDate: string | Date
+  deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number }[]
+  discountLabel: string
+  discountValue: number
+  isDiscountPercentage: boolean
+  taxLabel: string
+  taxRate: number
   accountName: string
   accountNumber: number
   bankName: string
   ifscCode: string
-  parsedTerms: { type: string; text?: string; items?: string[] }[]
-  expiresIn: string
+  parsedTerms: {
+    type: string
+    text?: string
+    items?: { text: string; subitems?: { text: string }[] }[]
+  }[]
+  expiresIn: string | Date
 }>()
+
+const computedDeliverables = computed(() => props.deliverables.map((item) => ({ ...item, amount: item.rate * item.quantity })))
+const subtotal = computed(() => computedDeliverables.value.reduce((sum, item) => sum + item.amount, 0))
+const discountAmount = computed(() => (props.isDiscountPercentage ? (subtotal.value * props.discountValue) / 100 : props.discountValue))
+const postDiscountTotal = computed(() => subtotal.value - discountAmount.value)
+const taxAmount = computed(() => (postDiscountTotal.value * props.taxRate) / 100)
+const grandTotal = computed(() => postDiscountTotal.value + taxAmount.value)
+
+const formatCurrency = (val: number) => val.toLocaleString('en-IN')
+const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
 
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', lineHeight: 1.4, fontStyle: 'normal' as const },
-  headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 30 },
+  headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 16 },
   logoSection: { width: '50%' },
   metaSection: { width: '50%', alignItems: 'flex-end' as const },
-  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 10 },
+  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 16 },
   pageFooterText: { fontSize: 12, color: '#888888' },
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   footerText: { fontSize: 12, fontWeight: 'bold' as const },
-  titleContainer: { marginBottom: 15, alignItems: 'flex-end' as const },
-  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 6 },
+  titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
+  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 8 },
   metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
   metaGridValue: { flex: 1, fontSize: 12 },
-  infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '15 40' },
-  bannerCol: { flex: 1, paddingRight: 10 },
+  infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
+  bannerCol: { flex: 1, paddingRight: 16 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
   sectionTitle: { fontSize: 24, textAlign: 'center' as const, fontWeight: 'bold' as const },
-  tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#000', paddingBottom: 8, marginBottom: 12 },
-  tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 12 },
-  colName: { flex: 2, paddingRight: 10, fontWeight: 'bold' as const, fontSize: 12 },
-  colDesc: { flex: 3.5, paddingRight: 10 },
+  tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#000000', paddingBottom: 8, marginBottom: 16 },
+  tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#EEEEEE', paddingVertical: 12 },
+  colName: { flex: 2, paddingRight: 16, fontWeight: 'bold' as const, fontSize: 12 },
+  colDesc: { flex: 3.5, paddingRight: 16 },
   colRate: { flex: 1.5, textAlign: 'right' as const, fontSize: 12 },
   colQty: { flex: 1, textAlign: 'center' as const, fontSize: 12 },
   colAmount: { flex: 1.5, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
-  colLeftSpan: { flex: 8, paddingRight: 20 },
-  bulletRow: { flexDirection: 'row' as const, marginBottom: 6 },
-  bullet: { width: 12, color: '#555', fontSize: 12 },
-  bulletText: { flex: 1, color: '#555', fontSize: 12, lineHeight: 1.4 },
-  financialRow: { flexDirection: 'row' as const, marginTop: 10 },
-  financialTotalRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '12 40', marginTop: 15 },
-  accountBox: { flexDirection: 'row' as const, marginTop: 40, paddingTop: 20 },
-  accountCol: { paddingRight: 10, whitespace: 'nowrap' },
+  colLeftSpan: { flex: 8, paddingRight: 16 },
+  bulletRow: { flexDirection: 'row' as const, marginBottom: 4 },
+  bullet: { width: 12, color: '#555555', fontSize: 12 },
+  bulletText: { flex: 1, color: '#555555', fontSize: 12, lineHeight: 1.4 },
+  financialRow: { flexDirection: 'row' as const, marginTop: 8 },
+  financialTotalRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40', marginTop: 16, borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
+  accountBox: { flexDirection: 'row' as const, marginTop: 24, paddingTop: 0 },
+  accountCol: { paddingRight: 16, whitespace: 'nowrap' as const },
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
-  accountValue: { fontSize: 12, color: '#555' },
-  termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 20, marginBottom: 8, color: '#000' },
-  termParagraph: { color: '#444', fontSize: 12 },
-  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 20, marginTop: 20 },
-  acceptanceSub: { fontSize: 12, marginBottom: 20 },
-  accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '12 40', fontWeight: 'bold' as const, marginBottom: 20 },
-  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 30 },
+  accountValue: { fontSize: 12, color: '#555555' },
+  termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 16, marginBottom: 8, color: '#000000' },
+  termParagraph: { color: '#444444', fontSize: 12 },
+  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 24, marginTop: 24 },
+  acceptanceSub: { fontSize: 12, marginBottom: 24 },
+  accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '16 40', fontWeight: 'bold' as const, marginBottom: 24 },
+  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 32 },
   accCol: { flex: 1, fontSize: 12 },
-  accNote: { fontSize: 12, color: '#555', marginTop: 50, textAlign: 'center' as const },
+  accNote: { fontSize: 12, color: '#555555', marginTop: 48, textAlign: 'center' as const },
 }
 </script>
 
@@ -86,10 +107,31 @@ const styles = {
       </View>
 
       <View :style="styles.headerRow">
-        <View :style="styles.logoSection">
-          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 15 }" />
+        <View :style="{ ...styles.logoSection, marginTop: 0 }">
+          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 16 }" />
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
-          <Text :style="{ color: '#555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+
+          <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
+            {{
+              organizationTradeRelationship === 'Trading As'
+                ? 'Trading as'
+                : organizationTradeRelationship === 'Operating Division'
+                  ? 'An operating division of'
+                  : organizationTradeRelationship === 'Wholly-Owned Subsidiary'
+                    ? 'A subsidiary of'
+                    : 'A brand of'
+            }}
+            {{ organizationLegalName }}
+            <!-- {{ organizationEntityType ? `(${organizationEntityType})` : '' }} -->
+          </Text>
+          <Text v-else-if="organizationLegalName && organizationName === organizationLegalName && organizationEntityType" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
+            {{ organizationEntityType }}
+          </Text>
+
+          <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+
+          <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }">GSTIN: {{ organizationGstin }}</Text>
+          <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
         </View>
 
         <View :style="styles.metaSection">
@@ -105,25 +147,13 @@ const styles = {
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
             <Text :style="styles.metaGridValue">
-              {{
-                new Date(projectIssuedDate).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              }}
+              {{ formatDate(projectIssuedDate) }}
             </Text>
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
             <Text :style="styles.metaGridValue">
-              {{
-                new Date(expiresIn).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              }}
+              {{ formatDate(expiresIn) }}
             </Text>
           </View>
         </View>
@@ -144,13 +174,7 @@ const styles = {
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Shoot Details</Text>
           <Text :style="{ fontSize: 12 }">
             Date:
-            {{
-              new Date(shootDate).toLocaleDateString('en-IN', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            }}
+            {{ formatDate(shootDate) }}
           </Text>
           <Text :style="{ fontSize: 12 }">Address: {{ shootAddress }}</Text>
         </View>
@@ -165,7 +189,7 @@ const styles = {
         <Text :style="styles.colAmount">Amount</Text>
       </View>
 
-      <View v-for="(item, index) in deliverables" :key="index" :style="styles.tableRow" :wrap="false">
+      <View v-for="(item, index) in computedDeliverables" :key="index" :style="styles.tableRow" :wrap="false">
         <Text :style="styles.colName">{{ item.title }}</Text>
         <View :style="styles.colDesc">
           <View v-if="item.points.length">
@@ -178,23 +202,30 @@ const styles = {
             <Text :style="styles.bulletText">{{ item.description }}</Text>
           </View>
         </View>
-        <Text :style="styles.colRate">{{ item.rate.toLocaleString('en-IN') }}</Text>
+        <Text :style="styles.colRate">{{ formatCurrency(item.rate) }}</Text>
         <Text :style="styles.colQty">{{ item.quantity }}</Text>
-        <Text :style="styles.colAmount">{{ item.amount.toLocaleString('en-IN') }}</Text>
+        <Text :style="styles.colAmount">{{ formatCurrency(item.amount) }}</Text>
       </View>
 
       <View :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Subtotal</Text>
-        <Text :style="styles.colAmount">{{ financialsSubtotal.toLocaleString('en-IN') }}</Text>
+        <Text :style="styles.colAmount">{{ formatCurrency(subtotal) }}</Text>
       </View>
-      <View v-if="financialsDiscountAmount" :style="styles.financialRow" :wrap="false">
-        <Text :style="{ ...styles.colLeftSpan, color: '#888', fontSize: 12 }">{{ financialsDiscountLabel }}</Text>
-        <Text :style="{ ...styles.colAmount, color: '#888' }">{{ financialsDiscountAmount }}</Text>
+
+      <View v-if="discountAmount > 0" :style="styles.financialRow" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, color: '#888888', fontSize: 12 }">{{ discountLabel }}</Text>
+        <Text :style="{ ...styles.colAmount, color: '#888888' }">- {{ formatCurrency(discountAmount) }}</Text>
       </View>
+
+      <View v-if="taxAmount > 0" :style="styles.financialRow" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, fontSize: 12 }">{{ taxLabel }}</Text>
+        <Text :style="styles.colAmount">{{ formatCurrency(taxAmount) }}</Text>
+      </View>
+
       <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33' }" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Total</Text>
         <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{
-          financialsTotalCost.toLocaleString('en-IN', {
+          grandTotal.toLocaleString('en-IN', {
             style: 'currency',
             currency: 'INR',
           })
@@ -228,15 +259,20 @@ const styles = {
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
-      <Text :style="{ ...styles.sectionTitle, marginBottom: 40 }">TERMS & CONDITIONS</Text>
+      <Text :style="{ ...styles.sectionTitle, marginBottom: 24 }">TERMS & CONDITIONS</Text>
       <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
         <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
         <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
-
         <View v-if="block.type === 'list'">
-          <View v-for="(item, iIndex) in block.items" :key="iIndex" :style="styles.bulletRow">
-            <Text :style="styles.bullet">-</Text>
-            <Text :style="styles.bulletText">{{ item }}</Text>
+          <View v-for="(item, iIndex) in block.items" :key="iIndex">
+            <View :style="styles.bulletRow">
+              <Text :style="styles.bulletText">- {{ item.text }}</Text>
+            </View>
+            <View v-if="item.subitems" :style="{ marginLeft: 16 }">
+              <View v-for="(subitem, sIndex) in item.subitems" :key="'sub_' + sIndex" :style="styles.bulletRow">
+                <Text :style="styles.bulletText">• {{ subitem.text }}</Text>
+              </View>
+            </View>
           </View>
         </View>
       </View>
@@ -255,7 +291,7 @@ const styles = {
         >, accept the agreement structure and choose to execute the project under the terms and conditions detailed above.
       </Text>
       <View :style="styles.accGridHeader">
-        <Text :style="styles.accCol">For {{ organizationName }}</Text>
+        <Text :style="styles.accCol">For {{ organizationLegalName || organizationName }}</Text>
         <Text :style="styles.accCol">For Client</Text>
       </View>
 

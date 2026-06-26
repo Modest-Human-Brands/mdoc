@@ -178,7 +178,7 @@ export default defineEventHandler(async (event) => {
     const signedFileName = `${baseTitle}-signed.${ext}`
 
     currentSigner.status = 'SIGNED'
-    currentSigner.signedAt = new Date().toISOString()
+    currentSigner.signedAt = new Date().toDateString()
     currentSigner.telemetry = telemetry
 
     const pendingSigners = signers.filter((s: any) => s.status === 'PENDING')
