@@ -280,7 +280,7 @@ export default defineEventHandler(async (event) => {
       properties: {
         Status: { status: { name: nextStatus } },
         'Routing Queue': { rich_text: [{ text: { content: JSON.stringify(signers) } }] },
-        'Next Signer': { email: nextSigner!.email },
+        'Next Signer': { email: nextSigner?.email ?? null },
       },
     })
 
