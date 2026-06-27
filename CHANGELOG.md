@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.16
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.15...v0.1.16)
+
+### 🩹 Fixes
+
+- Handle potential null value for nextSigner's email ([f42c951](https://github.com/Modest-Human-Brands/mdoc/commit/f42c951))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.15
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.14...v0.1.15)
