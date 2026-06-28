@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.20
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.19...v0.1.20)
+
+### 🎨 Styles
+
+- Improve formatting and readability in for rupees ([1ad0cfe](https://github.com/Modest-Human-Brands/mdoc/commit/1ad0cfe))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.19
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.18...v0.1.19)
