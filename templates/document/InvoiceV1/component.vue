@@ -51,7 +51,7 @@ const paymentStatus = computed(() => {
   return 'UNPAID'
 })
 
-const formatCurrency = (val: number) => val.toLocaleString('en-IN')
+const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
 
 const styles = {
@@ -240,7 +240,7 @@ const styles = {
       </View>
 
       <View :style="{ ...styles.financialDueRow, backgroundColor: paymentStatus === 'PAID' ? '#22c55e22' : paymentStatus === 'PARTIALLY PAID' ? '#eab30822' : '#ef444422' }" :wrap="false">
-        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Amount Due (INR)</Text>
+        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Amount Due</Text>
         <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ formatCurrency(amountDue) }}</Text>
       </View>
 

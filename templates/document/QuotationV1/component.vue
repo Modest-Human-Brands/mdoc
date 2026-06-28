@@ -49,7 +49,7 @@ const postDiscountTotal = computed(() => subtotal.value - discountAmount.value)
 const taxAmount = computed(() => (postDiscountTotal.value * props.taxRate) / 100)
 const grandTotal = computed(() => postDiscountTotal.value + taxAmount.value)
 
-const formatCurrency = (val: number) => val.toLocaleString('en-IN')
+const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
 
 const styles = {
@@ -223,12 +223,9 @@ const styles = {
 
       <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33' }" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Total</Text>
-        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{
-          grandTotal.toLocaleString('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-          })
-        }}</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">
+          {{ formatCurrency(grandTotal) }}
+        </Text>
       </View>
 
       <View :style="styles.accountBox" :wrap="false">

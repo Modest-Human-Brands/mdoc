@@ -35,7 +35,7 @@ const props = defineProps<{
 const advanceAmount = computed(() => (props.totalAmount * props.advancePercentage) / 100)
 const balanceAmount = computed(() => props.totalAmount - advanceAmount.value)
 
-const formatCurrency = (val: number) => val.toLocaleString('en-IN')
+const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
 
 const formatTime = (val: string) => {
@@ -247,7 +247,7 @@ const styles = {
       </Text>
 
       <View :style="styles.accGridHeader">
-        <Text :style="styles.accCol">For {{ organizationLegalName || organizationName }}</Text>
+        <Text :style="styles.accCol">For {{ organizationName }}</Text>
         <Text :style="styles.accCol">For Service Provider</Text>
       </View>
 
