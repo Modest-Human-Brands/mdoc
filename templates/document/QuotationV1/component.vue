@@ -62,9 +62,9 @@ const styles = {
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   footerText: { fontSize: 12, fontWeight: 'bold' as const },
   titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
-  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 8 },
-  metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
-  metaGridValue: { flex: 1, fontSize: 12 },
+  metaGridRow: { flexDirection: 'row' as const, marginTop: 8, gap: 8 },
+  metaGridLabel: { fontWeight: 'bold' as const, fontSize: 12, textAlign: 'left' as const, whitespace: 'nowrap' },
+  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 80, whitespace: 'nowrap' },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
   bannerCol: { flex: 1, paddingRight: 16 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
@@ -194,8 +194,7 @@ const styles = {
         <View :style="styles.colDesc">
           <View v-if="item.points.length">
             <View v-for="(point, pIndex) in item.points" :key="pIndex" :style="styles.bulletRow">
-              <Text :style="styles.bullet">•</Text>
-              <Text :style="styles.bulletText">{{ point }}</Text>
+              <Text :style="styles.bulletText">• {{ point }}</Text>
             </View>
           </View>
           <View v-else>
@@ -291,7 +290,7 @@ const styles = {
         >, accept the agreement structure and choose to execute the project under the terms and conditions detailed above.
       </Text>
       <View :style="styles.accGridHeader">
-        <Text :style="styles.accCol">For {{ organizationLegalName || organizationName }}</Text>
+        <Text :style="styles.accCol">For {{ organizationName }}</Text>
         <Text :style="styles.accCol">For Client</Text>
       </View>
 
@@ -300,8 +299,8 @@ const styles = {
         <Text :style="styles.accCol">Signature:</Text>
       </View>
       <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Name:</Text>
-        <Text :style="styles.accCol">Name:</Text>
+        <Text :style="styles.accCol">Signer Name:</Text>
+        <Text :style="styles.accCol">Signer Name:</Text>
       </View>
       <View :style="styles.accGridRow">
         <Text :style="styles.accCol">Date:</Text>

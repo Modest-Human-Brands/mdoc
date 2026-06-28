@@ -3,55 +3,83 @@ import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 
 const props = defineProps<{
   organizationName: string
+  organizationLegalName: string
+  organizationEntityType: string
+  organizationTradeRelationship: string
+  organizationGstin?: string
+  organizationPan?: string
   organizationAddress: string
   organizationLogo: string
   organizationFont: string
   organizationColorPrimary: string
   organizationColorAccent: string
-  agreementDate: string
+  agreementDate: string | Date
   contractorName: string
   contractorTitle: string
   projectName: string
-  shootDates: string
+  shootDates: string | Date
   location: string
   callTime: string
   deliverables: string[]
   totalAmount: number
-  expiresIn: string
+  expiresIn: string | Date
+  parsedTerms: {
+    type: string
+    text?: string
+    items?: { text: string; subitems?: { text: string }[] }[]
+  }[]
 }>()
 
+// --- Formatters ---
+const formatCurrency = (val: number) => val.toLocaleString('en-IN')
+const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
+
+// --- 8-Point Grid & Harmonized Quotation Styles ---
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', lineHeight: 1.4, fontStyle: 'normal' as const },
-  headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 30 },
+  headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 16 },
   logoSection: { width: '50%' },
   metaSection: { width: '50%', alignItems: 'flex-end' as const },
-  titleContainer: { marginBottom: 15, alignItems: 'flex-end' as const },
-  documentTitle: { fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const },
-  documentSubtitle: { fontSize: 12, marginTop: 16 },
-  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 6 },
-  metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
-  metaGridValue: { flex: 1, fontSize: 12 },
-  infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '15 40', marginBottom: 25 },
-  bannerCol: { flex: 1, paddingRight: 10 },
-  labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
-  introText: { fontSize: 11, marginBottom: 15 },
-  bold: { fontWeight: 'bold' as const, color: '#000000' },
-  section: { marginBottom: 15 },
-  sectionHeader: { fontSize: 12, color: props.organizationColorPrimary, marginBottom: 8, textTransform: 'uppercase' as const, fontWeight: 'bold' as const },
-  paragraph: { marginBottom: 8 },
-  list: { marginLeft: 10, marginTop: 5, marginBottom: 10 },
-  listItem: { flexDirection: 'row' as const, marginBottom: 4 },
-  bullet: { width: 15, color: props.organizationColorPrimary },
-  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 10 },
+  pageFooter: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 16 },
   pageFooterText: { fontSize: 12, color: '#888888' },
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   footerText: { fontSize: 12, fontWeight: 'bold' as const },
-  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 20, marginTop: 20 },
-  acceptanceSub: { fontSize: 12, marginBottom: 20 },
-  accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '12 40', fontWeight: 'bold' as const, marginBottom: 20 },
-  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 30 },
+  titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
+  metaGridRow: { flexDirection: 'row' as const, marginTop: 8, gap: 8 },
+  metaGridLabel: { fontWeight: 'bold' as const, fontSize: 12, textAlign: 'left' as const, whitespace: 'nowrap' },
+  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 80, whitespace: 'nowrap' },
+  infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
+  bannerCol: { flex: 1, paddingRight: 16 },
+  labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
+  sectionTitle: { fontSize: 24, textAlign: 'center' as const, fontWeight: 'bold' as const },
+  tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#000000', paddingBottom: 8, marginBottom: 16 },
+  tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#EEEEEE', paddingVertical: 12 },
+  colName: { flex: 2, paddingRight: 16, fontWeight: 'bold' as const, fontSize: 12 },
+  colDesc: { flex: 3.5, paddingRight: 16 },
+  colRate: { flex: 1.5, textAlign: 'right' as const, fontSize: 12 },
+  colQty: { flex: 1, textAlign: 'center' as const, fontSize: 12 },
+  colAmount: { flex: 1.5, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
+  colLeftSpan: { flex: 8, paddingRight: 16 },
+  bulletRow: { flexDirection: 'row' as const, marginBottom: 4 },
+  bullet: { width: 12, color: '#555555', fontSize: 12 },
+  bulletText: { flex: 1, color: '#555555', fontSize: 12, lineHeight: 1.4 },
+  financialRow: { flexDirection: 'row' as const, marginTop: 8 },
+  financialTotalRow: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40', marginTop: 16, borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
+  accountBox: { flexDirection: 'row' as const, marginTop: 24, paddingTop: 0 },
+  accountCol: { paddingRight: 16, whitespace: 'nowrap' as const },
+  accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
+  accountValue: { fontSize: 12, color: '#555555' },
+  termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 16, marginBottom: 8, color: '#000000' },
+  termParagraph: { color: '#444444', fontSize: 12 },
+  acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 24, marginTop: 24 },
+  acceptanceSub: { fontSize: 12, marginBottom: 24 },
+  accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '16 40', fontWeight: 'bold' as const, marginBottom: 24 },
+  accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 32 },
   accCol: { flex: 1, fontSize: 12 },
-  accNote: { fontSize: 12, color: '#555', marginTop: 50, textAlign: 'center' as const },
+  accNote: { fontSize: 12, color: '#555555', marginTop: 48, textAlign: 'center' as const },
+  introText: { fontSize: 12, marginTop: 24 },
+  bold: { fontWeight: 'bold' as const, color: '#000000' },
+  list: { marginLeft: 16, marginTop: 4, marginBottom: 8 },
 }
 </script>
 
@@ -65,28 +93,43 @@ const styles = {
       </View>
 
       <View :style="styles.headerRow">
-        <View :style="styles.logoSection">
-          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 15 }" />
+        <View :style="{ ...styles.logoSection, marginTop: 0 }">
+          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 16 }" />
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
-          <Text :style="{ color: '#555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+
+          <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
+            {{
+              organizationTradeRelationship === 'Trading As'
+                ? 'Trading as'
+                : organizationTradeRelationship === 'Operating Division'
+                  ? 'An operating division of'
+                  : organizationTradeRelationship === 'Wholly-Owned Subsidiary'
+                    ? 'A subsidiary of'
+                    : 'A brand of'
+            }}
+            {{ organizationLegalName }}
+            <!-- {{ organizationEntityType ? `(${organizationEntityType})` : '' }} -->
+          </Text>
+          <Text v-else-if="organizationLegalName && organizationName === organizationLegalName && organizationEntityType" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
+            {{ organizationEntityType }}
+          </Text>
+
+          <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+
+          <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }">GSTIN: {{ organizationGstin }}</Text>
+          <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
         </View>
 
         <View :style="styles.metaSection">
           <View :style="styles.titleContainer">
-            <Text :style="styles.documentTitle">Contractor Agreement</Text>
-            <Text :style="styles.documentSubtitle">Photography & Videography</Text>
+            <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">Contractor Agreement</Text>
+            <Text :style="{ fontSize: 12, marginTop: 16 }">Photography & Videography</Text>
           </View>
 
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Date</Text>
             <Text :style="styles.metaGridValue">
-              {{
-                new Date(agreementDate).toLocaleDateString('en-IN', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })
-              }}
+              {{ formatDate(agreementDate) }}
             </Text>
           </View>
         </View>
@@ -101,127 +144,70 @@ const styles = {
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Project Details</Text>
           <Text :style="{ fontSize: 12 }">{{ projectName }}</Text>
-          <Text :style="{ fontSize: 12 }">
-            Date:
-            {{
-              new Date(shootDates).toLocaleDateString('en-IN', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            }}
-          </Text>
+          <Text :style="{ fontSize: 12 }"> Date: {{ formatDate(shootDates) }} </Text>
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Logistics</Text>
           <Text :style="{ fontSize: 12 }">{{ location }}</Text>
-          <Text :style="{ fontSize: 12 }">
-            Call Time:
-            {{
-              new Date(callTime).toLocaleDateString('en-IN', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })
-            }}
-          </Text>
+          <Text :style="{ fontSize: 12 }">Call Time: {{ callTime }}</Text>
         </View>
       </View>
 
       <Text :style="styles.introText">
-        This Agreement is entered into as of
-        <Text :style="styles.bold">
-          {{
-            new Date(agreementDate).toLocaleDateString('en-IN', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
-          }} </Text
+        This Agreement is entered into as of <Text :style="styles.bold">{{ formatDate(agreementDate) }}</Text
         >, by and between <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
       </Text>
 
-      <View :style="styles.section">
-        <Text :style="styles.sectionHeader">1. Scope of Work & Deliverables</Text>
-        <Text :style="styles.paragraph">The Service Provider agrees to provide photography and/or videography services for the project detailed above, including the following deliverables:</Text>
+      <!-- Section 1 -->
+      <View :wrap="false">
+        <Text :style="styles.termHeading">1. Scope of Work & Deliverables</Text>
+        <Text :style="styles.termParagraph">The Service Provider agrees to provide photography and/or videography services for the project detailed above, including the following deliverables:</Text>
 
         <View :style="styles.list">
-          <View v-for="(item, index) in deliverables" :key="index" :style="styles.listItem">
-            <Text>• {{ item }}</Text>
+          <View v-for="(item, index) in deliverables" :key="index" :style="styles.bulletRow">
+            <Text :style="styles.bulletText">- {{ item }}</Text>
           </View>
         </View>
       </View>
 
-      <View :style="styles.section">
-        <Text :style="styles.sectionHeader">2. Compensation & Payment Terms</Text>
-        <Text :style="styles.paragraph"
-          >The Company agrees to pay the Service Provider a total fee of <Text :style="styles.bold">{{ totalAmount }}</Text> for the services described above.</Text
+      <!-- Section 2 -->
+      <View :wrap="false">
+        <Text :style="styles.termHeading">2. Compensation & Payment Terms</Text>
+        <Text :style="styles.termParagraph"
+          >The Company agrees to pay the Service Provider a total fee of <Text :style="styles.bold">₹{{ formatCurrency(totalAmount) }}</Text> for the services described above.</Text
         >
         <View :style="styles.list">
-          <View :style="styles.listItem">
-            <Text
-              >•<Text :style="styles.bold">Balance:</Text> After the Company receives the final payment amount from the client, the agreed payment will be given to the Service Provider within 2-3
+          <View :style="styles.bulletRow">
+            <Text :style="styles.bulletText"
+              >- <Text :style="styles.bold">Balance:</Text> After the Company receives the final payment amount from the client, the agreed payment will be given to the Service Provider within 2-3
               business days.</Text
             >
           </View>
-          <View :style="styles.listItem">
-            <Text
-              >•<Text :style="styles.bold">Expenses:</Text> The Company shall not reimburse the Service Provider for out-of-pocket expenses (e.g., travel, parking, equipment rentals) incurred during
+          <View :style="styles.bulletRow">
+            <Text :style="styles.bulletText"
+              >- <Text :style="styles.bold">Expenses:</Text> The Company shall not reimburse the Service Provider for out-of-pocket expenses (e.g., travel, parking, equipment rentals) incurred during
               the project if not decided formally via mail or other channel.</Text
             >
           </View>
         </View>
       </View>
 
-      <View :style="styles.section">
-        <Text :style="styles.sectionHeader">3. Copyright & Ownership (Work Made for Hire)</Text>
-        <Text :style="styles.paragraph">All photographs, videos, raw files, and deliverables created by the Service Provider under this Agreement shall be considered a "work made for hire."</Text>
-        <View :style="styles.list">
-          <View :style="styles.listItem">
-            <Text
-              >•<Text :style="styles.bold">Company Rights:</Text> {{ organizationName }} shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The
-              Company has the unrestricted right to use, edit, distribute, and publish the media across all platforms globally and in perpetuity.</Text
-            >
-          </View>
-          <View :style="styles.listItem">
-            <Text
-              >•<Text :style="styles.bold">Portfolio Rights:</Text> The Service Provider may use the final, publicly released media for their personal portfolio, website, and social media promotion,
-              provided they credit the Company and the Company gave them permission to do so.</Text
-            >
+      <!-- Dynamic Terms Engine (Sections 3+) -->
+      <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
+        <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
+        <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
+        <View v-if="block.type === 'list'">
+          <View v-for="(item, iIndex) in block.items" :key="iIndex">
+            <View :style="styles.bulletRow">
+              <Text :style="styles.bulletText">- {{ item.text }}</Text>
+            </View>
+            <View v-if="item.subitems" :style="{ marginLeft: 16 }">
+              <View v-for="(subitem, sIndex) in item.subitems" :key="'sub_' + sIndex" :style="styles.bulletRow">
+                <Text :style="styles.bulletText">• {{ subitem.text }}</Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
-
-      <View :style="styles.section">
-        <Text :style="styles.sectionHeader">4. Cancellation & Rescheduling</Text>
-        <Text :style="styles.paragraph"
-          ><Text :style="styles.bold">By the Company:</Text> If the Company cancels the shoot within 48 hours of the scheduled call time, the Service Provider shall not be entitled to the balance. If
-          rescheduled, the terms will apply to the new date.</Text
-        >
-        <Text :style="styles.paragraph"
-          ><Text :style="styles.bold">By the Service Provider:</Text> If the Service Provider is unable to perform the services due to illness or emergency, they must notify the Company immediately
-          and make reasonable efforts to secure a replacement of equal skill.</Text
-        >
-      </View>
-
-      <View :style="styles.section">
-        <Text :style="styles.sectionHeader">5. Independent Contractor Status</Text>
-        <Text :style="styles.paragraph"
-          >The Service Provider is an independent contractor. Nothing in this Agreement shall be construed to create an employer-employee relationship, partnership, or joint venture. The Service
-          Provider is solely responsible for their own taxes, insurance, and equipment maintenance.</Text
-        >
-      </View>
-
-      <View :style="styles.section">
-        <Text :style="styles.sectionHeader">6. Liability & Indemnification</Text>
-        <Text :style="styles.paragraph"
-          ><Text :style="styles.bold">Data Loss:</Text> The Service Provider shall implement standard backup protocols (e.g., dual memory card recording). In the unlikely event of total media failure
-          or loss of footage due to equipment malfunction, the Service Provider's liability shall be limited to the forfeiture of the agreed fee.</Text
-        >
-        <Text :style="styles.paragraph"
-          ><Text :style="styles.bold">Indemnity:</Text> The Service Provider agrees to indemnify and hold harmless the Company from any claims, damages, or liabilities arising out of the Service
-          Provider's negligence or breach of this Agreement.</Text
-        >
       </View>
     </Page>
 
@@ -229,7 +215,7 @@ const styles = {
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
         <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
         <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
-        <!-- <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" /> -->
+        <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 
       <Text :style="styles.acceptanceTitle">Acceptance of Terms</Text>
@@ -248,8 +234,8 @@ const styles = {
         <Text :style="styles.accCol">Signature:</Text>
       </View>
       <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Name:</Text>
-        <Text :style="styles.accCol">Name:</Text>
+        <Text :style="styles.accCol">Signer Name:</Text>
+        <Text :style="styles.accCol">Signer Name:</Text>
       </View>
       <View :style="styles.accGridRow">
         <Text :style="styles.accCol">Date:</Text>
@@ -260,9 +246,7 @@ const styles = {
         <Text :style="styles.accCol">Place:</Text>
       </View>
 
-      <!-- <Text
-        :render="(ctx) => `N.B: This Agreement consists of ${ctx.totalPages} pages including this one. Please initial and sign where indicated.`"
-        :style="styles.accNote"></Text> -->
+      <Text :render="(ctx) => `N.B: This Agreement consists of ${ctx.totalPages} pages including this one. Please initial and sign where indicated.`" :style="styles.accNote"></Text>
     </Page>
   </Document>
 </template>

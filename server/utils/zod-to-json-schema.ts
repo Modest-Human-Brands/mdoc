@@ -10,6 +10,44 @@ export default function parseSchemaVariables(schema: z.ZodTypeAny): Record<strin
       if (isDate) {
         ctx.jsonSchema.type = 'date'
       }
+
+      // Unwrap wrapper schemas (optionals, defaults, pipelines, effects, brands)
+      let s = ctx.zodSchema as any
+      while (s && !s._def?.format && !s._def?.checks && !s._zod?.def?.format && (s._def?.innerType || s._def?.schema || s._zod?.def?.innerType || s._zod?.def?.schema)) {
+        s = s._def?.innerType || s._def?.schema || s._zod?.def?.innerType || s._zod?.def?.schema
+      }
+
+      const def = s?._zod?.def || s?._def || s
+
+      // Collect every possible format / type identifier attached to the node
+      const candidates = [def?.type, def?.typeName, def?.format, def?.kind, def?.name, s?.type, s?.format].filter(Boolean).map(String)
+
+      if (Array.isArray(def?.checks)) {
+        for (const c of def.checks) {
+          if (c?.kind) candidates.push(String(c.kind))
+          if (c?.type) candidates.push(String(c.type))
+          if (c?.format) candidates.push(String(c.format))
+        }
+      }
+
+      for (const cand of candidates) {
+        const val = cand.toLowerCase()
+        if (val === 'datetime' || val === 'iso.datetime' || val === 'date-time') {
+          ctx.jsonSchema.type = 'string'
+          ctx.jsonSchema.format = 'date-time'
+          break
+        }
+        if (val === 'time' || val === 'iso.time') {
+          ctx.jsonSchema.type = 'string'
+          ctx.jsonSchema.format = 'time'
+          break
+        }
+        if (val === 'date' || val === 'iso.date') {
+          ctx.jsonSchema.type = 'string'
+          ctx.jsonSchema.format = 'date'
+          break
+        }
+      }
     },
   })
 
@@ -56,9 +94,14 @@ function mapJsonSchemaToVariables(jsonSchema: any): any {
     return 'object'
   }
 
-  if (jsonSchema.type === 'string' && jsonSchema.format) {
-    if (jsonSchema.format === 'email') return 'email'
-    if (jsonSchema.format === 'uri') return 'url'
+  // Normalized format checking catches both overridden formats AND native serializer outputs
+  if (jsonSchema.format) {
+    const fmt = String(jsonSchema.format).toLowerCase()
+    if (fmt === 'email') return 'email'
+    if (fmt === 'uri' || fmt === 'url') return 'url'
+    if (fmt === 'date-time' || fmt === 'datetime' || fmt === 'iso.datetime') return 'datetime'
+    if (fmt === 'time' || fmt === 'iso.time') return 'time'
+    if (fmt === 'date' || fmt === 'iso.date') return 'date'
   }
 
   if (jsonSchema.type) {
