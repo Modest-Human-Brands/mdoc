@@ -241,7 +241,7 @@ const styles = {
 
       <View :style="{ ...styles.financialDueRow, backgroundColor: paymentStatus === 'PAID' ? '#22c55e22' : paymentStatus === 'PARTIALLY PAID' ? '#eab30822' : '#ef444422' }" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Amount Due (INR)</Text>
-        <Text :style="{ ...styles.colAmount, fontSize: 16 }">₹{{ formatCurrency(amountDue) }}</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ formatCurrency(amountDue) }}</Text>
       </View>
 
       <View :style="styles.accountBox" :wrap="false">

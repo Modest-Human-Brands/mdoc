@@ -16,7 +16,7 @@ const props = defineProps<{
   organizationColorAccent: string
   agreementDate: string | Date
   contractorName: string
-  contractorTitle: string
+  contractorRole: string
   projectName: string
   shootDates: string | Date
   location: string
@@ -32,13 +32,25 @@ const props = defineProps<{
   }[]
 }>()
 
-// --- Derived Math ---
 const advanceAmount = computed(() => (props.totalAmount * props.advancePercentage) / 100)
 const balanceAmount = computed(() => props.totalAmount - advanceAmount.value)
 
-// --- Formatters ---
 const formatCurrency = (val: number) => val.toLocaleString('en-IN')
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
+
+const formatTime = (val: string) => {
+  if (!val) return ''
+  if (val.toUpperCase().includes('AM') || val.toUpperCase().includes('PM')) return val
+
+  const [hours, minutes] = val.split(':')
+  if (!hours || !minutes) return val
+
+  const h = parseInt(hours, 10)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+
+  return `${h12}:${minutes.slice(0, 2)} ${ampm}`
+}
 
 // --- 8-Point Grid & Harmonized Quotation Styles ---
 const styles = {
@@ -51,9 +63,9 @@ const styles = {
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   footerText: { fontSize: 12, fontWeight: 'bold' as const },
   titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
-  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 8 },
-  metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
-  metaGridValue: { flex: 1, fontSize: 12, textAlign: 'right' as const },
+  metaGridRow: { flexDirection: 'row' as const, marginTop: 8, gap: 8 },
+  metaGridLabel: { fontWeight: 'bold' as const, fontSize: 12, textAlign: 'left' as const, whitespace: 'nowrap' },
+  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 75, whitespace: 'nowrap' },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
   bannerCol: { flex: 1, paddingRight: 16 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
@@ -143,7 +155,7 @@ const styles = {
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Service Provider</Text>
           <Text :style="{ fontSize: 12 }">{{ contractorName }}</Text>
-          <Text :style="{ fontSize: 12 }">{{ contractorTitle }}</Text>
+          <Text :style="{ fontSize: 12 }">{{ contractorRole }}</Text>
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Project Details</Text>
@@ -153,7 +165,7 @@ const styles = {
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Logistics</Text>
           <Text :style="{ fontSize: 12 }">{{ location }}</Text>
-          <Text :style="{ fontSize: 12 }">Call Time: {{ callTime }}</Text>
+          <Text :style="{ fontSize: 12 }">Call Time: {{ formatTime(callTime) }}</Text>
         </View>
       </View>
 
@@ -178,18 +190,18 @@ const styles = {
       <View :wrap="false">
         <Text :style="styles.termHeading">2. Compensation & Payment Terms</Text>
         <Text :style="styles.termParagraph"
-          >The Company agrees to pay the Service Provider a total fee of <Text :style="styles.bold">₹{{ formatCurrency(totalAmount) }}</Text> for the services described above.</Text
+          >The Company agrees to pay the Service Provider a total fee of <Text :style="styles.bold">{{ formatCurrency(totalAmount) }}</Text> for the services described above.</Text
         >
         <View :style="styles.list">
           <View :style="styles.bulletRow">
             <Text :style="styles.bulletText"
-              >- <Text :style="styles.bold">Advance:</Text> An advance payment of {{ advancePercentage }}% (₹{{ formatCurrency(advanceAmount) }}) shall be paid to the Service Provider prior to project
+              >- <Text :style="styles.bold">Advance:</Text> An advance payment of {{ advancePercentage }}% ({{ formatCurrency(advanceAmount) }}) shall be paid to the Service Provider prior to project
               commencement.</Text
             >
           </View>
           <View :style="styles.bulletRow">
             <Text :style="styles.bulletText"
-              >- <Text :style="styles.bold">Remaining Balance:</Text> The remaining balance of ₹{{ formatCurrency(balanceAmount) }} will be paid within 2-3 business days after the Company receives the
+              >- <Text :style="styles.bold">Remaining Balance:</Text> The remaining balance of {{ formatCurrency(balanceAmount) }} will be paid within 2-3 business days after the Company receives the
               final payment amount from the client.</Text
             >
           </View>

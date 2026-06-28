@@ -90,13 +90,13 @@ const placeholders: ContractPayload = {
   agreementDate: new Date(),
   expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   terms: {
-    content: `### 3. Copyright & Ownership (Work Made for Hire)\n\nAll photographs, videos, raw files, and deliverables created under this Agreement shall be considered a "work made for hire."\n\n- **Company Rights:** Modest Human Brands shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The Company has the unrestricted right to use, edit, distribute, and publish the media across all platforms globally and in perpetuity.\n- **Portfolio Rights:** The Service Provider may use the final, publicly released media for their personal portfolio, provided they credit the Company.\n\n### 4. Cancellation & Rescheduling\n\n- **By the Company:** If the Company cancels the shoot within 48 hours of the scheduled call time, the Service Provider shall not be entitled to the balance.\n- **By the Service Provider:** If unable to perform due to emergency, they must secure a replacement of equal skill immediately.\n\n### 5. Independent Contractor Status\n\nThe Service Provider is an independent contractor. Nothing in this Agreement shall be construed to create an employer-employee relationship.\n\n### 6. Liability & Indemnification\n\n- **Data Loss:** The Service Provider shall implement standard dual-card backup protocols. In the unlikely event of total media failure, liability shall be limited to the forfeiture of the agreed fee.`,
+    content: `### 3. Copyright & Ownership (Work Made for Hire)\n\nAll photographs, videos, raw files, and deliverables created under this Agreement shall be considered a "work made for hire."\n\n- **Company Rights:** RED CAT PICTURES shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The Company has the unrestricted right to use, edit, distribute, and publish the media across all platforms globally and in perpetuity.\n- **Portfolio Rights:** The Service Provider may use the final, publicly released media for their personal portfolio, provided they credit the Company.\n\n### 4. Cancellation & Rescheduling\n\n- **By the Company:** If the Company cancels the shoot within 48 hours of the scheduled call time, the Service Provider shall not be entitled to the balance.\n- **By the Service Provider:** If unable to perform due to emergency, they must secure a replacement of equal skill immediately.\n\n### 5. Independent Contractor Status\n\nThe Service Provider is an independent contractor. Nothing in this Agreement shall be construed to create an employer-employee relationship.\n\n### 6. Liability & Indemnification\n\n- **Data Loss:** The Service Provider shall implement standard dual-card backup protocols. In the unlikely event of total media failure, liability shall be limited to the forfeiture of the agreed fee.`,
     lastUpdated: new Date(),
   },
   organization: {
     id: 'modest-human-brands',
-    name: 'Modest Human Brands',
-    legalName: 'Modest Human Brands LLP',
+    name: 'RED CAT PICTURES',
+    legalName: 'RED CAT PICTURES LLP',
     entityType: 'LLP',
     tradeRelationship: 'Primary',
     gstin: undefined,
@@ -104,7 +104,7 @@ const placeholders: ContractPayload = {
     address: 'Abc Road, Near DEF, UIO - 1890',
     foundedYear: 2020,
     accountDetails: {
-      accountName: 'Modest Human Brands LLP',
+      accountName: 'RED CAT PICTURES LLP',
       accountNumber: 1_234_567_890,
       bankName: 'HDFC Bank',
       ifscCode: 'HDFC0001234',
@@ -142,6 +142,8 @@ registerTemplate({
     const orgBranding = org?.branding || p.organization!.branding
     const rawTerms = rawData.terms?.content || p.terms.content
 
+    const parsedTerms: ParsedTerm[] = parseMarkdown(rawTerms)
+
     return {
       organizationName: org?.name || p.organization!.name,
       organizationLegalName: org?.legalName || p.organization!.legalName,
@@ -156,7 +158,7 @@ registerTemplate({
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
       agreementDate: rawData.agreementDate || p.agreementDate,
       contractorName: rawData.contact?.name || p.contact.name,
-      contractorTitle: rawData.contact?.title || p.contact.title,
+      contractorRole: rawData.contact?.title || p.contact.title,
       expiresIn: rawData.expiresIn || p.expiresIn,
       projectName: rawData.project?.title || p.project.title,
       shootDates: rawData.project?.shootDate || p.project.shootDate,
@@ -165,7 +167,7 @@ registerTemplate({
       deliverables: rawData.deliverables && rawData.deliverables.length > 0 ? rawData.deliverables : p.deliverables,
       totalAmount: rawData.totalAmount || p.totalAmount,
       advancePercentage: rawData.advancePercentage ?? p.advancePercentage ?? 35,
-      parsedTerms: parseMarkdown(rawTerms),
+      parsedTerms,
     }
   },
   signerFields: [

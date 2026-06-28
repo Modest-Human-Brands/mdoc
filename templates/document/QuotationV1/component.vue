@@ -64,7 +64,7 @@ const styles = {
   titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
   metaGridRow: { flexDirection: 'row' as const, marginTop: 8, gap: 8 },
   metaGridLabel: { fontWeight: 'bold' as const, fontSize: 12, textAlign: 'left' as const, whitespace: 'nowrap' },
-  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 80, whitespace: 'nowrap' },
+  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 75, whitespace: 'nowrap' },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
   bannerCol: { flex: 1, paddingRight: 16 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
