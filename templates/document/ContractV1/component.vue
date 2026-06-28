@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { computed } from 'vue'
 
 const props = defineProps<{
   organizationName: string
@@ -22,6 +23,7 @@ const props = defineProps<{
   callTime: string
   deliverables: string[]
   totalAmount: number
+  advancePercentage: number
   expiresIn: string | Date
   parsedTerms: {
     type: string
@@ -29,6 +31,10 @@ const props = defineProps<{
     items?: { text: string; subitems?: { text: string }[] }[]
   }[]
 }>()
+
+// --- Derived Math ---
+const advanceAmount = computed(() => (props.totalAmount * props.advancePercentage) / 100)
+const balanceAmount = computed(() => props.totalAmount - advanceAmount.value)
 
 // --- Formatters ---
 const formatCurrency = (val: number) => val.toLocaleString('en-IN')
@@ -45,9 +51,9 @@ const styles = {
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   footerText: { fontSize: 12, fontWeight: 'bold' as const },
   titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
-  metaGridRow: { flexDirection: 'row' as const, marginTop: 8, gap: 8 },
-  metaGridLabel: { fontWeight: 'bold' as const, fontSize: 12, textAlign: 'left' as const, whitespace: 'nowrap' },
-  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 80, whitespace: 'nowrap' },
+  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 8 },
+  metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
+  metaGridValue: { flex: 1, fontSize: 12, textAlign: 'right' as const },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
   bannerCol: { flex: 1, paddingRight: 16 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
@@ -70,14 +76,14 @@ const styles = {
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
   accountValue: { fontSize: 12, color: '#555555' },
   termHeading: { fontSize: 16, fontWeight: 'bold' as const, marginTop: 16, marginBottom: 8, color: '#000000' },
-  termParagraph: { color: '#444444', fontSize: 12 },
+  termParagraph: { color: '#444444', fontSize: 12, marginBottom: 8 },
   acceptanceTitle: { fontSize: 24, fontWeight: 'bold' as const, textAlign: 'center' as const, marginBottom: 24, marginTop: 24 },
   acceptanceSub: { fontSize: 12, marginBottom: 24 },
   accGridHeader: { flexDirection: 'row' as const, backgroundColor: props.organizationColorAccent + '1A', marginHorizontal: -40, padding: '16 40', fontWeight: 'bold' as const, marginBottom: 24 },
   accGridRow: { flexDirection: 'row' as const, padding: '0 0', marginBottom: 32 },
   accCol: { flex: 1, fontSize: 12 },
   accNote: { fontSize: 12, color: '#555555', marginTop: 48, textAlign: 'center' as const },
-  introText: { fontSize: 12, marginTop: 24 },
+  introText: { fontSize: 12, marginTop: 24, marginBottom: 16 },
   bold: { fontWeight: 'bold' as const, color: '#000000' },
   list: { marginLeft: 16, marginTop: 4, marginBottom: 8 },
 }
@@ -108,14 +114,12 @@ const styles = {
                     : 'A brand of'
             }}
             {{ organizationLegalName }}
-            <!-- {{ organizationEntityType ? `(${organizationEntityType})` : '' }} -->
           </Text>
           <Text v-else-if="organizationLegalName && organizationName === organizationLegalName && organizationEntityType" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
             {{ organizationEntityType }}
           </Text>
 
           <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
-
           <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }">GSTIN: {{ organizationGstin }}</Text>
           <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
         </View>
@@ -179,8 +183,14 @@ const styles = {
         <View :style="styles.list">
           <View :style="styles.bulletRow">
             <Text :style="styles.bulletText"
-              >- <Text :style="styles.bold">Balance:</Text> After the Company receives the final payment amount from the client, the agreed payment will be given to the Service Provider within 2-3
-              business days.</Text
+              >- <Text :style="styles.bold">Advance:</Text> An advance payment of {{ advancePercentage }}% (₹{{ formatCurrency(advanceAmount) }}) shall be paid to the Service Provider prior to project
+              commencement.</Text
+            >
+          </View>
+          <View :style="styles.bulletRow">
+            <Text :style="styles.bulletText"
+              >- <Text :style="styles.bold">Remaining Balance:</Text> The remaining balance of ₹{{ formatCurrency(balanceAmount) }} will be paid within 2-3 business days after the Company receives the
+              final payment amount from the client.</Text
             >
           </View>
           <View :style="styles.bulletRow">
@@ -196,7 +206,7 @@ const styles = {
       <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
         <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
         <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
-        <View v-if="block.type === 'list'">
+        <View v-if="block.type === 'list'" :style="styles.list">
           <View v-for="(item, iIndex) in block.items" :key="iIndex">
             <View :style="styles.bulletRow">
               <Text :style="styles.bulletText">- {{ item.text }}</Text>
@@ -225,7 +235,7 @@ const styles = {
       </Text>
 
       <View :style="styles.accGridHeader">
-        <Text :style="styles.accCol">For {{ organizationName }}</Text>
+        <Text :style="styles.accCol">For {{ organizationLegalName || organizationName }}</Text>
         <Text :style="styles.accCol">For Service Provider</Text>
       </View>
 
@@ -234,8 +244,8 @@ const styles = {
         <Text :style="styles.accCol">Signature:</Text>
       </View>
       <View :style="styles.accGridRow">
-        <Text :style="styles.accCol">Signer Name:</Text>
-        <Text :style="styles.accCol">Signer Name:</Text>
+        <Text :style="styles.accCol">Name:</Text>
+        <Text :style="styles.accCol">Name:</Text>
       </View>
       <View :style="styles.accGridRow">
         <Text :style="styles.accCol">Date:</Text>

@@ -22,6 +22,7 @@ export const contractSchema = z.object({
   }),
   deliverables: z.array(z.string()),
   totalAmount: z.number(),
+  advancePercentage: z.number().min(0).max(100).optional(),
   agreementDate: z.date(),
   expiresIn: z.date(),
   terms: z.object({
@@ -85,6 +86,7 @@ const placeholders: ContractPayload = {
   },
   deliverables: ['1x 60-second highlight video (4K resolution)', '50 edited high-resolution photographs', 'Delivery of all raw footage and unedited image files'],
   totalAmount: 150_000,
+  advancePercentage: 35,
   agreementDate: new Date(),
   expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   terms: {
@@ -162,6 +164,7 @@ registerTemplate({
       callTime: rawData.project?.callTime || p.project.callTime,
       deliverables: rawData.deliverables && rawData.deliverables.length > 0 ? rawData.deliverables : p.deliverables,
       totalAmount: rawData.totalAmount || p.totalAmount,
+      advancePercentage: rawData.advancePercentage ?? p.advancePercentage ?? 35,
       parsedTerms: parseMarkdown(rawTerms),
     }
   },
