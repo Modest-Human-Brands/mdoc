@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.18
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.17...v0.1.18)
+
+### 💅 Refactors
+
+- Add advance percentage to contract schema and calculations ([a339853](https://github.com/Modest-Human-Brands/mdoc/commit/a339853))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.17
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.16...v0.1.17)
