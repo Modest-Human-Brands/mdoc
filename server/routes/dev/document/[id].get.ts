@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
 
       <div class="w-2/3 h-full flex flex-col border-r border-gray-300 bg-white min-w-0">
 
-        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 flex justify-between items-center shadow-sm z-10 shrink-0">
+        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semi-bold text-gray-700 flex justify-between items-center shadow-sm z-10 shrink-0">
           <span>PDF Template: <span class="text-blue-600">${templateId}</span></span>
           <span class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full" :class="isRendering ? 'bg-blue-500 animate-pulse' : 'bg-green-500'"></span>
@@ -122,7 +122,7 @@ export default defineEventHandler(async (event) => {
       </div>
       <div class="w-1/3 h-full bg-white flex flex-col min-w-0">
 
-        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 shadow-sm z-10 flex justify-start items-center shrink-0">
+        <div class="p-4 bg-gray-50 border-b border-gray-200 font-semi-bold text-gray-700 shadow-sm z-10 flex justify-start items-center shrink-0">
           <span>Live Variables Editor</span>
         </div>
 
