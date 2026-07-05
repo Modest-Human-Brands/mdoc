@@ -26,13 +26,6 @@ export default defineEventHandler(async (event) => {
 
     const { signers, routingType, expiresInDays } = await readValidatedBody(event, envelopeSchema)
 
-    const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
-    const currentStatus = document.properties.Status.status.name
-
-    if (currentStatus !== 'Ready') {
-      throw new HTTPError({ statusCode: 403, statusMessage: `Document need to be in Ready status. Currently ${currentStatus}` })
-    }
-
     const sortedSigners = signers.sort((a, b) => a.order - b.order)
     const nextSigner = sortedSigners[0]
 

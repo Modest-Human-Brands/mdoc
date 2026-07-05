@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
       paginatedContent.map(async ({ id, properties, created_time, last_edited_time }) => {
         const name = notionTextStringify(properties.Name.title)
 
-        let projectDetails = { index: null as number | null, name: 'Misc', slug: 'misc', status: 'N/A' }
+        let projectDetails = { id: null as string | null, name: 'Misc', slug: 'misc', status: 'N/A' }
         let contactDetails = null
 
         const projectId = properties.Project?.relation?.[0]?.id
@@ -40,9 +40,9 @@ export default defineEventHandler(async (event) => {
           const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
           const contactId = project.properties.Contact.relation[0].id
           projectDetails = {
-            index: project.properties.Index?.number || null,
-            name: notionTextStringify(project.properties.Name.title),
+            id: projectId,
             slug: project.properties.Slug?.formula?.string || '',
+            name: notionTextStringify(project.properties.Name.title),
             status: project.properties.Status?.status?.name || 'N/A',
           }
 

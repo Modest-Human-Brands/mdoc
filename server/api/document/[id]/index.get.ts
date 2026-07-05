@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
 
         projectData = {
           id: project.id,
+          slug: project.properties.Slug.formula.string,
           name: notionTextStringify(project.properties.Name.title),
           contact: contactData,
         }
@@ -75,7 +76,6 @@ export default defineEventHandler(async (event) => {
       sizeBytes: properties.SizeBytes?.number,
       status: properties.Status?.status?.name,
       organizationId: properties.Organization?.relation?.[0]?.id || null,
-      projectId,
       project: projectData,
       routingType: properties['Routing Type']?.select?.name || null,
       nextSigner: properties['Next Signer']?.email || null,

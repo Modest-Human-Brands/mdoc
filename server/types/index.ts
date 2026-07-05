@@ -322,6 +322,12 @@ export interface NotionDocument {
       type: 'number'
       number: number
     }
+    Data: {
+      type: 'rich_text'
+      rich_text: {
+        text: { content: string }
+      }[]
+    }
     'Routing Queue': {
       type: 'rich_text'
       rich_text: {

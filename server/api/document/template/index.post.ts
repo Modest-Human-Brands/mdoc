@@ -42,14 +42,19 @@ export default defineEventHandler(async (event) => {
 
     const file = await fsStorage.getItemRaw<Buffer<ArrayBufferLike>>(`${fileName}.pdf`)
 
-    await fsStorage.setItem(`${fileName}.json`, rawData)
-
     const notionProperties: any = {
       Name: { title: [{ text: { content: fileName } }] },
       'Template ID': { select: { name: templateId } },
       'Mime Type': { select: { name: 'application/pdf' } },
       SizeBytes: { number: file?.byteLength || 0 },
       Status: { status: { name: 'Draft' } },
+      Data: {
+        rich_text: [
+          {
+            text: { content: rawData },
+          },
+        ],
+      },
     }
 
     if (orgId) {
