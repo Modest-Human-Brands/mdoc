@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.22
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.21...v0.1.22)
+
+### 🚀 Enhancements
+
+- Update dependencies and add verify-signature endpoint for PDF validation ([49f9156](https://github.com/Modest-Human-Brands/mdoc/commit/49f9156))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.21
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.20...v0.1.21)
