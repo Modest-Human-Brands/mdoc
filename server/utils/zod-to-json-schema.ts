@@ -11,7 +11,6 @@ export default function parseSchemaVariables(schema: z.ZodTypeAny): Record<strin
         ctx.jsonSchema.type = 'date'
       }
 
-      // Unwrap wrapper schemas (optionals, defaults, pipelines, effects, brands)
       let s = ctx.zodSchema as any
       while (s && !s._def?.format && !s._def?.checks && !s._zod?.def?.format && (s._def?.innerType || s._def?.schema || s._zod?.def?.innerType || s._zod?.def?.schema)) {
         s = s._def?.innerType || s._def?.schema || s._zod?.def?.innerType || s._zod?.def?.schema
@@ -19,7 +18,6 @@ export default function parseSchemaVariables(schema: z.ZodTypeAny): Record<strin
 
       const def = s?._zod?.def || s?._def || s
 
-      // Collect every possible format / type identifier attached to the node
       const candidates = [def?.type, def?.typeName, def?.format, def?.kind, def?.name, s?.type, s?.format].filter(Boolean).map(String)
 
       if (Array.isArray(def?.checks)) {
@@ -94,7 +92,6 @@ function mapJsonSchemaToVariables(jsonSchema: any): any {
     return 'object'
   }
 
-  // Normalized format checking catches both overridden formats AND native serializer outputs
   if (jsonSchema.format) {
     const fmt = String(jsonSchema.format).toLowerCase()
     if (fmt === 'email') return 'email'

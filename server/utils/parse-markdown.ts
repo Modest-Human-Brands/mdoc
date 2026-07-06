@@ -32,7 +32,7 @@ export default function (rawMarkdown: string): ParsedTerm[] {
           if (t.type === 'text' || t.type === 'paragraph') {
             textContent += t.text + ' '
           } else if (t.type === 'list') {
-            subitems = parseListItems(t) // Recursive parsing for nested lists
+            subitems = parseListItems(t)
           }
         }
       } else {

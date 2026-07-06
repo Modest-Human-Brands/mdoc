@@ -56,14 +56,13 @@ export default defineEventHandler(async (event) => {
       extendedMode: true,
     })
 
-    // 6. Extract Signer Information
     const signerCert = signedData.certificates?.[0]
     const signerName = signerCert ? signerCert.subject.typesAndValues.find((t) => t.type === '2.5.4.3')?.value.valueBlock.value : 'Unknown'
 
     return {
       isIntact: verificationResult,
       signer: signerName,
-      message: verificationResult ? 'Document is intact and signature is mathematically valid.' : 'Signature is invalid or document was tampered with.',
+      message: verificationResult ? 'Document is intact and signature is valid.' : 'Document is tampered or signature is invalid.',
     }
   } catch (error: any) {
     console.error(`API /document/[id]/verify-signature POST`, error)

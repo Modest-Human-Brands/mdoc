@@ -25,7 +25,6 @@ export default defineEventHandler(async (event) => {
     const ext = mime.extension(properties['Mime Type'].select.name) || 'pdf'
     const currentStatus = properties.Status?.status?.name
 
-    // Intelligently resolve the active PDF layer based on cryptographic progression
     let targetFileName = `${baseTitle}.${ext}`
 
     if (currentStatus === 'Completed') {
@@ -60,7 +59,6 @@ export default defineEventHandler(async (event) => {
     const fsStorage = useStorage('fs')
     let pdfBuffer = await fsStorage.getItemRaw<Buffer>(targetFileName)
 
-    // Robust Fallback: If the stamped file is missing from disk, gracefully drop back to baseline
     if (!pdfBuffer && targetFileName !== `${baseTitle}.${ext}`) {
       console.warn(`Target file "${targetFileName}" missing, falling back to baseline "${baseTitle}.${ext}"`)
       pdfBuffer = await fsStorage.getItemRaw<Buffer>(`${baseTitle}.${ext}`)
