@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.23
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.22...v0.1.23)
+
+### 💅 Refactors
+
+- Remove redundant comments and improve code clarity in various files ([05b0b56](https://github.com/Modest-Human-Brands/mdoc/commit/05b0b56))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.22
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.21...v0.1.22)
