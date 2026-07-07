@@ -203,4 +203,5 @@ registerTemplate({
       ifscCode: org?.accountDetails?.ifscCode || p.organization!.accountDetails.ifscCode,
     }
   },
+  signerFields: [],
 })

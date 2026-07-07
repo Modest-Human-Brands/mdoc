@@ -82,9 +82,7 @@ export default defineEventHandler(async (event) => {
       },
     }
   } catch (error: any) {
-    console.error('API /document GET', error)
-
-    const { code: errorCode } = error as { code?: string }
+    console.error('API /document/index GET', error)
 
     if (error instanceof Error && 'statusCode' in error) {
       throw error

@@ -73,11 +73,11 @@ export default defineEventHandler(async (event) => {
 
     return pdfBuffer
   } catch (error: unknown) {
+    console.error('API document/[id]/content GET', error)
+
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
-
-    console.error('API document/[id] GET', error)
 
     throw new HTTPError({
       statusCode: 500,

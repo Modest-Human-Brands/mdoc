@@ -1,20 +1,9 @@
-import type { InternshipCompletionCertificatePayload } from '~/templates/document/InternshipCompletionCertificateV1'
-import type { QuotationPayload } from '~/templates/document/QuotationV1'
-import type { ContractPayload } from '~/templates/document/ContractV1'
-
-export const TEMPLATES = ['quotation', 'internship-completion-certificate', 'contract'] as const
-export type TemplateName = (typeof TEMPLATES)[number]
-
-export type TemplatePayload = QuotationPayload | InternshipCompletionCertificatePayload | ContractPayload
-
 export type RequestBody = {
   name: string
   orgId: string
-} & (
-  | { template: 'quotation'; data: QuotationPayload }
-  | { template: 'internship-completion-certificate'; data: InternshipCompletionCertificatePayload }
-  | { template: 'contract'; data: ContractPayload }
-)
+  template: string
+  data: Record<string, any>
+}
 
 export interface DocumentMeta {
   id: string

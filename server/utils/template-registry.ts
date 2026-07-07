@@ -26,7 +26,7 @@ export interface TemplateDefinition {
   schema: z.ZodObject<any, any>
   placeholders: Record<string, any>
   transformPayload: (rawData: any) => Record<string, any>
-  signerFields?: DocumentField[]
+  signerFields: DocumentField[]
 }
 
 export const templateRegistry: Record<string, TemplateDefinition> = {}

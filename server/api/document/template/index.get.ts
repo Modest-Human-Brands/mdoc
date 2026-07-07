@@ -14,11 +14,11 @@ export default defineEventHandler(() => {
 
     return templates
   } catch (error: unknown) {
+    console.error('API /document/template/index GET', error)
+
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
-
-    console.error('API api/document/template GET', error)
 
     throw new HTTPError({
       statusCode: 500,

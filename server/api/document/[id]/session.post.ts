@@ -77,11 +77,13 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error(`API /document/id/session POST`, error)
 
-    if (error instanceof z.ZodError) {
-      throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid session payload' })
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
     }
 
-    if (error instanceof HTTPError) throw error
-    throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to generate secure session' })
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })

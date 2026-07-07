@@ -53,8 +53,13 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error(`API /document/[id]/verify POST`, error)
 
-    if (error instanceof HTTPError) throw error
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
+    }
 
-    throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to verify secure session' })
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })

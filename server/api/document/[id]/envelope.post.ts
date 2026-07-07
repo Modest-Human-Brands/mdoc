@@ -47,11 +47,11 @@ export default defineEventHandler(async (event) => {
       queueSize: sortedSigners.length,
     }
   } catch (error: unknown) {
+    console.error(`API /document/[id]/envelope POST`, error)
+
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
-
-    console.error(`API /document/id/envelope POST`, error)
 
     throw new HTTPError({
       statusCode: 500,

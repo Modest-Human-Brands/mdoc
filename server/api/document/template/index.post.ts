@@ -7,7 +7,7 @@ import { useStorage } from 'nitro/storage'
 import notion from '~/server/utils/notion'
 import type { NotionDB } from '~/server/types'
 import { templateRegistry } from '~/server/utils/template-registry'
-import { TEMPLATES, type RequestBody } from '~/server/types/templates'
+import type { RequestBody } from '~/server/types/templates'
 
 import '~/templates/document'
 
@@ -19,18 +19,11 @@ export default defineEventHandler(async (event) => {
 
     const { name: fileName, template: templateId, data: rawData, orgId, projectId, contactId } = (await readBody<RequestBody & { projectId?: string; contactId?: string; orgId?: string }>(event))!
 
-    if (!(TEMPLATES as readonly string[]).includes(templateId)) {
-      throw new HTTPError({
-        statusCode: 400,
-        statusMessage: `Unknown template "${templateId}"`,
-      })
-    }
-
     const targetTemplate = templateRegistry[templateId]
     if (!targetTemplate) {
       throw new HTTPError({
         statusCode: 400,
-        statusMessage: `Template target identifier "${templateId}" is unrecognized by renderer engine.`,
+        statusMessage: `Template target identifier "${templateId}" is unrecognized.`,
       })
     }
 
@@ -51,7 +44,7 @@ export default defineEventHandler(async (event) => {
       Data: {
         rich_text: [
           {
-            text: { content: rawData },
+            text: { content: JSON.stringify(rawData) },
           },
         ],
       },
@@ -81,10 +74,15 @@ export default defineEventHandler(async (event) => {
       sizeBytes: file?.byteLength || 0,
     }
   } catch (error: unknown) {
-    console.error('Document Generation Pipeline Failure:', error)
+    console.error('API /document/template/index POST', error)
+
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
+    }
+
     throw new HTTPError({
       statusCode: 500,
-      statusMessage: 'Failed to process document template pipeline calculations.',
+      statusMessage: 'Some Unknown Error Found',
     })
   }
 })

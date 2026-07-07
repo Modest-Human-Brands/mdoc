@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody } from 'nitro/h3'
+import { defineEventHandler, HTTPError, readBody } from 'nitro/h3'
 import { h } from 'vue'
 import { renderToBuffer } from '@ceereals/vue-pdf'
 
@@ -31,11 +31,15 @@ export default defineEventHandler(async (event) => {
 
     return { pdfBase64 }
   } catch (error: any) {
-    console.error('API document/template/preview POST', error)
-    event.res.status = 500
-    event.res.statusText = error instanceof Error ? error.message : 'Unknown PDF compilation error.'
-    return {
-      error: error instanceof Error ? error.message : 'Unknown PDF compilation error.',
+    console.error('API /document/template/preview POST', error)
+
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
     }
+
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })

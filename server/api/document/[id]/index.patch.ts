@@ -56,20 +56,15 @@ export default defineEventHandler(async (event) => {
       id: updatedPage.id,
     }
   } catch (error: any) {
-    console.error(`API /document/${getRouterParam(event, 'id')} PATCH`, error)
-
-    if (error.code === 'object_not_found' || error.status === 404 || error.code === 'validation_error') {
-      throw new HTTPError({ statusCode: 404, statusMessage: 'Document not found' })
-    }
-
-    if (error instanceof z.ZodError) {
-      throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid update payload' })
-    }
+    console.error(`API /document/[id]/index PATCH`, error)
 
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
 
-    throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to update document' })
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })

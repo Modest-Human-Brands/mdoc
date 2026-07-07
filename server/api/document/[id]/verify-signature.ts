@@ -66,7 +66,14 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error(`API /document/[id]/verify-signature POST`, error)
-    if (error instanceof HTTPError) throw error
-    throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to void document' })
+
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
+    }
+
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })

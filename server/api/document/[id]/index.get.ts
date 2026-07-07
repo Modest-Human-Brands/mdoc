@@ -87,11 +87,11 @@ export default defineEventHandler(async (event) => {
       rawData,
     }
   } catch (error: any) {
+    console.error(`API /document/[id]/index GET`, error)
+
     if (error instanceof Error && 'statusCode' in error) {
       throw error
     }
-
-    console.error(`API /document/[id] GET`, error)
 
     throw new HTTPError({
       statusCode: 500,

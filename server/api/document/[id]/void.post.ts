@@ -101,9 +101,15 @@ export default defineEventHandler(async (event) => {
       fileName: voidedFileName,
     }
   } catch (error: any) {
-    console.error(`API /document/id/void POST`, error)
-    if (error instanceof z.ZodError) throw new HTTPError({ statusCode: 400, statusMessage: 'Invalid payload', data: error.errors })
-    if (error instanceof HTTPError) throw error
-    throw new HTTPError({ statusCode: 500, statusMessage: 'Failed to void document' })
+    console.error(`API /document/[id]/void POST`, error)
+
+    if (error instanceof Error && 'statusCode' in error) {
+      throw error
+    }
+
+    throw new HTTPError({
+      statusCode: 500,
+      statusMessage: 'Some Unknown Error Found',
+    })
   }
 })
