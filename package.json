@@ -29,8 +29,8 @@
     "preview": "nitro preview",
     "start": "node --env-file=.env.prod .output/server/index.mjs",
     "clean": "nitro cleanup",
-    "docker:build": "docker build --build-arg VERSION=dev --build-arg BUILD_TIME=now -t nitrotemplate:dev .",
-    "docker:start": "docker run --detach --name nitrotemplate-dev --env-file .env.prod -p 3500:3000 nitrotemplate:dev"
+    "docker:build": "docker build --build-arg VERSION=dev --build-arg BUILD_TIME=now -t mdoc:dev .",
+    "docker:start": "docker run --detach --name mdoc-dev --env-file .env.prod -p 3500:3000 mdoc:dev"
   },
   "dependencies": {
     "@ceereals/vue-pdf": "^0.3.1",
