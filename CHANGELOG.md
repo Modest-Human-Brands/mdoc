@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.26
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.25...v0.1.26)
+
+### 🩹 Fixes
+
+- Update project title in quotation payload ([ca0c6de](https://github.com/Modest-Human-Brands/mdoc/commit/ca0c6de))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.25
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.24...v0.1.25)
