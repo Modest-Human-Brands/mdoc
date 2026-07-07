@@ -1,6 +1,6 @@
 {
   "name": "mdoc",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "A structured document management service for creating, storing, and collaborating on business documents and deliverables.",
   "author": "Shirsendu Bairagi <shirsendu2001@gmail.com>",
   "license": "MIT",

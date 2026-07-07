@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.24
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.23...v0.1.24)
+
+### 🩹 Fixes
+
+- Update docker commands to use correct image name and clarify prettierignore ([0a337c1](https://github.com/Modest-Human-Brands/mdoc/commit/0a337c1))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.23
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.22...v0.1.23)
