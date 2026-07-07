@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.25
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.24...v0.1.25)
+
+### 🩹 Fixes
+
+- Improve error logging and handling across API endpoints ([6f923c3](https://github.com/Modest-Human-Brands/mdoc/commit/6f923c3))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.24
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.23...v0.1.24)
