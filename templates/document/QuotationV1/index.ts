@@ -92,7 +92,7 @@ const placeholders: QuotationPayload = {
     phone: '+1 555-0199',
   },
   project: {
-    title: 'Photography and Videography',
+    title: 'Test Project',
     quoteNumber: 'RCP-Q-78-2',
     quoteDate: new Date(),
     shootDate: new Date(),
