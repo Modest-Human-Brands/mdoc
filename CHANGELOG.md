@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.27
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.26...v0.1.27)
+
+### 💅 Refactors
+
+- Contract and quotation templates to enhance structure and add new fields ([cdd6142](https://github.com/Modest-Human-Brands/mdoc/commit/cdd6142))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.26
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.25...v0.1.26)
