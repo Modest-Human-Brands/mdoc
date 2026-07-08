@@ -11,9 +11,22 @@ export interface ParsedTerm {
   items?: ParsedListItem[]
 }
 
-export default function (rawMarkdown: string): ParsedTerm[] {
+export default function parseMarkdown(rawMarkdown: string, variables: Record<string, any> = {}): ParsedTerm[] {
   const parsedTerms: ParsedTerm[] = []
-  const tokens = marked.lexer(rawMarkdown)
+
+  const resolvedMarkdown = rawMarkdown.replace(/{{\s*([\w.]+)\s*}}/g, (match, path) => {
+    let value: any = variables
+    for (const part of path.split('.')) {
+      if (value == null) {
+        value = undefined
+        break
+      }
+      value = value[part]
+    }
+    return value !== undefined && value !== null ? String(value) : match
+  })
+
+  const tokens = marked.lexer(resolvedMarkdown)
 
   const cleanText = (text: string) => {
     return text

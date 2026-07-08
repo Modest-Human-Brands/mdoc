@@ -1,6 +1,5 @@
 import { defineEventHandler, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
-import zodToJsonSchema from '~/server/utils/zod-to-json-schema'
 
 import '~/templates/document'
 
@@ -8,8 +7,8 @@ export default defineEventHandler(() => {
   try {
     const templates = Object.values(templateRegistry).map((template) => ({
       id: template.id,
-      variables: template.schema ? zodToJsonSchema(template.schema) : {},
-      signerFields: template.signerFields,
+      label: template.label,
+      description: template.description,
     }))
 
     return templates

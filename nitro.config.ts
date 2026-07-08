@@ -10,6 +10,9 @@ export default defineConfig({
   features: {
     websocket: true,
   },
+  experimental: {
+    tasks: true,
+  },
   runtimeConfig: {
     app: {
       version: '',

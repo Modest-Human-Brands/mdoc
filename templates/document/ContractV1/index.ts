@@ -22,7 +22,8 @@ export const contractSchema = z.object({
   }),
   deliverables: z.array(z.string()),
   totalAmount: z.number(),
-  advancePercentage: z.number().min(0).max(100).optional(),
+  serviceCategory: z.string(),
+  advancePercentage: z.number().min(0).max(100).optional().default(0),
   agreementDate: z.date(),
   expiresIn: z.date(),
   terms: z.object({
@@ -81,22 +82,23 @@ const placeholders: ContractPayload = {
     quoteNumber: 'QT-2026-089',
     quoteDate: new Date(),
     shootDate: new Date(),
-    shootLocation: 'Gotham City',
+    shootLocation: 'Gotham City / Remote',
     callTime: '08:00 AM',
   },
   deliverables: ['1x 60-second highlight video (4K resolution)', '50 edited high-resolution photographs', 'Delivery of all raw footage and unedited image files'],
-  totalAmount: 150_000,
-  advancePercentage: 35,
+  totalAmount: 0,
+  serviceCategory: 'Media Production',
+  advancePercentage: 0,
   agreementDate: new Date(),
-  expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   terms: {
-    content: `### 3. Copyright & Ownership (Work Made for Hire)\n\nAll photographs, videos, raw files, and deliverables created under this Agreement shall be considered a "work made for hire."\n\n- **Company Rights:** RED CAT PICTURES shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The Company has the unrestricted right to use, edit, distribute, and publish the media across all platforms globally and in perpetuity.\n- **Portfolio Rights:** The Service Provider may use the final, publicly released media for their personal portfolio, provided they credit the Company.\n\n### 4. Cancellation & Rescheduling\n\n- **By the Company:** If the Company cancels the shoot within 48 hours of the scheduled call time, the Service Provider shall not be entitled to the balance.\n- **By the Service Provider:** If unable to perform due to emergency, they must secure a replacement of equal skill immediately.\n\n### 5. Independent Contractor Status\n\nThe Service Provider is an independent contractor. Nothing in this Agreement shall be construed to create an employer-employee relationship.\n\n### 6. Liability & Indemnification\n\n- **Data Loss:** The Service Provider shall implement standard dual-card backup protocols. In the unlikely event of total media failure, liability shall be limited to the forfeiture of the agreed fee.`,
+    content: `### 1. Scope of Work & Deliverables\n\nThe Service Provider agrees to provide the agreed services for the project detailed above, including the outlined deliverables.\n\n### 2. Compensation & Payment Terms\n\nThe Company agrees to pay the Service Provider the total agreed fee.\n\n- **Advance:** An advance payment shall be paid to the Service Provider prior to project commencement.\n- **Remaining Balance:** The remaining balance will be paid within 2-3 business days after the Company receives the final payment amount from the client.\n- **Expenses:** The Company shall not reimburse the Service Provider for out-of-pocket expenses (e.g., travel, parking, equipment rentals) incurred during the project if not decided formally via mail.\n\n### 3. Copyright & Ownership (Work Made for Hire)\n\nAll media, raw files, and deliverables created under this Agreement shall be considered a "work made for hire."\n\n- **Company Rights:** RED CAT PICTURES shall be the exclusive owner of all rights, titles, and interests in the media, including all copyrights. The Company has the unrestricted right to use, edit, distribute, and publish the media across all platforms globally and in perpetuity.\n- **Portfolio Rights:** The Service Provider may use the final, publicly released media for their personal portfolio, provided they credit the Company.\n\n### 4. Cancellation & Rescheduling\n\n- **By the Company:** If the Company cancels the engagement within 48 hours of the scheduled call time, the Service Provider shall not be entitled to the balance.\n- **By the Service Provider:** If unable to perform due to emergency, they must secure a replacement of equal skill immediately.\n\n### 5. Independent Contractor Status\n\nThe Service Provider is an independent contractor. Nothing in this Agreement shall be construed to create an employer-employee relationship.\n\n### 6. Liability & Indemnification\n\n- **Data Loss:** The Service Provider shall implement standard backup protocols. In the unlikely event of total data failure, liability shall be limited to the forfeiture of the agreed fee.`,
     lastUpdated: new Date(),
   },
+  expiresIn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   organization: {
     id: 'modest-human-brands',
-    name: 'RED CAT PICTURES',
-    legalName: 'RED CAT PICTURES LLP',
+    name: 'Modest Human Brands',
+    legalName: 'Modest Human Brands LLP',
     entityType: 'LLP',
     tradeRelationship: 'Primary',
     gstin: undefined,
@@ -104,7 +106,7 @@ const placeholders: ContractPayload = {
     address: 'Abc Road, Near DEF, UIO - 1890',
     foundedYear: 2020,
     accountDetails: {
-      accountName: 'RED CAT PICTURES LLP',
+      accountName: 'Modest Human Brands LLP',
       accountNumber: 1_234_567_890,
       bankName: 'HDFC Bank',
       ifscCode: 'HDFC0001234',
@@ -129,6 +131,8 @@ const placeholders: ContractPayload = {
 
 registerTemplate({
   id: 'contract',
+  label: 'Contract',
+  description: 'The formal agreement or legal document associated with this record.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
     { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
@@ -142,9 +146,7 @@ registerTemplate({
     const orgBranding = org?.branding || p.organization!.branding
     const rawTerms = rawData.terms?.content || p.terms.content
 
-    const parsedTerms: ParsedTerm[] = parseMarkdown(rawTerms)
-
-    return {
+    const transformedVariables = {
       organizationName: org?.name || p.organization!.name,
       organizationLegalName: org?.legalName || p.organization!.legalName,
       organizationEntityType: org?.entityType || p.organization!.entityType,
@@ -157,18 +159,31 @@ registerTemplate({
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
       agreementDate: rawData.agreementDate || p.agreementDate,
+
       contractorName: rawData.contact?.name || p.contact.name,
       contractorRole: rawData.contact?.role || p.contact.role,
-      expiresIn: rawData.expiresIn || p.expiresIn,
-      projectName: rawData.project?.title || p.project.title,
-      shootDates: rawData.project?.shootDate || p.project.shootDate,
-      location: rawData.project?.shootLocation || p.project.shootLocation,
+      contractorAddress: rawData.contact?.address || p.contact.address,
+      contractorPhone: rawData.contact?.phone || p.contact.phone,
+      contractorEmail: rawData.contact?.email || p.contact.email,
+
+      projectTitle: rawData.project?.title || p.project.title,
+      projectQuoteNumber: rawData.project?.quoteNumber || p.project.quoteNumber,
+      serviceCategory: rawData.serviceCategory || p.serviceCategory,
+      shootDate: rawData.project?.shootDate || p.project.shootDate,
+      shootLocation: rawData.project?.shootLocation || p.project.shootLocation,
       callTime: rawData.project?.callTime || p.project.callTime,
+      expiresIn: rawData.expiresIn || p.expiresIn,
+
       deliverables: rawData.deliverables && rawData.deliverables.length > 0 ? rawData.deliverables : p.deliverables,
       totalAmount: rawData.totalAmount || p.totalAmount,
       advancePercentage: rawData.advancePercentage ?? p.advancePercentage ?? 35,
-      parsedTerms,
+      advanceAmount: (rawData.totalAmount * (rawData?.advancePercentage || p.advancePercentage)) / 100,
+      balanceAmount: rawData.totalAmount - (rawData.totalAmount * (rawData?.advancePercentage || p.advancePercentage)) / 100,
     }
+
+    const parsedTerms: ParsedTerm[] = parseMarkdown(rawTerms, { ...transformedVariables })
+
+    return { ...transformedVariables, parsedTerms }
   },
   signerFields: [
     {

@@ -4,6 +4,7 @@ import { useStorage } from 'nitro/storage'
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionDocument, NotionProject, NotionContact } from '~/server/types'
+import { useRuntimeConfig } from 'nitro/runtime-config'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,6 +17,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     const fsStorage = useStorage('fs')
+    const config = useRuntimeConfig()
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
 
@@ -81,7 +83,7 @@ export default defineEventHandler(async (event) => {
       nextSigner: properties['Next Signer']?.email || null,
       routingQueue,
       categories: properties.Category?.multi_select?.map((c: any) => c.name) || [],
-      previewUrl: `/api/document/${document.id}/content`,
+      previewUrl: `${config.public.siteUrl}/api/document/${document.id}/content`,
       createdAt: created_time,
       updatedAt: last_edited_time,
       rawData,

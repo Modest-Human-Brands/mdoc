@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
-import { computed } from 'vue'
 
 const props = defineProps<{
   organizationName: string
@@ -17,14 +16,20 @@ const props = defineProps<{
   agreementDate: string | Date
   contractorName: string
   contractorRole: string
-  projectName: string
-  shootDates: string | Date
-  location: string
+  contractorAddress: string
+  contractorPhone: string
+  contractorEmail: string
+  projectTitle: string
+  serviceCategory: string
+  shootDate: string | Date
+  shootLocation: string
   callTime: string
+  expiresIn: string | Date
   deliverables: string[]
   totalAmount: number
   advancePercentage: number
-  expiresIn: string | Date
+  advanceAmount: number
+  balanceAmount: number
   parsedTerms: {
     type: string
     text?: string
@@ -32,12 +37,8 @@ const props = defineProps<{
   }[]
 }>()
 
-const advanceAmount = computed(() => (props.totalAmount * props.advancePercentage) / 100)
-const balanceAmount = computed(() => props.totalAmount - advanceAmount.value)
-
 const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
-
 const formatTime = (val: string) => {
   if (!val) return ''
   if (val.toUpperCase().includes('AM') || val.toUpperCase().includes('PM')) return val
@@ -63,9 +64,9 @@ const styles = {
   footer: { position: 'absolute' as const, bottom: 40, left: 40, right: 40, flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   footerText: { fontSize: 12, fontWeight: 'bold' as const },
   titleContainer: { marginBottom: 16, alignItems: 'flex-end' as const },
-  metaGridRow: { flexDirection: 'row' as const, marginTop: 8, gap: 8 },
-  metaGridLabel: { fontWeight: 'bold' as const, fontSize: 12, textAlign: 'left' as const, whitespace: 'nowrap' },
-  metaGridValue: { fontSize: 12, textAlign: 'right' as const, width: 75, whitespace: 'nowrap' },
+  metaGridRow: { flexDirection: 'row' as const, width: 160, marginTop: 8 },
+  metaGridLabel: { width: 80, fontWeight: 'bold' as const, fontSize: 12 },
+  metaGridValue: { flex: 1, fontSize: 12, textAlign: 'right' as const },
   infoBanner: { flexDirection: 'row' as const, marginHorizontal: -40, padding: '16 40' },
   bannerCol: { flex: 1, paddingRight: 16 },
   labelBold: { fontWeight: 'bold' as const, marginBottom: 4, fontSize: 12 },
@@ -76,7 +77,7 @@ const styles = {
   colDesc: { flex: 3.5, paddingRight: 16 },
   colRate: { flex: 1.5, textAlign: 'right' as const, fontSize: 12 },
   colQty: { flex: 1, textAlign: 'center' as const, fontSize: 12 },
-  colAmount: { flex: 1.5, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
+  colAmount: { flex: 3, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
   colLeftSpan: { flex: 8, paddingRight: 16 },
   bulletRow: { flexDirection: 'row' as const, marginBottom: 4 },
   bullet: { width: 12, color: '#555555', fontSize: 12 },
@@ -132,20 +133,26 @@ const styles = {
           </Text>
 
           <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
-          <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }">GSTIN: {{ organizationGstin }}</Text>
-          <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
+          <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }"> GSTIN: {{ organizationGstin }} </Text>
+          <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }"> PAN: {{ organizationPan }} </Text>
         </View>
 
         <View :style="styles.metaSection">
           <View :style="styles.titleContainer">
-            <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">Contractor Agreement</Text>
-            <Text :style="{ fontSize: 12, marginTop: 16 }">Photography & Videography</Text>
+            <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const, textAlign: 'right' }"> Contractor Agreement </Text>
+            <Text :style="{ fontSize: 12, marginTop: 16 }">Project {{ projectTitle }}</Text>
           </View>
 
           <View :style="styles.metaGridRow">
-            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Date</Text>
+            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
             <Text :style="styles.metaGridValue">
               {{ formatDate(agreementDate) }}
+            </Text>
+          </View>
+          <View :style="styles.metaGridRow">
+            <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
+            <Text :style="styles.metaGridValue">
+              {{ formatDate(expiresIn) }}
             </Text>
           </View>
         </View>
@@ -156,65 +163,47 @@ const styles = {
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Service Provider</Text>
           <Text :style="{ fontSize: 12 }">{{ contractorName }}</Text>
           <Text :style="{ fontSize: 12 }">{{ contractorRole }}</Text>
+          <Text :style="{ fontSize: 12 }">{{ serviceCategory }}</Text>
+        </View>
+        <View :style="styles.bannerCol">
+          <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Contact Details</Text>
+          <Text :style="{ fontSize: 12 }">Phone No: {{ contractorPhone }}</Text>
+          <Text :style="{ fontSize: 12 }">Email: {{ contractorEmail }}</Text>
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Project Details</Text>
-          <Text :style="{ fontSize: 12 }">{{ projectName }}</Text>
-          <Text :style="{ fontSize: 12 }"> Date: {{ formatDate(shootDates) }} </Text>
-        </View>
-        <View :style="styles.bannerCol">
-          <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Logistics</Text>
-          <Text :style="{ fontSize: 12 }">{{ location }}</Text>
+          <Text :style="{ fontSize: 12 }">Date: {{ formatDate(shootDate) }}</Text>
+          <Text :style="{ fontSize: 12 }">Location: {{ shootLocation }}</Text>
           <Text :style="{ fontSize: 12 }">Call Time: {{ formatTime(callTime) }}</Text>
         </View>
       </View>
 
-      <Text :style="styles.introText">
-        This Agreement is entered into as of <Text :style="styles.bold">{{ formatDate(agreementDate) }}</Text
-        >, by and between <Text :style="styles.bold">{{ organizationName }}</Text> ("Company") and <Text :style="styles.bold">{{ contractorName }}</Text> ("Service Provider").
-      </Text>
-
-      <!-- Section 1 -->
-      <View :wrap="false">
-        <Text :style="styles.termHeading">1. Scope of Work & Deliverables</Text>
-        <Text :style="styles.termParagraph">The Service Provider agrees to provide photography and/or videography services for the project detailed above, including the following deliverables:</Text>
-
-        <View :style="styles.list">
-          <View v-for="(item, index) in deliverables" :key="index" :style="styles.bulletRow">
-            <Text :style="styles.bulletText">- {{ item }}</Text>
-          </View>
-        </View>
+      <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 24 }">SCOPE OF WORK & DELIVERABLES</Text>
+      <View :style="styles.tableHeader">
+        <Text :style="{ width: 40, fontWeight: 'bold' as const, fontSize: 12 }">No.</Text>
+        <Text :style="{ flex: 1, fontWeight: 'bold' as const, fontSize: 12 }">Description</Text>
       </View>
 
-      <!-- Section 2 -->
-      <View :wrap="false">
-        <Text :style="styles.termHeading">2. Compensation & Payment Terms</Text>
-        <Text :style="styles.termParagraph"
-          >The Company agrees to pay the Service Provider a total fee of <Text :style="styles.bold">{{ formatCurrency(totalAmount) }}</Text> for the services described above.</Text
-        >
-        <View :style="styles.list">
-          <View :style="styles.bulletRow">
-            <Text :style="styles.bulletText"
-              >- <Text :style="styles.bold">Advance:</Text> An advance payment of {{ advancePercentage }}% ({{ formatCurrency(advanceAmount) }}) shall be paid to the Service Provider prior to project
-              commencement.</Text
-            >
-          </View>
-          <View :style="styles.bulletRow">
-            <Text :style="styles.bulletText"
-              >- <Text :style="styles.bold">Remaining Balance:</Text> The remaining balance of {{ formatCurrency(balanceAmount) }} will be paid within 2-3 business days after the Company receives the
-              final payment amount from the client.</Text
-            >
-          </View>
-          <View :style="styles.bulletRow">
-            <Text :style="styles.bulletText"
-              >- <Text :style="styles.bold">Expenses:</Text> The Company shall not reimburse the Service Provider for out-of-pocket expenses (e.g., travel, parking, equipment rentals) incurred during
-              the project if not decided formally via mail or other channel.</Text
-            >
-          </View>
-        </View>
+      <View v-for="(item, index) in deliverables" :key="index" :style="styles.tableRow" :wrap="false">
+        <Text :style="{ width: 40, fontSize: 12 }">{{ String(index + 1).padStart(2, '0') }}</Text>
+        <Text :style="{ flex: 1, fontSize: 12, lineHeight: 1.4 }">{{ item }}</Text>
       </View>
 
-      <!-- Dynamic Terms Engine (Sections 3+) -->
+      <View :style="styles.financialRow" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Total Fee</Text>
+        <Text :style="styles.colAmount">{{ formatCurrency(totalAmount) }}</Text>
+      </View>
+
+      <View v-if="advanceAmount > 0" :style="styles.financialRow" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, color: '#888888', fontSize: 12 }"> Advance ({{ advancePercentage }}%) </Text>
+        <Text :style="{ ...styles.colAmount, color: '#888888' }">{{ formatCurrency(advanceAmount) }}</Text>
+      </View>
+
+      <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33', marginBottom: 32 }" :wrap="false">
+        <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Remaining Balance</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ formatCurrency(balanceAmount) }}</Text>
+      </View>
+
       <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
         <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
         <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>

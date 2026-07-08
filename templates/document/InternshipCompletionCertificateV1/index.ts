@@ -89,6 +89,8 @@ const placeholders: InternshipCompletionCertificatePayload = {
 
 registerTemplate({
   id: 'internship-completion-certificate',
+  label: 'Internship Completion Certificate',
+  description: 'The formal proof of completion, including your start and end dates, role, and an authorized signature.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
     { name: 'IslandMoments', path: './asset/IslandMoments-Regular.ttf' },

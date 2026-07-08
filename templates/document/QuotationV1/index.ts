@@ -18,16 +18,16 @@ export const quotationSchema = z.object({
     quoteDate: z.date(),
     shootDate: z.date(),
     shootLocation: z.string(),
+    deliverables: z.array(
+      z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        points: z.array(z.string()).optional(),
+        quantity: z.number().min(0).optional(),
+        rate: z.number().min(0).optional(),
+      })
+    ),
   }),
-  deliverables: z.array(
-    z.object({
-      title: z.string().optional(),
-      description: z.string().optional(),
-      points: z.array(z.string()).optional(),
-      quantity: z.number().min(0).optional(),
-      rate: z.number().min(0).optional(),
-    })
-  ),
   financials: z
     .object({
       discountLabel: z.string().optional(),
@@ -81,7 +81,7 @@ export const quotationSchema = z.object({
 
 export type QuotationPayload = z.infer<typeof quotationSchema>
 
-type DeliverableInput = QuotationPayload['deliverables'][number]
+type DeliverableInput = QuotationPayload['project']['deliverables'][number]
 
 const placeholders: QuotationPayload = {
   pricingModel: 'project',
@@ -97,11 +97,11 @@ const placeholders: QuotationPayload = {
     quoteDate: new Date(),
     shootDate: new Date(),
     shootLocation: 'Gotham City',
+    deliverables: [
+      { title: 'Premium Brand Strategy', quantity: 1, rate: 5000, description: 'Premium Brand Strategy' },
+      { title: 'UI/UX Design System', quantity: 1, rate: 8500, points: [] },
+    ],
   },
-  deliverables: [
-    { title: 'Premium Brand Strategy', quantity: 1, rate: 5000, description: 'Premium Brand Strategy' },
-    { title: 'UI/UX Design System', quantity: 1, rate: 8500, points: [] },
-  ],
   financials: {
     discountLabel: 'Discount',
     discountValue: 0,
@@ -150,6 +150,8 @@ const placeholders: QuotationPayload = {
 
 registerTemplate({
   id: 'quotation',
+  label: 'Quotation',
+  description: 'The estimated pricing, scope of work, and terms provided to the client before finalizing the agreement.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
     { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
@@ -187,23 +189,23 @@ registerTemplate({
 
       clientName: rawData.contact?.name || p.contact.name,
       clientAddress: rawData.contact?.address || p.contact.address,
-      contactPhone: rawData.contact?.phone || p.contact.phone,
-      contactEmail: rawData.contact?.email || p.contact.email,
+      clientPhone: rawData.contact?.phone || p.contact.phone,
+      clientEmail: rawData.contact?.email || p.contact.email,
 
-      shootDate: rawData.project?.shootDate || p.project.shootDate,
-      shootAddress: rawData.project?.shootLocation || p.project.shootLocation,
       projectTitle: rawData.project?.title || p.project.title,
       projectQuoteNumber: rawData.project?.quoteNumber || p.project.quoteNumber,
       projectIssuedDate: rawData.project?.quoteDate || p.project.quoteDate,
-      expiresIn: rawData.expiresIn || p.expiresIn,
-
-      deliverables: (rawData.deliverables || p.deliverables).map((item: DeliverableInput) => ({
+      shootDate: rawData.project?.shootDate || p.project.shootDate,
+      shootAddress: rawData.project?.shootLocation || p.project.shootLocation,
+      deliverables: (rawData.project.deliverables || p.project.deliverables).map((item: DeliverableInput) => ({
         title: item.title ?? '',
         description: item.description ?? '',
         points: Array.isArray(item.points) ? item.points.filter((pt: string) => pt.trim() !== '') : [],
         rate: item.rate ?? 0,
         quantity: item.quantity ?? 1,
       })),
+
+      expiresIn: rawData.expiresIn || p.expiresIn,
 
       discountLabel: financials?.discountLabel || 'Discount',
       discountValue: financials?.discountValue || 0,

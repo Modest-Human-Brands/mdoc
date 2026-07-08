@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
     const toDownload = getQuery(event).download
+    const requestType = getQuery(event).type
 
     if (!id) {
       throw new HTTPError({
@@ -24,6 +25,26 @@ export default defineEventHandler(async (event) => {
     const baseTitle = notionTextStringify(properties.Name.title)
     const ext = mime.extension(properties['Mime Type'].select.name) || 'pdf'
     const currentStatus = properties.Status?.status?.name
+    const fsStorage = useStorage('fs')
+
+    // Handle image preview requests
+    if (requestType === 'image') {
+      const imageFileName = `${baseTitle}.png`
+
+      event.res.headers.set('Content-Type', 'image/png')
+      event.res.headers.set('Content-Disposition', `inline; filename="${imageFileName}"`)
+
+      const imageBuffer = await fsStorage.getItemRaw<Buffer>(imageFileName)
+
+      if (!imageBuffer) {
+        throw new HTTPError({
+          statusCode: 404,
+          statusMessage: `Preview image missing for document ID "${id}"`,
+        })
+      }
+
+      return imageBuffer
+    }
 
     let targetFileName = `${baseTitle}.${ext}`
 
@@ -56,7 +77,6 @@ export default defineEventHandler(async (event) => {
     event.res.headers.set('X-Created-At', created_time)
     event.res.headers.set('X-Updated-At', last_edited_time)
 
-    const fsStorage = useStorage('fs')
     let pdfBuffer = await fsStorage.getItemRaw<Buffer>(targetFileName)
 
     if (!pdfBuffer && targetFileName !== `${baseTitle}.${ext}`) {

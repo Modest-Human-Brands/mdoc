@@ -146,7 +146,7 @@ const styles = {
         <View :style="styles.metaSection">
           <View :style="styles.titleContainer">
             <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">INVOICE</Text>
-            <Text :style="{ fontSize: 12, marginTop: 16, textAlign: 'right' }">{{ projectTitle }}</Text>
+            <Text :style="{ fontSize: 12, marginTop: 16, textAlign: 'right' }">Project {{ projectTitle }}</Text>
           </View>
 
           <View :style="styles.metaGridRow">

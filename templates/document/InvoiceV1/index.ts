@@ -12,19 +12,22 @@ export const invoiceSchema = z.object({
   }),
   project: z.object({
     title: z.string(),
+    quoteNumber: z.string(),
+    quoteDate: z.date(),
     invoiceNumber: z.string(),
-    quotationNumber: z.string(),
     invoiceDate: z.date(),
+    shootDate: z.date(),
+    shootLocation: z.string(),
+    deliverables: z.array(
+      z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        points: z.array(z.string()).optional(),
+        quantity: z.number().min(0).optional(),
+        rate: z.number().min(0).optional(),
+      })
+    ),
   }),
-  deliverables: z.array(
-    z.object({
-      title: z.string().optional(),
-      description: z.string().optional(),
-      points: z.array(z.string()).optional(),
-      quantity: z.number().min(0).optional(),
-      rate: z.number().min(0).optional(),
-    })
-  ),
   financials: z
     .object({
       discountLabel: z.string().optional(),
@@ -84,15 +87,18 @@ const placeholders: InvoicePayload = {
     phone: '+1 555-0199',
   },
   project: {
-    title: 'Photography and Videography',
+    title: 'Test Project',
+    quoteNumber: 'RCP-Q-78-2',
+    quoteDate: new Date(),
+    shootDate: new Date(),
+    shootLocation: 'Gotham City',
     invoiceNumber: 'RCP-I-78-2-1',
-    quotationNumber: 'RCP-Q-78-2',
     invoiceDate: new Date(),
+    deliverables: [
+      { title: 'Premium Brand Strategy', quantity: 1, rate: 5000, description: 'Final project delivery' },
+      { title: 'UI/UX Design System', quantity: 1, rate: 8500, points: [] },
+    ],
   },
-  deliverables: [
-    { title: 'Premium Brand Strategy', quantity: 1, rate: 5000, description: 'Final project delivery' },
-    { title: 'UI/UX Design System', quantity: 1, rate: 8500, points: [] },
-  ],
   financials: {
     discountLabel: 'Discount',
     discountValue: 0,
@@ -138,6 +144,8 @@ const placeholders: InvoicePayload = {
 
 registerTemplate({
   id: 'invoice',
+  label: 'Billing Invoice',
+  description: 'The official document outlining the charges, payment terms, and amount due.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
     { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
@@ -177,18 +185,17 @@ registerTemplate({
       contactEmail: rawData.contact?.email || p.contact.email,
 
       projectTitle: rawData.project?.title || p.project.title,
+      projectQuotationNumber: rawData.project?.quoteNumber || p.project.quoteNumber,
       projectInvoiceNumber: rawData.project?.invoiceNumber || p.project.invoiceNumber,
-      projectQuotationNumber: rawData.project?.quotationNumber || p.project.quotationNumber,
       projectIssuedDate: rawData.project?.invoiceDate || p.project.invoiceDate,
-      dueDate: rawData.dueDate || p.dueDate,
-
-      deliverables: (rawData.deliverables || p.deliverables).map((item) => ({
+      deliverables: (rawData.project.deliverables || p.project.deliverables).map((item) => ({
         title: item.title ?? '',
         description: item.description ?? '',
         points: Array.isArray(item.points) ? item.points.filter((pt: string) => pt.trim() !== '') : [],
         rate: item.rate ?? 0,
         quantity: item.quantity ?? 1,
       })),
+      dueDate: rawData.dueDate || p.dueDate,
 
       discountLabel: financials?.discountLabel || 'Discount',
       discountValue: financials?.discountValue || 0,

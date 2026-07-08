@@ -5,8 +5,9 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
 
 import notion from '~/server/utils/notion'
-import type { NotionDB } from '~/server/types'
 import { templateRegistry } from '~/server/utils/template-registry'
+import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
+import type { NotionDB } from '~/server/types'
 import type { RequestBody } from '~/server/types/templates'
 
 import '~/templates/document'
@@ -27,13 +28,20 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const finalizedInputProps = targetTemplate.transformPayload(rawData)
-
     const outputPath = `./static/${fileName}.pdf`
 
-    await renderToFile(h(targetTemplate.component as Component, finalizedInputProps), outputPath)
+    // Generate the PDF file
+    await renderToFile(h(targetTemplate.component as Component, targetTemplate.transformPayload(rawData)), outputPath)
 
-    const file = await fsStorage.getItemRaw<Buffer<ArrayBufferLike>>(`${fileName}.pdf`)
+    // Read the newly generated PDF buffer
+    const file = await fsStorage.getItemRaw<Buffer>(`${fileName}.pdf`)
+    if (!file) {
+      throw new Error('Generated PDF could not be found.')
+    }
+
+    const pngBuffer = await generatePdfThumbnail(file)
+
+    await fsStorage.setItemRaw(`${fileName}.png`, pngBuffer)
 
     const notionProperties: any = {
       Name: { title: [{ text: { content: fileName } }] },

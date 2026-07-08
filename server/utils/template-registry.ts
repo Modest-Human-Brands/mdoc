@@ -21,6 +21,8 @@ export interface DocumentField {
 
 export interface TemplateDefinition {
   id: string
+  label: string
+  description: string
   fonts?: Array<{ name: string; path: string }>
   component: Component
   schema: z.ZodObject<any, any>

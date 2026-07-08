@@ -17,8 +17,8 @@ const props = defineProps<{
   organizationColorAccent: string
   clientName: string
   clientAddress: string
-  contactPhone: string
-  contactEmail: string
+  clientPhone: string
+  clientEmail: string
   shootDate: string | Date
   shootAddress: string
   projectTitle: string
@@ -71,11 +71,11 @@ const styles = {
   sectionTitle: { fontSize: 24, textAlign: 'center' as const, fontWeight: 'bold' as const },
   tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#000000', paddingBottom: 8, marginBottom: 16 },
   tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#EEEEEE', paddingVertical: 12 },
-  colName: { flex: 2, paddingRight: 16, fontWeight: 'bold' as const, fontSize: 12 },
-  colDesc: { flex: 3.5, paddingRight: 16 },
-  colRate: { flex: 1.5, textAlign: 'right' as const, fontSize: 12 },
-  colQty: { flex: 1, textAlign: 'center' as const, fontSize: 12 },
-  colAmount: { flex: 1.5, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
+  colName: { flex: 4, paddingRight: 16, fontWeight: 'bold' as const, fontSize: 12 },
+  colDesc: { flex: 8, paddingRight: 16 },
+  colRate: { flex: 3, textAlign: 'left' as const, fontSize: 12 },
+  colQty: { flex: 1, textAlign: 'right' as const, fontSize: 12 },
+  colAmount: { flex: 3, textAlign: 'right' as const, fontWeight: 'bold' as const, fontSize: 12 },
   colLeftSpan: { flex: 8, paddingRight: 16 },
   bulletRow: { flexDirection: 'row' as const, marginBottom: 4 },
   bullet: { width: 12, color: '#555555', fontSize: 12 },
@@ -137,7 +137,7 @@ const styles = {
         <View :style="styles.metaSection">
           <View :style="styles.titleContainer">
             <Text :style="{ fontSize: 24, color: props.organizationColorAccent, fontWeight: 'bold' as const }">Quotation Agreement</Text>
-            <Text :style="{ fontSize: 12, marginTop: 16 }">{{ projectTitle }}</Text>
+            <Text :style="{ fontSize: 12, marginTop: 16 }">Project {{ projectTitle }}</Text>
           </View>
 
           <View :style="styles.metaGridRow">
@@ -167,8 +167,8 @@ const styles = {
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Contact Details</Text>
-          <Text :style="{ fontSize: 12 }">Phone No: {{ contactPhone }}</Text>
-          <Text :style="{ fontSize: 12 }">Email: {{ contactEmail }}</Text>
+          <Text :style="{ fontSize: 12 }">Phone No: {{ clientPhone }}</Text>
+          <Text :style="{ fontSize: 12 }">Email: {{ clientEmail }}</Text>
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Shoot Details</Text>
@@ -182,10 +182,14 @@ const styles = {
 
       <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">DELIVERABLES</Text>
       <View :style="styles.tableHeader">
-        <Text :style="styles.colName">{{ pricingModel === 'day' ? 'Role / Phase' : 'Name of Service' }}</Text>
+        <Text :style="styles.colName">{{ pricingModel === 'day' ? 'Phase' : 'Name of Service' }}</Text>
         <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
-        <Text :style="{ ...styles.colRate, fontWeight: 'bold', fontSize: 12 }">{{ pricingModel === 'day' ? 'Day Rate' : 'Unit Price' }}</Text>
-        <Text :style="{ ...styles.colQty, fontWeight: 'bold', fontSize: 12 }">{{ pricingModel === 'day' ? 'Days' : 'Qty' }}</Text>
+        <Text :style="{ ...styles.colRate, fontWeight: 'bold', fontSize: 12 }">
+          {{ pricingModel === 'day' ? 'Day Rate' : 'Unit Price' }}
+        </Text>
+        <Text :style="{ ...styles.colQty, fontWeight: 'bold', fontSize: 12 }">
+          {{ pricingModel === 'day' ? 'Days' : 'Qty' }}
+        </Text>
         <Text :style="styles.colAmount">Amount</Text>
       </View>
 
@@ -201,14 +205,14 @@ const styles = {
             <Text :style="styles.bulletText">{{ item.description }}</Text>
           </View>
         </View>
-        <Text :style="styles.colRate">{{ formatCurrency(item.rate) }}</Text>
+        <Text :style="styles.colRate">{{ item.rate }}</Text>
         <Text :style="styles.colQty">{{ item.quantity }}</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(item.amount) }}</Text>
+        <Text :style="styles.colAmount">{{ item.amount }}</Text>
       </View>
 
       <View :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Subtotal</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(subtotal) }}</Text>
+        <Text :style="styles.colAmount">{{ subtotal }}</Text>
       </View>
 
       <View v-if="discountAmount > 0" :style="styles.financialRow" :wrap="false">

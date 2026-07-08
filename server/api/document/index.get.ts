@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
           contact: contactDetails,
           project: projectDetails,
           organizationId: properties.Organization?.relation?.[0]?.id || null,
-          previewUrl: `/api/document/${name}/content`,
+          previewUrl: `${config.public.siteUrl}/api/document/${id}/content`,
           createdAt: created_time,
           updatedAt: last_edited_time,
         }
