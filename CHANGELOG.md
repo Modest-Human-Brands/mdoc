@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.1
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.0...v0.2.1)
+
+### 🩹 Fixes
+
+- **pdf:** Set worker source for PDF.js to ensure proper rendering ([de12a2b](https://github.com/Modest-Human-Brands/mdoc/commit/de12a2b))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.0
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.27...v0.2.0)
