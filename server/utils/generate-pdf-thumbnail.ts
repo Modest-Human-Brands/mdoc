@@ -1,6 +1,10 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { createCanvas } from '@napi-rs/canvas'
 
+import 'pdfjs-dist/legacy/build/pdf.worker.mjs'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.mjs'
+
 export default async function (pdfBuffer: Buffer | ArrayBuffer | Uint8Array, scale: number = 1.5): Promise<Buffer> {
   const pdfDoc = await pdfjsLib.getDocument({
     data: new Uint8Array(pdfBuffer as ArrayBuffer),
