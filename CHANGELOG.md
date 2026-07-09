@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.0
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.27...v0.2.0)
+
+### 🚀 Enhancements
+
+- **signing:** ⚠️ Implement client and server-side signing endpoints with session management ([573a64d](https://github.com/Modest-Human-Brands/mdoc/commit/573a64d))
+
+#### ⚠️ Breaking Changes
+
+- **signing:** ⚠️ Implement client and server-side signing endpoints with session management ([573a64d](https://github.com/Modest-Human-Brands/mdoc/commit/573a64d))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.1.27
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.1.26...v0.1.27)
