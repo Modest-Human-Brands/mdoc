@@ -23,9 +23,7 @@ export default defineEventHandler(async (event) => {
       return { error: `Template '${templateId}' not found.` }
     }
 
-    const transformedProps = templateDef.transformPayload(variables || {})
-
-    const pdfBuffer = await renderToBuffer(h(templateDef.component, transformedProps))
+    const pdfBuffer = await renderToBuffer(h(templateDef.component, await templateDef.transformPayload(variables || {})))
 
     const pdfBase64 = Buffer.isBuffer(pdfBuffer) ? pdfBuffer.toString('base64') : Buffer.from(pdfBuffer).toString('base64')
 

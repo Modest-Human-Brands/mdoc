@@ -27,7 +27,7 @@ export interface TemplateDefinition {
   component: Component
   schema: z.ZodObject<any, any>
   placeholders: Record<string, any>
-  transformPayload: (rawData: any) => Record<string, any>
+  transformPayload: (rawData: any) => Promise<Record<string, any>>
   signerFields: DocumentField[]
 }
 

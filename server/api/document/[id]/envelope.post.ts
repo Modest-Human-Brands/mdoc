@@ -1,10 +1,8 @@
 import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
-import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
 
 const envelopeSchema = z.object({
-  expiresInDays: z.number().min(1).max(30).default(7),
   routingType: z.enum(['SEQUENTIAL', 'PARALLEL']).default('SEQUENTIAL'),
   signers: z
     .array(
@@ -24,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
-    const { signers, routingType, expiresInDays } = await readValidatedBody(event, envelopeSchema)
+    const { signers, routingType } = await readValidatedBody(event, envelopeSchema)
 
     const sortedSigners = signers.sort((a, b) => a.order - b.order)
     const nextSigner = sortedSigners[0]

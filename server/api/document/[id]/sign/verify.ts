@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
       message: verificationResult ? 'Document is intact and signature is valid.' : 'Document is tampered or signature is invalid.',
     }
   } catch (error: any) {
-    console.error(`API /document/[id]/verify-signature POST`, error)
+    console.error(`API /document/[id]/sign/verify POST`, error)
 
     if (error instanceof Error && 'statusCode' in error) {
       throw error

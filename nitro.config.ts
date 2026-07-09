@@ -19,7 +19,7 @@ export default defineConfig({
       buildTime: '',
     },
     public: {
-      siteUrl: '',
+      docUrl: '',
     },
     private: {
       notionDbId: '',
@@ -31,6 +31,10 @@ export default defineConfig({
     fs: {
       driver: 'fs',
       base: './static',
+    },
+    data: {
+      driver: 'fs',
+      base: './.data',
     },
   },
   routeRules: {

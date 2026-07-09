@@ -159,7 +159,7 @@ registerTemplate({
   component: Component,
   schema: quotationSchema,
   placeholders,
-  transformPayload: (rawData: QuotationPayload) => {
+  transformPayload: async (rawData: QuotationPayload) => {
     const p = placeholders
     const org = rawData.organization || p.organization
     const orgBranding = org?.branding || p.organization!.branding

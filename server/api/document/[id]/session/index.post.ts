@@ -8,9 +8,18 @@ import notionTextStringify from '~/server/utils/notion-text-stringify'
 
 const sessionSchema = z.object({
   signerEmail: z.email(),
-  expiresIn: z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
-    message: 'Invalid date format for expiresIn',
-  }),
+  expiresIn: z
+    .string()
+    .nullish()
+    .refine(
+      (val) => {
+        if (!val) return true
+        return !Number.isNaN(Date.parse(val))
+      },
+      {
+        message: 'Invalid date format for expiresIn',
+      }
+    ),
 })
 
 export default defineEventHandler(async (event) => {
@@ -52,27 +61,38 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const expirationDate = new Date(expiresIn)
-    const expiresInSeconds = Math.floor((expirationDate.getTime() - Date.now()) / 1000)
+    let expiresInSeconds: number | undefined = undefined
+    let expiresAtStr: string | null = null
 
-    if (expiresInSeconds <= 0) {
-      throw new HTTPError({ statusCode: 400, statusMessage: 'Expiration date must be in the future.' })
+    if (expiresIn) {
+      const expirationDate = new Date(expiresIn)
+      expiresInSeconds = Math.floor((expirationDate.getTime() - Date.now()) / 1000)
+
+      if (expiresInSeconds <= 0) {
+        throw new HTTPError({ statusCode: 400, statusMessage: 'Expiration date must be in the future.' })
+      }
+      expiresAtStr = expirationDate.toISOString()
     }
 
-    const token = jwt.sign(
+    const jwtOptions: jwt.SignOptions = {}
+    if (expiresInSeconds !== undefined) {
+      jwtOptions.expiresIn = expiresInSeconds
+    }
+
+    const sessionToken = jwt.sign(
       {
         documentId: envelopeId,
         signerEmail: targetSigner.email,
         role: targetSigner.role,
       },
       config.private.jwtSecret,
-      { expiresIn: expiresInSeconds }
+      jwtOptions
     )
 
     return {
       signer: targetSigner.email,
-      expiresAt: expirationDate.toISOString(),
-      token,
+      expiresAt: expiresAtStr,
+      sessionToken,
     }
   } catch (error: any) {
     console.error(`API /document/id/session POST`, error)

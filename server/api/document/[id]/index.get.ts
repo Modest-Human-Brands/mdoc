@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
       nextSigner: properties['Next Signer']?.email || null,
       routingQueue,
       categories: properties.Category?.multi_select?.map((c: any) => c.name) || [],
-      previewUrl: `${config.public.siteUrl}/api/document/${document.id}/content`,
+      previewUrl: `${config.public.docUrl}/api/document/${document.id}/content`,
       createdAt: created_time,
       updatedAt: last_edited_time,
       rawData,

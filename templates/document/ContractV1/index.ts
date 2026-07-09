@@ -140,7 +140,7 @@ registerTemplate({
   schema: contractSchema,
   placeholders,
   component: Component,
-  transformPayload: (rawData: ContractPayload) => {
+  transformPayload: async (rawData: ContractPayload) => {
     const p = placeholders
     const org = rawData.organization || p.organization
     const orgBranding = org?.branding || p.organization!.branding

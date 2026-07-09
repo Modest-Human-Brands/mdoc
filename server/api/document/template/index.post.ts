@@ -30,10 +30,8 @@ export default defineEventHandler(async (event) => {
 
     const outputPath = `./static/${fileName}.pdf`
 
-    // Generate the PDF file
-    await renderToFile(h(targetTemplate.component as Component, targetTemplate.transformPayload(rawData)), outputPath)
+    await renderToFile(h(targetTemplate.component as Component, await targetTemplate.transformPayload(rawData)), outputPath)
 
-    // Read the newly generated PDF buffer
     const file = await fsStorage.getItemRaw<Buffer>(`${fileName}.pdf`)
     if (!file) {
       throw new Error('Generated PDF could not be found.')

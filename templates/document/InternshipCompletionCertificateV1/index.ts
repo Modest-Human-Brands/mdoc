@@ -1,6 +1,16 @@
 import Component from './component.vue'
 import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
+import sharp from 'sharp'
+
+async function getTintedBackground(imageString: string, hexColor: string): Promise<string> {
+  // Tint the image and output as a base64 Data URL for the <Image> tag
+  const tintedBuffer = await sharp(imageString)
+    .tint(hexColor) // Tints grayscale/monochrome images with the specified hex
+    .toBuffer()
+
+  return `data:image/png;base64,${tintedBuffer.toString('base64')}`
+}
 
 export const internshipCompletionCertificateSchema = z.object({
   recipientName: z.string(),
@@ -99,15 +109,20 @@ registerTemplate({
   schema: internshipCompletionCertificateSchema,
   placeholders,
   component: Component,
-  transformPayload: (data: InternshipCompletionCertificatePayload) => {
+  transformPayload: async (rawData: InternshipCompletionCertificatePayload) => {
     const p = placeholders
+    const org = rawData.organization || p.organization
+    const orgBranding = org?.branding || p.organization!.branding
 
     return {
-      recipientName: data.recipientName || p.recipientName,
-      bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${data.recipientRole || p.recipientRole} towards ${data.scopeOfWork || p.scopeOfWork} during ${data.startDate || p.startDate} - ${data.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${data.organization.name || p.organization.name}.`,
-      organizationName: data?.organization?.name || p.organization.name,
-      organizationBrandingLogo: data?.organization?.branding?.logo || p.organization.branding.logo,
-      basePdfBackground: './asset/internship-completion-certificate-v1_0001.svg',
+      recipientName: rawData.recipientName || p.recipientName,
+      bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${rawData.recipientRole || p.recipientRole} towards ${rawData.scopeOfWork || p.scopeOfWork} during ${rawData.startDate || p.startDate} - ${rawData.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${rawData.organization.name || p.organization.name}.`,
+      organizationName: rawData?.organization?.name || p.organization.name,
+      organizationLogo: orgBranding?.logo || p.organization.branding.logo,
+      organizationFont: orgBranding?.font || p.organization!.branding!.font,
+      organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
+      organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
+      basePdfBackground: await getTintedBackground('./asset/internship-completion-certificate-v1_0001.svg', orgBranding?.color?.accent || p.organization!.branding!.color!.accent),
     }
   },
   signerFields: [

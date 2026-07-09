@@ -153,7 +153,7 @@ registerTemplate({
   component: Component,
   schema: invoiceSchema,
   placeholders,
-  transformPayload: (rawData: InvoicePayload) => {
+  transformPayload: async (rawData: InvoicePayload) => {
     const p = placeholders
     const org = rawData.organization || p.organization
     const orgBranding = org?.branding || p.organization!.branding
