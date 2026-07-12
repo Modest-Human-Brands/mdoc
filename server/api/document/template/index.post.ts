@@ -47,13 +47,6 @@ export default defineEventHandler(async (event) => {
       'Mime Type': { select: { name: 'application/pdf' } },
       SizeBytes: { number: file?.byteLength || 0 },
       Status: { status: { name: 'Draft' } },
-      Data: {
-        rich_text: [
-          {
-            text: { content: JSON.stringify(rawData) },
-          },
-        ],
-      },
     }
 
     if (orgId) {
@@ -68,9 +61,25 @@ export default defineEventHandler(async (event) => {
       notionProperties.Contact = { relation: [{ id: contactId }] }
     }
 
+    const rawDataString = JSON.stringify(rawData)
+    const chunks = rawDataString.match(/[\s\S]{1,2000}/g) || []
+
+    const childrenBlocks: any[] = []
+    for (let i = 0; i < chunks.length; i += 100) {
+      childrenBlocks.push({
+        object: 'block',
+        type: 'code',
+        code: {
+          language: 'json',
+          rich_text: chunks.slice(i, i + 100).map((chunk) => ({ text: { content: chunk } })),
+        },
+      })
+    }
+
     const record = await notion.pages.create({
       parent: { data_source_id: notionDbId.document },
       properties: notionProperties,
+      children: childrenBlocks,
     })
 
     return {
