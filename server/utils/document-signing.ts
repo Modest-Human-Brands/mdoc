@@ -19,11 +19,11 @@ export interface SignerDetails {
 export interface SignSession {
   documentId: string
   patchedPdfHex: string
-  ltIdx: number
-  gtIdx: number
-  signerInfoDerHex: string
-  certificateDerHex: string
-  certificateChainDerHex: string[]
+  ltIdx?: number
+  gtIdx?: number
+  signerInfoDerHex?: string
+  certificateDerHex?: string
+  certificateChainDerHex?: string[]
   ctx: {
     document: NotionDocument
     signers: SignerDetails[]

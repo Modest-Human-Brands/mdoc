@@ -13,7 +13,7 @@ import { patchByteRange, extractSigningContent } from '~/server/utils/pdf-byte-r
 const prepareSchema = z.object({
   sessionToken: z.string(),
   fields: z.record(z.string(), z.union([z.string(), z.boolean()])).default({}),
-  certificateDerHex: z.string(),
+  certificateDerHex: z.string().optional(),
   certificateChainDerHex: z.array(z.string()).default([]),
   telemetry: z.object({ ipAddress: z.string().optional(), userAgent: z.string().optional() }).optional(),
 })
@@ -40,7 +40,6 @@ export default defineEventHandler(async (event) => {
     const pdfDoc = await applyFieldStamps(pdfBuffer, ctx.currentSigner, signatureFields, inputFields)
 
     const sigField = signatureFields.find((f: any) => f.type === 'SIGNATURE' || f.type === 'INITIALS')
-    const widgetPageIdx = sigField && typeof sigField.pageIndex === 'number' ? Math.max(0, sigField.pageIndex - 1) : 0
 
     pdflibAddPlaceholder({
       pdfDoc,
@@ -50,30 +49,43 @@ export default defineEventHandler(async (event) => {
       location: 'Global',
       signatureLength: 262_144, //room for leaf + chain
       widgetRect: sigField ? [sigField.x, sigField.y, sigField.x + sigField.width, sigField.y + sigField.height] : undefined,
-      // widgetPage: widgetPageIdx,
     })
 
     const placeholderBytes = Buffer.from(await pdfDoc.save())
 
-    const { patchedBytes, ltIdx, gtIdx } = patchByteRange(placeholderBytes)
-    const content = extractSigningContent(patchedBytes, ltIdx, gtIdx)
-    const contentDigest = crypto.createHash('sha256').update(content).digest()
+    let digestHex: string | undefined = undefined
+    let signerInfoDerHex: string | undefined = undefined
+    let pdfToStoreHex = placeholderBytes.toString('hex')
+    let storedLtIdx: number | undefined = undefined
+    let storedGtIdx: number | undefined = undefined
 
-    const certDer = Buffer.from(certificateDerHex, 'hex')
-    const { signerInfoDer, digestToSign } = await buildPreparedSignerInfo({
-      certDer: certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength),
-      contentDigest,
-    })
+    if (certificateDerHex) {
+      const { patchedBytes, ltIdx, gtIdx } = patchByteRange(placeholderBytes)
+      const content = extractSigningContent(patchedBytes, ltIdx, gtIdx)
+      const contentDigest = crypto.createHash('sha256').update(content).digest()
+
+      const certDer = Buffer.from(certificateDerHex, 'hex')
+      const { signerInfoDer, digestToSign } = await buildPreparedSignerInfo({
+        certDer: certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength),
+        contentDigest,
+      })
+
+      digestHex = digestToSign.toString('hex')
+      signerInfoDerHex = signerInfoDer.toString('hex')
+      pdfToStoreHex = patchedBytes.toString('hex')
+      storedLtIdx = ltIdx
+      storedGtIdx = gtIdx
+    }
 
     const sessionId = crypto.randomUUID()
     await signStorage.setItem(
       `session:${sessionId}`,
       {
         documentId: id,
-        patchedPdfHex: patchedBytes.toString('hex'),
-        ltIdx,
-        gtIdx,
-        signerInfoDerHex: signerInfoDer.toString('hex'),
+        patchedPdfHex: pdfToStoreHex,
+        ltIdx: storedLtIdx,
+        gtIdx: storedGtIdx,
+        signerInfoDerHex,
         certificateDerHex,
         certificateChainDerHex,
         ctx,
@@ -84,7 +96,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       sessionId,
-      digestHex: digestToSign.toString('hex'),
+      digestHex,
       signerEmail: ctx.currentSigner.email,
       documentStatus: ctx.document.properties.Status.status.name,
     }

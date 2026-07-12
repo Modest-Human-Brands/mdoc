@@ -4,7 +4,6 @@ import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import { SignPdf } from '@signpdf/signpdf'
 import { P12Signer } from '@signpdf/signer-p12'
-import type { NotionDocument } from '~/server/types'
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
 
 const serverSignSchema = z.object({
