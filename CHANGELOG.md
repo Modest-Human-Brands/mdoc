@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.2
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.1...v0.2.2)
+
+### 🩹 Fixes
+
+- **api:** Optimize data handling for Notion integration by chunking JSON payloads ([52208b0](https://github.com/Modest-Human-Brands/mdoc/commit/52208b0))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.1
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.0...v0.2.1)
