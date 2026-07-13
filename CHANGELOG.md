@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.4
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.3...v0.2.4)
+
+### 🏡 Chore
+
+- Update dependencies and fix potential undefined access in document API ([30448c7](https://github.com/Modest-Human-Brands/mdoc/commit/30448c7))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.3
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.2...v0.2.3)
