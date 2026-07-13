@@ -38,7 +38,6 @@ export default defineEventHandler(async (event) => {
 
         if (projectId) {
           const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
-          const contactId = project.properties.Contact.relation[0].id
           projectDetails = {
             id: projectId,
             slug: project.properties.Slug?.formula?.string || '',
@@ -46,6 +45,7 @@ export default defineEventHandler(async (event) => {
             status: project.properties.Status?.status?.name || 'N/A',
           }
 
+          const contactId = project.properties.Contact.relation[0]?.id
           if (contactId) {
             const contact = (await notion.pages.retrieve({ page_id: contactId })) as unknown as NotionContact
             contactDetails = {
