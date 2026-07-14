@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const signer = new P12Signer(certificateBuffer, {
-      passphrase: config.private.certificateSecret,
+      passphrase: config.private.certificateSecret as string,
     })
 
     const signedPdfBuffer = await new SignPdf().sign(pdfWithPlaceholder, signer)
@@ -53,9 +53,9 @@ export default defineEventHandler(async (event) => {
     await signStorage.removeItem(`session:${sessionId}`)
 
     return result
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`API /document/[id]/server POST`, error)
-    if (error instanceof Error && 'statusCode' in error) {
+    if (typeof error === 'object' && error !== null && 'statusCode' in error) {
       throw error
     }
     throw new HTTPError({

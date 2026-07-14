@@ -1,16 +1,15 @@
 import { defineEventHandler, HTTPError } from 'h3'
 import * as pkijs from 'pkijs'
 import * as asn1js from 'asn1js'
-import { Crypto } from '@peculiar/webcrypto'
+import { webcrypto } from 'node:crypto'
 import z from 'zod'
 
-const webCrypto = new Crypto()
-
 pkijs.setEngine(
-  'crypto',
+  'nodeEngine',
   new pkijs.CryptoEngine({
-    name: 'webcrypto',
-    crypto: webCrypto,
+    name: 'nodeEngine',
+    crypto: webcrypto as unknown as Crypto,
+    subtle: webcrypto.subtle as SubtleCrypto,
   }) as unknown as pkijs.ICryptoEngine
 )
 

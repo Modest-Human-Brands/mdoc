@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
 import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
-import { finalizeSignedData } from '~/server/utils/cms-signer'
+import { finalizeSignedData, buildMinimalChain } from '~/server/utils/cms-signer'
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
 import { embedSignature } from '~/server/utils/pdf-byte-range'
 
@@ -22,22 +22,28 @@ export default defineEventHandler(async (event) => {
     if (!session) throw new HTTPError({ statusCode: 400, statusMessage: 'Signing session expired or invalid. Please refresh and try again.' })
 
     const patchedBytes = Buffer.from(session.patchedPdfHex, 'hex')
-    const signerInfoDer = Buffer.from(session.signerInfoDerHex, 'hex')
+    const signerInfoDer = Buffer.from(session.signerInfoDerHex!, 'hex')
     const signatureBytes = Buffer.from(signatureHex, 'hex')
-    const certDer = Buffer.from(session.certificateDerHex, 'hex')
-    const certChainDer = session.certificateChainDerHex.map((h) => {
+    const certDer = Buffer.from(session.certificateDerHex!, 'hex')
+    const certDerAB = certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength) as ArrayBuffer
+    const certChainCandidates = session.certificateChainDerHex!.map((h) => {
       const b = Buffer.from(h, 'hex')
-      return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)
+      return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer
     })
+
+    const certChainDer = buildMinimalChain(certDerAB, certChainCandidates)
+    if (certChainCandidates.length > 10) {
+      console.warn(`[ClientSign] Unusually large chain candidate pool (${certChainCandidates.length}) from signing bridge for session ${sessionId} — check frontend chain assembly.`)
+    }
 
     const cmsDer = finalizeSignedData({
       signerInfoDer,
       signatureBytes,
-      certDer: certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength),
+      certDer: certDerAB,
       certChainDer,
     })
 
-    const signedPdfBuffer = embedSignature(patchedBytes, cmsDer, session.ltIdx, session.gtIdx)
+    const signedPdfBuffer = embedSignature(patchedBytes, cmsDer, session.ltIdx!, session.gtIdx!)
 
     const { ctx, telemetry } = session
     const pendingSigners = ctx.signers.filter((s: SignerDetails) => s.status === 'PENDING')
@@ -48,7 +54,7 @@ export default defineEventHandler(async (event) => {
     await signStorage.removeItem(`session:${sessionId}`)
 
     return result
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`API /document/[id]/client POST`, error)
     if (error instanceof Error && 'statusCode' in error) throw error
     throw new HTTPError({ statusCode: 500, statusMessage: 'An error occurred while injecting the hardware signature.' })

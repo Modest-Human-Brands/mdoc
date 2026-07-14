@@ -4,7 +4,9 @@ import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import crypto from 'node:crypto'
 
-import { pdflibAddPlaceholder } from '@signpdf/placeholder-pdf-lib'
+import '~/templates/document'
+
+import { plainAddPlaceholder } from '@signpdf/placeholder-plain'
 import { templateRegistry } from '~/server/utils/template-registry'
 import { buildPreparedSignerInfo } from '~/server/utils/cms-signer'
 import { type SignSession, resolveSigningContext, applyFieldStamps } from '~/server/utils/document-signing'
@@ -30,28 +32,23 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { sessionToken, fields: inputFields, certificateDerHex, certificateChainDerHex, telemetry } = prepareSchema.parse(body)
 
-    const ctx = await resolveSigningContext(id, sessionToken, config)
+    const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret)
     const pdfBuffer = await fsStorage.getItemRaw<Buffer>(ctx.fileName)
     if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: `PDF file missing for document ID "${id}"` })
 
     const targetTemplate = templateRegistry[ctx.document.properties['Template ID'].select.name]
 
     const signatureFields = (targetTemplate?.signerFields || []).filter((f: any) => Number(f.signerOrder) === Number(ctx.currentSigner.order))
-    const pdfDoc = await applyFieldStamps(pdfBuffer, ctx.currentSigner, signatureFields, inputFields)
+    const stampedBuffer = applyFieldStamps(pdfBuffer, ctx.currentSigner, signatureFields, inputFields)
 
-    const sigField = signatureFields.find((f: any) => f.type === 'SIGNATURE' || f.type === 'INITIALS')
-
-    pdflibAddPlaceholder({
-      pdfDoc,
+    const placeholderBytes = plainAddPlaceholder({
+      pdfBuffer: stampedBuffer,
       reason: 'The user is declaring consent and cryptographically signing.',
       contactInfo: ctx.currentSigner.email,
       name: ctx.currentSigner.name,
       location: 'Global',
-      signatureLength: 262_144, //room for leaf + chain
-      widgetRect: sigField ? [sigField.x, sigField.y, sigField.x + sigField.width, sigField.y + sigField.height] : undefined,
+      signatureLength: 16_384,
     })
-
-    const placeholderBytes = Buffer.from(await pdfDoc.save())
 
     let digestHex: string | undefined = undefined
     let signerInfoDerHex: string | undefined = undefined
@@ -66,7 +63,7 @@ export default defineEventHandler(async (event) => {
 
       const certDer = Buffer.from(certificateDerHex, 'hex')
       const { signerInfoDer, digestToSign } = await buildPreparedSignerInfo({
-        certDer: certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength),
+        certDer: certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength) as ArrayBuffer,
         contentDigest,
       })
 

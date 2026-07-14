@@ -8,7 +8,12 @@ interface Placeholders {
 function locatePlaceholders(pdfBytes: Buffer): Placeholders {
   const str = pdfBytes.toString('latin1')
 
-  const brLabelIdx = str.indexOf('/ByteRange')
+  // Documents can already contain earlier, completed signatures (sequential multi-signer
+  // flow). Each is appended via an incremental update, so the newest — and only still-
+  // unsigned — /ByteRange placeholder is always the LAST one in the byte stream, not the
+  // first. Using indexOf here would grab an earlier signer's already-sealed /ByteRange and
+  // /Contents instead, producing nonsense offsets against the current (larger) file length.
+  const brLabelIdx = str.lastIndexOf('/ByteRange')
   if (brLabelIdx === -1) throw new Error('No /ByteRange found — was pdflibAddPlaceholder applied?')
   const brOpen = str.indexOf('[', brLabelIdx)
   const brClose = str.indexOf(']', brOpen)

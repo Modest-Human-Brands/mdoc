@@ -1,6 +1,7 @@
 import { HTTPError } from 'nitro/h3'
-import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage } from 'pdf-lib'
-import jwt from 'jsonwebtoken'
+import * as mupdf from 'mupdf'
+import { createCanvas } from '@napi-rs/canvas'
+import jwt, { type JwtPayload } from 'jsonwebtoken'
 import mime from 'mime-types'
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
@@ -35,46 +36,106 @@ export interface SignSession {
   telemetry?: { ipAddress?: string; userAgent?: string }
 }
 
-function resolveTargetPages(pIdx: string | number | number[], pages: PDFPage[]): PDFPage[] {
-  const total = pages.length
+export interface SignatureField {
+  id: string
+  type: string
+  pageIndex?: number | string | number[]
+  x: number
+  y: number
+  width: number
+  height: number
+  required?: boolean
+  fontSize?: number
+}
+
+export interface AppConfig {
+  private: {
+    jwtSecret: string
+  }
+}
+
+export interface StorageEngine {
+  setItemRaw(key: string, value: Buffer): Promise<void>
+}
+
+interface MuPDFAnnotation {
+  setRect(rect: [number, number, number, number]): void
+  setFlags(flags: number): void
+  // setStampImage scales the image to fit whatever Rect was set via setRect() —
+  // this is the correct API for "drop an image into a Stamp annotation".
+  // setAppearance(appearance, state, transform, bbox, resources, contents) is a
+  // different, lower-level primitive for hand-built content streams; it is NOT
+  // an (image, matrix) API despite the similar-looking call shape.
+  setStampImage(image: unknown): void
+  update(): void
+}
+
+interface MuPDFPage {
+  getBounds(): [number, number, number, number]
+  createAnnotation(type: string): MuPDFAnnotation
+}
+
+interface MuPDFBuffer {
+  asUint8Array(): Uint8Array
+}
+
+interface MuPDFPdfDoc {
+  countPages(): number
+  loadPage(index: number): MuPDFPage
+  saveToBuffer(options: string): MuPDFBuffer
+}
+
+interface MuPDFDoc {
+  asPDF(): MuPDFPdfDoc
+}
+
+interface IMuPDF {
+  Document: { openDocument(data: Uint8Array | Buffer, magic: string): MuPDFDoc }
+  Image: new (data: Uint8Array | Buffer) => unknown
+}
+
+const mupdfLib = mupdf as unknown as IMuPDF
+
+function resolveTargetPageIndices(pIdx: string | number | number[], totalPages: number): number[] {
   const resolveIdx = (idx: number) => {
-    if (idx < 0) return total + idx
-    // Prevent undefined page errors when 1-based indexing is passed (e.g., pageIndex=1 for page 0)
-    if (idx >= total && idx > 0) return Math.min(idx - 1, total - 1)
+    if (idx < 0) return totalPages + idx
+    if (idx >= totalPages && idx > 0) return Math.min(idx - 1, totalPages - 1)
     return idx
   }
 
-  if (typeof pIdx === 'number') return [pages[resolveIdx(pIdx)]]
-  if (Array.isArray(pIdx)) return pIdx.map((idx) => pages[resolveIdx(idx)])
+  if (typeof pIdx === 'number') return [resolveIdx(pIdx)]
+  if (Array.isArray(pIdx)) return pIdx.map((element) => resolveIdx(element))
   if (typeof pIdx !== 'string') return []
+
+  const allIndices = Array.from({ length: totalPages }, (_, i) => i)
 
   switch (pIdx) {
     case 'all': {
-      return pages
+      return allIndices
     }
     case 'all-except-last': {
-      return pages.slice(0, -1)
+      return allIndices.slice(0, -1)
     }
     case 'odd': {
-      return pages.filter((_, i) => i % 2 === 0)
+      return allIndices.filter((_, i) => i % 2 === 0)
     }
     case 'even': {
-      return pages.filter((_, i) => i % 2 !== 0)
+      return allIndices.filter((_, i) => i % 2 !== 0)
     }
     default: {
       if (pIdx.startsWith('*/')) {
         const step = Number.parseInt(pIdx.replace('*/', ''), 10)
-        if (!Number.isNaN(step) && step > 0) return pages.filter((_, i) => i % step === 0)
+        if (!Number.isNaN(step) && step > 0) return allIndices.filter((_, i) => i % step === 0)
       } else if (pIdx.includes(',')) {
         const indices = pIdx
           .split(',')
           .map((s) => Number.parseInt(s.trim(), 10))
           .filter((n) => !Number.isNaN(n))
-        return indices.map((idx) => pages[resolveIdx(idx)])
+        return indices.map((element) => resolveIdx(element))
       } else if (pIdx.includes('-')) {
         const parts = pIdx.split('-').map((s) => Number.parseInt(s.trim(), 10))
         if (parts.length === 2 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1])) {
-          return pages.slice(resolveIdx(parts[0]), resolveIdx(parts[1]) + 1)
+          return allIndices.slice(resolveIdx(parts[0]), resolveIdx(parts[1]) + 1)
         }
       }
       return []
@@ -82,38 +143,25 @@ function resolveTargetPages(pIdx: string | number | number[], pages: PDFPage[]):
   }
 }
 
-async function drawBase64Image(pdfDoc: PDFDocument, targetPages: PDFPage[], field: any, base64String: string) {
-  const isJpeg = base64String.startsWith('data:image/jpeg') || base64String.startsWith('data:image/jpg')
-  const b64 = base64String.replace(/^data:image\/(png|jpeg|jpg);base64,/, '')
-  const buffer = Buffer.from(b64, 'base64')
-  const image = isJpeg ? await pdfDoc.embedJpg(buffer) : await pdfDoc.embedPng(buffer)
-  const dims = image.scaleToFit(field.width, field.height)
+function createTextImage(text: string, width: number, height: number, fontSize: number, isBold: boolean = false): Buffer {
+  const w = Math.max(width, 1)
+  const h = Math.max(height, 1)
+  const canvas = createCanvas(w, h)
+  const ctx = canvas.getContext('2d')
 
-  for (const page of targetPages) {
-    page.drawImage(image, {
-      x: field.x + (field.width - dims.width) / 2,
-      y: field.y + (field.height - dims.height) / 2,
-      width: dims.width,
-      height: dims.height,
-    })
-  }
+  ctx.font = `${isBold ? 'bold ' : ''}${fontSize}px Helvetica, Arial, sans-serif`
+  ctx.fillStyle = '#000000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, w / 2, h / 2)
+
+  return canvas.toBuffer('image/png')
 }
 
-function drawCenteredText(targetPages: PDFPage[], field: any, text: string, font: PDFFont, baseOptions: any) {
-  const textWidth = font.widthOfTextAtSize(text, field.fontSize || 12)
-  for (const page of targetPages) {
-    page.drawText(text, {
-      x: field.x + (field.width - textWidth) / 2,
-      y: field.y + field.height / 2 - (field.fontSize || 12) / 3,
-      ...baseOptions,
-    })
-  }
-}
-
-export async function resolveSigningContext(id: string, sessionToken: string, config: any) {
-  let decodedToken: any
+export async function resolveSigningContext(id: string, sessionToken: string, jwtSecret: string) {
+  let decodedToken: JwtPayload & { documentId?: string; signerEmail?: string }
   try {
-    decodedToken = jwt.verify(sessionToken, config.private.jwtSecret)
+    decodedToken = jwt.verify(sessionToken, jwtSecret) as JwtPayload & { documentId?: string; signerEmail?: string }
   } catch {
     throw new HTTPError({ statusCode: 401, statusMessage: 'Session expired or invalid.' })
   }
@@ -134,52 +182,56 @@ export async function resolveSigningContext(id: string, sessionToken: string, co
   if (signerIndex === -1) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in queue.' })
 
   const currentSigner = signers[signerIndex]
-  if (currentSigner.status === 'SIGNED') throw new HTTPError({ statusCode: 409, statusMessage: 'Already signed.' })
+  if (currentSigner?.status === 'SIGNED') throw new HTTPError({ statusCode: 409, statusMessage: 'Already signed.' })
 
   const baseTitle = notionTextStringify(document.properties.Name.title)
-  const ext = mime.extension(document.properties['Mime Type'].select.name)
-  const fileName = `${baseTitle}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${ext}`
-  const currentFileName = `${baseTitle}-${currentSigner.order}.${ext}`
+  const ext = mime.extension(document.properties['Mime Type'].select.name) || 'pdf'
+  const fileName = `${baseTitle}${currentSigner!.order === 1 ? '' : '-' + (currentSigner!.order - 1)}.${ext}`
+  const currentFileName = `${baseTitle}-${currentSigner!.order}.${ext}`
   const signedFileName = `${baseTitle}-signed.${ext}`
 
-  return { document, signers, currentSigner, fileName, currentFileName, signedFileName }
+  return { document, signers, currentSigner: currentSigner!, fileName, currentFileName, signedFileName }
 }
 
-export async function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerDetails, signatureFields: any[], inputFields: any) {
-  const pdfDoc = await PDFDocument.load(pdfBuffer)
-  const pages = pdfDoc.getPages()
-  const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-  pdfDoc.setProducer('MDoc')
+export function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerDetails, signatureFields: SignatureField[], inputFields: Record<string, string | boolean | undefined>): Buffer {
+  const doc = mupdfLib.Document.openDocument(pdfBuffer, 'application/pdf')
+  const pdfDoc = doc.asPDF()
+  const totalPages = pdfDoc.countPages()
 
   for (const field of signatureFields) {
-    const targetPages = resolveTargetPages(field.pageIndex, pages)
-    const textOptions = { font: helveticaFont, size: field.fontSize || 12, color: rgb(0, 0, 0) }
+    const targetIndices = resolveTargetPageIndices(field.pageIndex ?? -1, totalPages)
+    let imgBuffer: Buffer | null = null
 
     switch (field.type) {
       case 'SIGNATURE':
       case 'INITIALS': {
         const imgVal = inputFields[field.id]
         if (field.required && !imgVal) throw new HTTPError({ statusCode: 400, statusMessage: `Image is required for field: ${field.id}` })
-        if (imgVal && typeof imgVal === 'string') await drawBase64Image(pdfDoc, targetPages, field, imgVal)
+        if (imgVal && typeof imgVal === 'string') {
+          const b64 = imgVal.replace(/^data:image\/(png|jpeg|jpg);base64,/, '')
+          imgBuffer = Buffer.from(b64, 'base64')
+        }
         break
       }
       case 'DATE': {
-        drawCenteredText(targetPages, field, new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }), helveticaFont, textOptions)
+        const text = new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+        imgBuffer = createTextImage(text, field.width, field.height, field.fontSize || 12, false)
         break
       }
       case 'NAME': {
-        drawCenteredText(targetPages, field, currentSigner.name, helveticaBold, { ...textOptions, font: helveticaBold })
+        imgBuffer = createTextImage(currentSigner.name, field.width, field.height, field.fontSize || 12, true)
         break
       }
       case 'EMAIL': {
-        drawCenteredText(targetPages, field, currentSigner.email, helveticaFont, textOptions)
+        imgBuffer = createTextImage(currentSigner.email, field.width, field.height, field.fontSize || 12, false)
         break
       }
       case 'TEXT': {
         const textVal = inputFields[field.id]
         if (field.required && !textVal) throw new HTTPError({ statusCode: 400, statusMessage: `Field ${field.id} is required.` })
-        if (textVal && typeof textVal === 'string') drawCenteredText(targetPages, field, textVal, helveticaFont, textOptions)
+        if (textVal && typeof textVal === 'string') {
+          imgBuffer = createTextImage(textVal, field.width, field.height, field.fontSize || 12, false)
+        }
         break
       }
       case 'CHECKBOX': {
@@ -187,23 +239,52 @@ export async function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerD
         if (field.required && !isChecked) throw new HTTPError({ statusCode: 400, statusMessage: `Checkbox ${field.id} must be checked.` })
         if (isChecked === true) {
           const checkSize = field.height * 0.8
-          drawCenteredText(targetPages, field, 'X', helveticaBold, { ...textOptions, font: helveticaBold, size: checkSize })
+          imgBuffer = createTextImage('X', field.width, field.height, checkSize, true)
         }
         break
       }
     }
+
+    if (imgBuffer) {
+      for (const pageIdx of targetIndices) {
+        const page = pdfDoc.loadPage(pageIdx)
+        const bounds = page.getBounds()
+        const pageHeight = bounds[3] - bounds[1]
+
+        const annot = page.createAnnotation('Stamp')
+
+        annot.setFlags(4 | 128 | 512)
+
+        const rect: [number, number, number, number] = [field.x, pageHeight - field.y - field.height, field.x + field.width, pageHeight - field.y]
+        annot.setRect(rect)
+
+        const image = new mupdfLib.Image(imgBuffer)
+
+        annot.setStampImage(image)
+
+        annot.update()
+
+        if (typeof (page as any).update === 'function') {
+          ;(page as any).update()
+        }
+      }
+    } else {
+      console.log(`[Stamping] Warning: No image buffer generated for ${field.id}`)
+    }
   }
-  return pdfDoc
+
+  const outBytes = pdfDoc.saveToBuffer('incremental').asUint8Array()
+  return Buffer.from(outBytes)
 }
 
 export async function finalizeAndPersist(
-  fsStorage: any,
+  fsStorage: StorageEngine,
   id: string,
   targetFileName: string,
   signedBytes: Uint8Array | Buffer,
   signers: SignerDetails[],
   currentSigner: SignerDetails,
-  telemetry?: any
+  telemetry?: { ipAddress?: string; userAgent?: string }
 ) {
   const signerInArray = signers.find((s) => s.email === currentSigner.email)
   if (!signerInArray) {
