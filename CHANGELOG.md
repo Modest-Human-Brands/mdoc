@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.6
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.5...v0.2.6)
+
+### 🩹 Fixes
+
+- Add missing mupdf and @napi-rs/canvas to rollup external dependencies ([d1fb23a](https://github.com/Modest-Human-Brands/mdoc/commit/d1fb23a))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.5
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.4...v0.2.5)
