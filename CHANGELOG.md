@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.5
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.4...v0.2.5)
+
+### 💅 Refactors
+
+- Update dependencies and improve PDF signing process ([5274758](https://github.com/Modest-Human-Brands/mdoc/commit/5274758))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.4
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.3...v0.2.4)
