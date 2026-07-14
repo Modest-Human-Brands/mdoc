@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.7
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.6...v0.2.7)
+
+### 🩹 Fixes
+
+- Streamline mupdf directory creation and copying in Dockerfile ([360234b](https://github.com/Modest-Human-Brands/mdoc/commit/360234b))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.6
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.5...v0.2.6)
