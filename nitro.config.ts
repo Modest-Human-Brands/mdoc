@@ -5,6 +5,7 @@ export default defineConfig({
   serverDir: './server',
   rollupConfig: {
     plugins: [vue()],
+    external: ['mupdf', '@napi-rs/canvas'],
   },
   // imports: {},
   features: {

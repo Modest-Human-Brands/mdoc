@@ -29,4 +29,6 @@ ENV NITRO_APP_BUILD_TIME=$BUILD_TIME
 
 EXPOSE 3000
 
+RUN mkdir -p .output/server/node_modules/mupdf/dist && cp -r node_modules/mupdf/dist .output/server/node_modules/mupdf
+
 ENTRYPOINT ["bun", ".output/server/index.mjs"]
