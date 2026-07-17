@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.8
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.7...v0.2.8)
+
+### 🩹 Fixes
+
+- Turn based document signing process with detailed logging and improved field stamping ([f8d253c](https://github.com/Modest-Human-Brands/mdoc/commit/f8d253c))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.7
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.6...v0.2.7)
