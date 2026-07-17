@@ -3,10 +3,10 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import crypto from 'node:crypto'
+import { plainAddPlaceholder } from '@signpdf/placeholder-plain'
 
 import '~/templates/document'
 
-import { plainAddPlaceholder } from '@signpdf/placeholder-plain'
 import { templateRegistry } from '~/server/utils/template-registry'
 import { buildPreparedSignerInfo } from '~/server/utils/cms-signer'
 import { type SignSession, resolveSigningContext, applyFieldStamps } from '~/server/utils/document-signing'
@@ -33,13 +33,15 @@ export default defineEventHandler(async (event) => {
     const { sessionToken, fields: inputFields, certificateDerHex, certificateChainDerHex, telemetry } = prepareSchema.parse(body)
 
     const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret)
+
     const pdfBuffer = await fsStorage.getItemRaw<Buffer>(ctx.fileName)
-    if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: `PDF file missing for document ID "${id}"` })
+    if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: `PDF file missing for document "${ctx.fileName}"` })
 
     const targetTemplate = templateRegistry[ctx.document.properties['Template ID'].select.name]
-
     const signatureFields = (targetTemplate?.signerFields || []).filter((f: any) => Number(f.signerOrder) === Number(ctx.currentSigner.order))
-    const stampedBuffer = applyFieldStamps(pdfBuffer, ctx.currentSigner, signatureFields, inputFields)
+
+    const isFirstSigner = ctx.document.properties.Status.status.name === 'Sent'
+    const stampedBuffer = applyFieldStamps(pdfBuffer, ctx.currentSigner, signatureFields, inputFields, isFirstSigner)
 
     const placeholderBytes = plainAddPlaceholder({
       pdfBuffer: stampedBuffer,
@@ -77,28 +79,13 @@ export default defineEventHandler(async (event) => {
     const sessionId = crypto.randomUUID()
     await signStorage.setItem(
       `session:${sessionId}`,
-      {
-        documentId: id,
-        patchedPdfHex: pdfToStoreHex,
-        ltIdx: storedLtIdx,
-        gtIdx: storedGtIdx,
-        signerInfoDerHex,
-        certificateDerHex,
-        certificateChainDerHex,
-        ctx,
-        telemetry,
-      },
+      { documentId: id, patchedPdfHex: pdfToStoreHex, ltIdx: storedLtIdx, gtIdx: storedGtIdx, signerInfoDerHex, certificateDerHex, certificateChainDerHex, ctx, telemetry },
       { ttl: 300 }
     )
 
-    return {
-      sessionId,
-      digestHex,
-      signerEmail: ctx.currentSigner.email,
-      documentStatus: ctx.document.properties.Status.status.name,
-    }
+    return { sessionId, digestHex, signerEmail: ctx.currentSigner.email, documentStatus: ctx.document.properties.Status.status.name }
   } catch (error: any) {
-    console.error(`API /document/[id]/prepare POST`, error)
+    console.error(`[Prepare - FATAL ERROR]`, error)
     if (error instanceof Error && 'statusCode' in error) throw error
     throw new HTTPError({ statusCode: 500, statusMessage: 'An error occurred while preparing the document for signing.' })
   }

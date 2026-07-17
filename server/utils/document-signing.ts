@@ -193,7 +193,13 @@ export async function resolveSigningContext(id: string, sessionToken: string, jw
   return { document, signers, currentSigner: currentSigner!, fileName, currentFileName, signedFileName }
 }
 
-export function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerDetails, signatureFields: SignatureField[], inputFields: Record<string, string | boolean | undefined>): Buffer {
+export function applyFieldStamps(
+  pdfBuffer: Buffer,
+  currentSigner: SignerDetails,
+  signatureFields: SignatureField[],
+  inputFields: Record<string, string | boolean | undefined>,
+  isFirstSigner: boolean = false
+): Buffer {
   const doc = mupdfLib.Document.openDocument(pdfBuffer, 'application/pdf')
   const pdfDoc = doc.asPDF()
   const totalPages = pdfDoc.countPages()
@@ -202,47 +208,52 @@ export function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerDetails
     const targetIndices = resolveTargetPageIndices(field.pageIndex ?? -1, totalPages)
     let imgBuffer: Buffer | null = null
 
-    switch (field.type) {
-      case 'SIGNATURE':
-      case 'INITIALS': {
-        const imgVal = inputFields[field.id]
-        if (field.required && !imgVal) throw new HTTPError({ statusCode: 400, statusMessage: `Image is required for field: ${field.id}` })
-        if (imgVal && typeof imgVal === 'string') {
-          const b64 = imgVal.replace(/^data:image\/(png|jpeg|jpg);base64,/, '')
-          imgBuffer = Buffer.from(b64, 'base64')
+    try {
+      switch (field.type) {
+        case 'SIGNATURE':
+        case 'INITIALS': {
+          const imgVal = inputFields[field.id]
+          if (field.required && !imgVal) throw new HTTPError({ statusCode: 400, statusMessage: `Image is required for field: ${field.id}` })
+          if (imgVal && typeof imgVal === 'string') {
+            const b64 = imgVal.replace(/^data:image\/(png|jpeg|jpg);base64,/, '')
+            imgBuffer = Buffer.from(b64, 'base64')
+          }
+          break
         }
-        break
-      }
-      case 'DATE': {
-        const text = new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
-        imgBuffer = createTextImage(text, field.width, field.height, field.fontSize || 12, false)
-        break
-      }
-      case 'NAME': {
-        imgBuffer = createTextImage(currentSigner.name, field.width, field.height, field.fontSize || 12, true)
-        break
-      }
-      case 'EMAIL': {
-        imgBuffer = createTextImage(currentSigner.email, field.width, field.height, field.fontSize || 12, false)
-        break
-      }
-      case 'TEXT': {
-        const textVal = inputFields[field.id]
-        if (field.required && !textVal) throw new HTTPError({ statusCode: 400, statusMessage: `Field ${field.id} is required.` })
-        if (textVal && typeof textVal === 'string') {
-          imgBuffer = createTextImage(textVal, field.width, field.height, field.fontSize || 12, false)
+        case 'DATE': {
+          const text = new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+          imgBuffer = createTextImage(text, field.width, field.height, field.fontSize || 12, false)
+          break
         }
-        break
-      }
-      case 'CHECKBOX': {
-        const isChecked = inputFields[field.id]
-        if (field.required && !isChecked) throw new HTTPError({ statusCode: 400, statusMessage: `Checkbox ${field.id} must be checked.` })
-        if (isChecked === true) {
-          const checkSize = field.height * 0.8
-          imgBuffer = createTextImage('X', field.width, field.height, checkSize, true)
+        case 'NAME': {
+          imgBuffer = createTextImage(currentSigner.name, field.width, field.height, field.fontSize || 12, true)
+          break
         }
-        break
+        case 'EMAIL': {
+          imgBuffer = createTextImage(currentSigner.email, field.width, field.height, field.fontSize || 12, false)
+          break
+        }
+        case 'TEXT': {
+          const textVal = inputFields[field.id]
+          if (field.required && !textVal) throw new HTTPError({ statusCode: 400, statusMessage: `Field ${field.id} is required.` })
+          if (textVal && typeof textVal === 'string') {
+            imgBuffer = createTextImage(textVal, field.width, field.height, field.fontSize || 12, false)
+          }
+          break
+        }
+        case 'CHECKBOX': {
+          const isChecked = inputFields[field.id]
+          if (field.required && !isChecked) throw new HTTPError({ statusCode: 400, statusMessage: `Checkbox ${field.id} must be checked.` })
+          if (isChecked === true) {
+            const checkSize = field.height * 0.8
+            imgBuffer = createTextImage('X', field.width, field.height, checkSize, true)
+          }
+          break
+        }
       }
+    } catch (error_) {
+      console.error(`[Stamp - CANVAS CRASH] Failed to create image for ${field.id}:`, error_)
+      throw error_
     }
 
     if (imgBuffer) {
@@ -252,14 +263,31 @@ export function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerDetails
         const pageHeight = bounds[3] - bounds[1]
 
         const annot = page.createAnnotation('Stamp')
-
         annot.setFlags(4 | 128 | 512)
-
-        const rect: [number, number, number, number] = [field.x, pageHeight - field.y - field.height, field.x + field.width, pageHeight - field.y]
-        annot.setRect(rect)
 
         const image = new mupdfLib.Image(imgBuffer)
 
+        const imgWidth = typeof image.getWidth === 'function' ? image.getWidth() : (image as any).width
+        const imgHeight = typeof image.getHeight === 'function' ? image.getHeight() : (image as any).height
+
+        const imgRatio = imgWidth / imgHeight
+        const fieldRatio = field.width / field.height
+
+        let fitWidth = field.width
+        let fitHeight = field.height
+
+        if (imgRatio > fieldRatio) {
+          fitHeight = field.width / imgRatio
+        } else {
+          fitWidth = field.height * imgRatio
+        }
+
+        const offsetX = field.x + (field.width - fitWidth) / 2
+        const offsetY = field.y + (field.height - fitHeight) / 2
+
+        const rect: [number, number, number, number] = [offsetX, pageHeight - offsetY - fitHeight, offsetX + fitWidth, pageHeight - offsetY]
+
+        annot.setRect(rect)
         annot.setStampImage(image)
 
         annot.update()
@@ -268,12 +296,12 @@ export function applyFieldStamps(pdfBuffer: Buffer, currentSigner: SignerDetails
           ;(page as any).update()
         }
       }
-    } else {
-      console.log(`[Stamping] Warning: No image buffer generated for ${field.id}`)
     }
   }
 
-  const outBytes = pdfDoc.saveToBuffer('incremental').asUint8Array()
+  const saveOpts = isFirstSigner ? 'clean,decompress' : 'incremental'
+  const outBytes = pdfDoc.saveToBuffer(saveOpts).asUint8Array()
+
   return Buffer.from(outBytes)
 }
 

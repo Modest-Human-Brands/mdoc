@@ -4,6 +4,7 @@ import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import { SignPdf } from '@signpdf/signpdf'
 import { P12Signer } from '@signpdf/signer-p12'
+
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
 
 const serverSignSchema = z.object({
@@ -21,20 +22,14 @@ export default defineEventHandler(async (event) => {
 
     const session = await signStorage.getItem(`session:${sessionId}`)
     if (!session) {
-      throw new HTTPError({
-        statusCode: 400,
-        statusMessage: 'Signing session expired or invalid. Please refresh and try again.',
-      })
+      throw new HTTPError({ statusCode: 400, statusMessage: 'Signing session expired or invalid.' })
     }
 
     const pdfWithPlaceholder = Buffer.from(session.patchedPdfHex, 'hex')
 
     const certificateBuffer = await fsStorage.getItemRaw<Buffer>('certificate.p12')
     if (!certificateBuffer) {
-      throw new HTTPError({
-        statusCode: 500,
-        statusMessage: 'Server signing certificate (certificate.p12) not found in storage.',
-      })
+      throw new HTTPError({ statusCode: 500, statusMessage: 'Server signing certificate (certificate.p12) not found.' })
     }
 
     const signer = new P12Signer(certificateBuffer, {
@@ -54,13 +49,10 @@ export default defineEventHandler(async (event) => {
 
     return result
   } catch (error: unknown) {
-    console.error(`API /document/[id]/server POST`, error)
+    console.error(`[ServerSign - FATAL ERROR]`, error)
     if (typeof error === 'object' && error !== null && 'statusCode' in error) {
       throw error
     }
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'An error occurred during server-side document signing.',
-    })
+    throw new HTTPError({ statusCode: 500, statusMessage: 'An error occurred during server-side document signing.' })
   }
 })

@@ -5,21 +5,26 @@ WORKDIR /app
 COPY package.json bun.lock ./
 COPY nitro.config.ts ./
 
-ENV NITRO_PRESET=bun
+ENV NITRO_PRESET=node-server
 ENV NITRO_PUBLIC_SITE_URL=$SITE_URL
 
 RUN bun install --frozen-lockfile
 
 COPY . .
-
 RUN bun run build
 
-FROM oven/bun:1-alpine AS runner
+RUN mkdir -p .output/server/node_modules && \
+  cp -R node_modules/mupdf .output/server/node_modules/ && \
+  cp -R node_modules/@napi-rs .output/server/node_modules/
+
+FROM node:22-alpine AS runner
 
 ARG VERSION
 ARG BUILD_TIME
 
 WORKDIR /app
+
+RUN apk add --no-cache fontconfig freetype ttf-liberation ttf-dejavu
 
 COPY --from=builder /app/.output ./.output
 
@@ -29,7 +34,4 @@ ENV NITRO_APP_BUILD_TIME=$BUILD_TIME
 
 EXPOSE 3000
 
-RUN mkdir -p ./.output/server/node_modules/mupdf/dist 
-COPY --from=builder /app/node_modules/mupdf/dist ./.output/server/node_modules/mupdf
-
-ENTRYPOINT ["bun", ".output/server/index.mjs"]
+ENTRYPOINT ["node", ".output/server/index.mjs"]
