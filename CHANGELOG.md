@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.1
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.0...v0.3.1)
+
+### 🚀 Enhancements
+
+- Update document templates to use 'recipient' instead of 'contact' and enhance schema ([346e015](https://github.com/Modest-Human-Brands/mdoc/commit/346e015))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.0
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.8...v0.3.0)
