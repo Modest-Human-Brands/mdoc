@@ -4,7 +4,7 @@ import { z } from 'zod'
 import parseMarkdown from '~/server/utils/parse-markdown.ts'
 import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
 
-export const contractSchema = z.object({
+export const shootContractSchema = z.object({
   contact: z.object({
     name: z.string(),
     role: z.string(),
@@ -67,9 +67,9 @@ export const contractSchema = z.object({
   }),
 })
 
-export type ContractPayload = z.infer<typeof contractSchema>
+export type ShootContractPayload = z.infer<typeof shootContractSchema>
 
-const placeholders: ContractPayload = {
+const placeholders: ShootContractPayload = {
   contact: {
     name: 'Jane Doe',
     role: 'Lead Cinematographer',
@@ -122,7 +122,7 @@ const placeholders: ContractPayload = {
       logo: 'https://modesthumanbrands.com/logo.svg',
       color: {
         primary: '#2B2B2B',
-        accent: '#4A85FF',
+        accent: '#5945EA',
       },
       font: 'Exo2',
     },
@@ -130,17 +130,17 @@ const placeholders: ContractPayload = {
 }
 
 registerTemplate({
-  id: 'contract',
-  label: 'Contract',
-  description: 'The formal agreement or legal document associated with this record.',
+  id: 'shoot-contract',
+  label: 'Shoot Contract',
+  description: 'The formal agreement or legal document outlining scope, terms, and obligations between parties.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
     { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
   ],
-  schema: contractSchema,
+  schema: shootContractSchema,
   placeholders,
   component: Component,
-  transformPayload: async (rawData: ContractPayload) => {
+  transformPayload: async (rawData: ShootContractPayload) => {
     const p = placeholders
     const org = rawData.organization || p.organization
     const orgBranding = org?.branding || p.organization!.branding

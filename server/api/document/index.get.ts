@@ -3,7 +3,7 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
 
 import notion from '~/server/utils/notion'
-import notionQueryDb from '~/server/utils/notion-query-db'
+import notionQueryDb from '~/server/utils/notion-query-db.ts'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionContact, NotionDB, NotionDocument, NotionProject } from '~/server/types'
 
