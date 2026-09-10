@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.3.0
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.8...v0.3.0)
+
+### 🚀 Enhancements
+
+- ⚠️ Integrate nitro-mcp-toolkit and add health tool ([ad265ad](https://github.com/Modest-Human-Brands/mdoc/commit/ad265ad))
+- Add retainer and shoot contract templates ([b18422b](https://github.com/Modest-Human-Brands/mdoc/commit/b18422b))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️ Integrate nitro-mcp-toolkit and add health tool ([ad265ad](https://github.com/Modest-Human-Brands/mdoc/commit/ad265ad))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.2.8
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.2.7...v0.2.8)
