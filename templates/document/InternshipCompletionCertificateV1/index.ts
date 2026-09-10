@@ -3,18 +3,43 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import sharp from 'sharp'
 
-async function getTintedBackground(imageString: string, hexColor: string): Promise<string> {
-  // Tint the image and output as a base64 Data URL for the <Image> tag
-  const tintedBuffer = await sharp(imageString)
-    .tint(hexColor) // Tints grayscale/monochrome images with the specified hex
+async function getTintedBackground(
+  imageString: string,
+  hexColor: string,
+  options: {
+    opacity?: number
+    saturation?: number
+  } = {}
+): Promise<string> {
+  const { opacity = 1, saturation = 0 } = options
+
+  const image = sharp(imageString).tint(hexColor).ensureAlpha()
+
+  const { width, height } = await image.metadata()
+
+  const mask = Buffer.from(
+    `<svg width="${width}" height="${height}">
+      <rect width="100%" height="100%" fill="black" fill-opacity="${opacity}" />
+    </svg>`
+  )
+
+  const tintedBuffer = await image
+    .composite([{ input: mask, blend: 'dest-in' }])
+    .modulate({ saturation })
+    .png()
     .toBuffer()
 
   return `data:image/png;base64,${tintedBuffer.toString('base64')}`
 }
 
 export const internshipCompletionCertificateSchema = z.object({
-  recipientName: z.string(),
-  recipientRole: z.string(),
+  recipient: z.object({
+    name: z.string(),
+    role: z.string(),
+    address: z.string(),
+    email: z.email('Invalid recipient email'),
+    phone: z.string(),
+  }),
   scopeOfWork: z.string(),
   startDate: z.date(),
   endDate: z.date(),
@@ -58,9 +83,14 @@ export const internshipCompletionCertificateSchema = z.object({
 export type InternshipCompletionCertificatePayload = z.infer<typeof internshipCompletionCertificateSchema>
 
 const placeholders: InternshipCompletionCertificatePayload = {
-  recipientName: 'Alex Mercer',
-  recipientRole: 'Senior Marketing Intern',
-  scopeOfWork: 'Digital Campaign Management',
+  recipient: {
+    name: '{{ recipient name }}',
+    role: '{{ recipient role }}',
+    address: '{{ recipient address }}',
+    email: '{{ recipient email }}',
+    phone: '{{ recipient phone }}',
+  },
+  scopeOfWork: '{{ scope of work }}',
   startDate: new Date('June 1, 2025'),
   endDate: new Date('December 31, 2025'),
   organization: {
@@ -71,8 +101,8 @@ const placeholders: InternshipCompletionCertificatePayload = {
     tradeRelationship: 'Primary',
     gstin: undefined,
     pan: 'ABCDE0123F',
-    address: 'Abc Road, Near DEF, UIO - 1890',
-    foundedYear: 2020,
+    address: '17 NO, N S Road,harinavi Beltola, South 24 Parganas, West Bengal, India',
+    foundedYear: 2025,
     accountDetails: {
       accountName: 'Modest Human Brands LLP',
       accountNumber: 1_234_567_890,
@@ -80,7 +110,7 @@ const placeholders: InternshipCompletionCertificatePayload = {
       ifscCode: 'HDFC0001234',
     },
     website: 'https://modesthumanbrands.com',
-    contactEmail: 'hello@modesthumanbrands.com',
+    contactEmail: 'contact@modesthumanbrands.com',
     billingEmail: 'billing@modesthumanbrands.com',
     primaryContactId: 'contact-1',
     organizationMemberIds: ['member-1'],
@@ -89,10 +119,18 @@ const placeholders: InternshipCompletionCertificatePayload = {
     branding: {
       logo: 'https://modesthumanbrands.com/logo.svg',
       color: {
-        primary: '#2B2B2B',
-        accent: '#4A85FF',
+        primary: '#111827',
+        accent: '#5945EA',
       },
       font: 'Exo2',
+    },
+    phone: '+919999999999',
+    whatsapp: '+919999999999',
+    socials: {
+      instagram: 'https://www.instagram.com/modesthumanbrands/',
+      facebook: 'https://facebook.com/modesthumanbrands',
+      linkedin: 'https://linkedin.com/company/modest-human-brands',
+      youtube: 'https://www.youtube.com/@modesthumanbrands',
     },
   },
 }
@@ -115,8 +153,8 @@ registerTemplate({
     const orgBranding = org?.branding || p.organization!.branding
 
     return {
-      recipientName: rawData.recipientName || p.recipientName,
-      bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${rawData.recipientRole || p.recipientRole} towards ${rawData.scopeOfWork || p.scopeOfWork} during ${rawData.startDate || p.startDate} - ${rawData.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${rawData.organization.name || p.organization.name}.`,
+      recipientName: rawData?.recipient?.name || p.recipient.name,
+      bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${rawData.recipient.role || p.recipient.role} towards ${rawData.scopeOfWork || p.scopeOfWork} during ${rawData.startDate || p.startDate} - ${rawData.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${rawData.organization?.name || p.organization.name}.`,
       organizationName: rawData?.organization?.name || p.organization.name,
       organizationLogo: orgBranding?.logo || p.organization.branding.logo,
       organizationFont: orgBranding?.font || p.organization!.branding!.font,

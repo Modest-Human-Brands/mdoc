@@ -3,13 +3,13 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 
 export const invoiceSchema = z.object({
-  pricingModel: z.enum(['project', 'day']).optional(),
-  contact: z.object({
+  recipient: z.object({
     name: z.string(),
     address: z.string(),
-    email: z.email('Invalid client email'),
+    email: z.email('Invalid recipient email'),
     phone: z.string(),
   }),
+  pricingModel: z.enum(['project', 'day']).optional(),
   project: z.object({
     title: z.string(),
     quoteNumber: z.string(),
@@ -79,13 +79,13 @@ export const invoiceSchema = z.object({
 export type InvoicePayload = z.infer<typeof invoiceSchema>
 
 const placeholders: InvoicePayload = {
-  pricingModel: 'project',
-  contact: {
+  recipient: {
     name: 'Wayne Enterprises',
     address: '1007 Mountain Drive, Gotham',
     email: 'billing@wayne.ent',
     phone: '+1 555-0199',
   },
+  pricingModel: 'project',
   project: {
     title: 'Test Project',
     quoteNumber: 'RCP-Q-78-2',
@@ -116,8 +116,8 @@ const placeholders: InvoicePayload = {
     tradeRelationship: 'Primary',
     gstin: undefined,
     pan: 'ABCDE0123F',
-    address: 'Abc Road, Near DEF, UIO - 1890',
-    foundedYear: 2020,
+    address: '17 NO, N S Road,harinavi Beltola, South 24 Parganas, West Bengal, India',
+    foundedYear: 2025,
     accountDetails: {
       accountName: 'Modest Human Brands LLP',
       accountNumber: 1_234_567_890,
@@ -125,7 +125,7 @@ const placeholders: InvoicePayload = {
       ifscCode: 'HDFC0001234',
     },
     website: 'https://modesthumanbrands.com',
-    contactEmail: 'hello@modesthumanbrands.com',
+    contactEmail: 'contact@modesthumanbrands.com',
     billingEmail: 'billing@modesthumanbrands.com',
     primaryContactId: 'contact-1',
     organizationMemberIds: ['member-1'],
@@ -134,10 +134,18 @@ const placeholders: InvoicePayload = {
     branding: {
       logo: 'https://modesthumanbrands.com/logo.svg',
       color: {
-        primary: '#2B2B2B',
-        accent: '#4A85FF',
+        primary: '#111827',
+        accent: '#5945EA',
       },
       font: 'Exo2',
+    },
+    phone: '+919999999999',
+    whatsapp: '+919999999999',
+    socials: {
+      instagram: 'https://www.instagram.com/modesthumanbrands/',
+      facebook: 'https://facebook.com/modesthumanbrands',
+      linkedin: 'https://linkedin.com/company/modest-human-brands',
+      youtube: 'https://www.youtube.com/@modesthumanbrands',
     },
   },
 }
@@ -179,10 +187,10 @@ registerTemplate({
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
 
-      clientName: rawData.contact?.name || p.contact.name,
-      clientAddress: rawData.contact?.address || p.contact.address,
-      contactPhone: rawData.contact?.phone || p.contact.phone,
-      contactEmail: rawData.contact?.email || p.contact.email,
+      clientName: rawData.recipient?.name || p.recipient.name,
+      clientAddress: rawData.recipient?.address || p.recipient.address,
+      contactPhone: rawData.recipient?.phone || p.recipient.phone,
+      contactEmail: rawData.recipient?.email || p.recipient.email,
 
       projectTitle: rawData.project?.title || p.project.title,
       projectQuotationNumber: rawData.project?.quoteNumber || p.project.quoteNumber,
