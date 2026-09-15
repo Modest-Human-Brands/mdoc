@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
       status: targetSigner.status,
     }
   } catch (error: any) {
-    console.error(`API /document/[id]/verify POST`, error)
+    console.error(`API /document/[id]/session/verify POST`, error)
 
     if (error instanceof Error && 'statusCode' in error) {
       throw error
