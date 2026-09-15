@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.2
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.1...v0.3.2)
+
+### 🚀 Enhancements
+
+- Enhance invoicev1 and quotationv1 templates with organization relationship labels ([4893116](https://github.com/Modest-Human-Brands/mdoc/commit/4893116))
+- Implement PDF signature verification endpoint ([5dcc707](https://github.com/Modest-Human-Brands/mdoc/commit/5dcc707))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.1
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.0...v0.3.1)
