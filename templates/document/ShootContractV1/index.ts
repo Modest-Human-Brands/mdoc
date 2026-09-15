@@ -7,7 +7,6 @@ import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
 export const shootContractSchema = z.object({
   recipient: z.object({
     name: z.string(),
-    role: z.string(),
     address: z.string(),
     email: z.email('Invalid recipient email'),
     phone: z.string(),
@@ -72,7 +71,6 @@ export type ShootContractPayload = z.infer<typeof shootContractSchema>
 const placeholders: ShootContractPayload = {
   recipient: {
     name: 'Jane Doe',
-    role: 'Lead Cinematographer',
     address: '1007 Mountain Drive, Gotham',
     email: 'billing@wayne.ent',
     phone: '+1 555-0199',
@@ -169,7 +167,6 @@ registerTemplate({
       agreementDate: rawData.agreementDate || p.agreementDate,
 
       contractorName: rawData.recipient?.name || p.recipient.name,
-      contractorRole: rawData.recipient?.role || p.recipient.role,
       contractorAddress: rawData.recipient?.address || p.recipient.address,
       contractorPhone: rawData.recipient?.phone || p.recipient.phone,
       contractorEmail: rawData.recipient?.email || p.recipient.email,

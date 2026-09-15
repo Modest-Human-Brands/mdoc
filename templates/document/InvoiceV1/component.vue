@@ -54,6 +54,26 @@ const paymentStatus = computed(() => {
 const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
 
+const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
+  switch (relationship) {
+    case 'Trading As':
+      return `Trading as ${legalName}`
+
+    case 'Operating Division':
+      return `An operating division of ${legalName}`
+
+    case 'Wholly-Owned Subsidiary':
+      return `A wholly-owned subsidiary of ${legalName}`
+
+    case 'Special Purpose Vehicle':
+      return `A special purpose vehicle of ${legalName}`
+
+    case 'Primary':
+    default:
+      return legalName
+  }
+}
+
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', fontStyle: 'normal' as const },
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 16 },
@@ -121,20 +141,7 @@ const styles = {
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{
-              organizationTradeRelationship === 'Trading As'
-                ? 'Trading as'
-                : organizationTradeRelationship === 'Operating Division'
-                  ? 'An operating division of'
-                  : organizationTradeRelationship === 'Wholly-Owned Subsidiary'
-                    ? 'A subsidiary of'
-                    : 'A brand of'
-            }}
-            {{ organizationLegalName }}
-            <!-- {{ organizationEntityType ? `(${organizationEntityType})` : '' }} -->
-          </Text>
-          <Text v-else-if="organizationLegalName && organizationName === organizationLegalName && organizationEntityType" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{ organizationEntityType }}
+            {{ organizationRelationshipLabel(organizationTradeRelationship, organizationLegalName) }}
           </Text>
 
           <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>

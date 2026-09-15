@@ -18,7 +18,22 @@ export default defineEventHandler(async (event) => {
     const notionDbId = JSON.parse(config.private.notionDbId) as unknown as NotionDB
     const fsStorage = useStorage('fs')
 
-    const { name: fileName, template: templateId, data: rawData, orgId, projectId, contactId } = (await readBody<RequestBody & { projectId?: string; contactId?: string; orgId?: string }>(event))!
+    const {
+      name: fileName,
+      template: templateId,
+      data: rawData,
+      orgId,
+      projectId,
+      contactId,
+      userId,
+    } = (await readBody<RequestBody & { projectId?: string; contactId?: string; orgId?: string; userId?: string }>(event))!
+
+    if (!contactId || !userId) {
+      throw new HTTPError({
+        statusCode: 400,
+        statusMessage: 'contactId and userId are required.',
+      })
+    }
 
     const targetTemplate = templateRegistry[templateId]
     if (!targetTemplate) {
@@ -47,6 +62,8 @@ export default defineEventHandler(async (event) => {
       'Mime Type': { select: { name: 'application/pdf' } },
       SizeBytes: { number: file?.byteLength || 0 },
       Status: { status: { name: 'Draft' } },
+      Contact: { relation: [{ id: contactId }] },
+      User: { relation: [{ id: userId }] },
     }
 
     if (orgId) {
@@ -55,10 +72,6 @@ export default defineEventHandler(async (event) => {
 
     if (projectId) {
       notionProperties.Project = { relation: [{ id: projectId }] }
-    }
-
-    if (contactId) {
-      notionProperties.Contact = { relation: [{ id: contactId }] }
     }
 
     const rawDataString = JSON.stringify(rawData)

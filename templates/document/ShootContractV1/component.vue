@@ -15,7 +15,6 @@ const props = defineProps<{
   organizationColorAccent: string
   agreementDate: string | Date
   contractorName: string
-  contractorRole: string
   contractorAddress: string
   contractorPhone: string
   contractorEmail: string
@@ -51,6 +50,26 @@ const formatTime = (val: string) => {
   const h12 = h % 12 || 12
 
   return `${h12}:${minutes.slice(0, 2)} ${ampm}`
+}
+
+const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
+  switch (relationship) {
+    case 'Trading As':
+      return `Trading as ${legalName}`
+
+    case 'Operating Division':
+      return `An operating division of ${legalName}`
+
+    case 'Wholly-Owned Subsidiary':
+      return `A wholly-owned subsidiary of ${legalName}`
+
+    case 'Special Purpose Vehicle':
+      return `A special purpose vehicle of ${legalName}`
+
+    case 'Primary':
+    default:
+      return legalName
+  }
 }
 
 // --- 8-Point Grid & Harmonized Quotation Styles ---
@@ -117,19 +136,7 @@ const styles = {
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{
-              organizationTradeRelationship === 'Trading As'
-                ? 'Trading as'
-                : organizationTradeRelationship === 'Operating Division'
-                  ? 'An operating division of'
-                  : organizationTradeRelationship === 'Wholly-Owned Subsidiary'
-                    ? 'A subsidiary of'
-                    : 'A brand of'
-            }}
-            {{ organizationLegalName }}
-          </Text>
-          <Text v-else-if="organizationLegalName && organizationName === organizationLegalName && organizationEntityType" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{ organizationEntityType }}
+            {{ organizationRelationshipLabel(organizationTradeRelationship, organizationLegalName) }}
           </Text>
 
           <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
@@ -162,7 +169,6 @@ const styles = {
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Service Provider</Text>
           <Text :style="{ fontSize: 12 }">{{ contractorName }}</Text>
-          <Text :style="{ fontSize: 12 }">{{ contractorRole }}</Text>
           <Text :style="{ fontSize: 12 }">{{ serviceCategory }}</Text>
         </View>
         <View :style="styles.bannerCol">

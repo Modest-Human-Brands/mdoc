@@ -4,16 +4,15 @@ import { z } from 'zod'
 import parseMarkdown from '~/server/utils/parse-markdown.ts'
 import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
 
+import { addMonths, subDays } from 'date-fns'
+
 export const retainerContractSchema = z.object({
   recipient: z.object({
     name: z.string(),
-    role: z.string(),
-    address: z.string(),
     email: z.email('Invalid recipient email'),
-    phone: z.string(),
   }),
   engagement: z.object({
-    title: z.string(), // e.g. "Performance Marketing Retainer" / "Frontend Development Retainer"
+    title: z.string(),
     quoteNumber: z.string(),
     quoteDate: z.date(),
     startDate: z.date(),
@@ -21,8 +20,8 @@ export const retainerContractSchema = z.object({
     renewalType: z.enum(['Auto-Renew', 'Manual Renewal', 'Fixed Term - No Renewal']),
     noticePeriodDays: z.number().int().min(0).default(30),
   }),
-  serviceCategory: z.string(), // e.g. 'Marketing', 'Development', 'Marketing & Development'
-  scopeOfWork: z.array(z.string()), // recurring monthly scope items / deliverables
+  serviceCategory: z.string(),
+  scopeOfWork: z.array(z.string()),
   compensation: z
     .object({
       flatMonthlyFee: z.number().min(0).optional(),
@@ -91,13 +90,10 @@ export type RetainerContractPayload = z.infer<typeof retainerContractSchema>
 const placeholders: RetainerContractPayload = {
   recipient: {
     name: 'Jane Doe',
-    role: 'Marketing Consultant',
-    address: '1007 Mountain Drive, Gotham',
     email: 'billing@wayne.ent',
-    phone: '+1 555-0199',
   },
   engagement: {
-    title: 'Performance Marketing Retainer',
+    title: 'Marketing Consultant',
     quoteNumber: 'RT-2026-089',
     quoteDate: new Date(),
     startDate: new Date(),
@@ -139,18 +135,31 @@ The Service Provider agrees to provide the services described in the Scope of Wo
 
 This Agreement begins on the Start Date and continues for the Engagement Duration stated above ("Initial Term").
 
+{{#if 'Auto-Renew'}}
 - **Auto-Renew:** Unless either party gives written notice of non-renewal at least {{noticePeriodDays}} days before the end of the current term, this Agreement automatically renews for successive terms of the same length.
-- **Manual Renewal:** At the end of the Initial Term, this Agreement expires unless both parties agree in writing to renew it.
-- **Fixed Term - No Renewal:** This Agreement expires automatically at the end of the Initial Term and does not renew.
+{{/if}}
 
-The renewal method that applies to this Agreement is stated in the Engagement Summary above.
+{{#if 'Manual Renewal'}}
+- **Manual Renewal:** At the end of the Initial Term, this Agreement expires unless both parties agree in writing to renew it.
+{{/if}}
+
+{{#if 'Fixed Term - No Renewal'}}
+- **Fixed Term - No Renewal:** This Agreement expires automatically at the end of the Initial Term and does not renew.
+{{/if}}
 
 ### 3. Compensation & Payment Terms
 
+{{#if flatMonthlyFee}}
 - **Flat Monthly Fee:** Where a flat monthly fee applies, it is invoiced at the start of each monthly billing cycle and is due within 7 days of invoice.
+{{/if}}
+
+{{#if targetBasedFees}}
 - **Target-Based Fee:** Where a target-based fee applies, it is calculated and invoiced at the end of each monthly billing cycle based on actual units delivered during that month, and is due within 7 days of invoice.
+{{/if}}
+
+{{#if onboardingFee}}
 - **Onboarding Fee:** Where a one-time onboarding fee applies, it is due prior to commencement of work and is non-refundable once work has begun.
-- Late payments beyond 15 days of the invoice due date may result in suspension of services until the outstanding balance is settled.
+{{/if}}
 
 ### 4. Termination
 
@@ -172,7 +181,7 @@ The Service Provider is an independent contractor. Nothing in this Agreement sha
 
 ### 8. Liability & Indemnification
 
-Each party's liability arising out of this Agreement shall be limited to the fees paid or payable under this Agreement in the three (3) months preceding the event giving rise to the claim, except in cases of gross negligence, willful misconduct, or breach of confidentiality.`,
+Each party's liability arising out of this Agreement shall be limited to the fees paid or payable under this Agreement in the {{engagementMonths}} months preceding the event giving rise to the claim, except in cases of gross negligence, willful misconduct, or breach of confidentiality.`,
     lastUpdated: new Date(),
   },
   organization: {
@@ -217,12 +226,6 @@ Each party's liability arising out of this Agreement shall be limited to the fee
   },
 }
 
-function addMonths(date: Date, months: number): Date {
-  const result = new Date(date)
-  result.setMonth(result.getMonth() + months)
-  return result
-}
-
 registerTemplate({
   id: 'retainer-contract',
   label: 'Retainer Contract',
@@ -242,7 +245,7 @@ registerTemplate({
 
     const engagement = rawData.engagement || p.engagement
     const compensation = rawData.compensation || p.compensation
-    const endDate = addMonths(engagement.startDate, engagement.engagementMonths)
+    const endDate = subDays(addMonths(engagement.startDate, Number.parseInt(`${engagement.engagementMonths}`)), 1)
 
     const flatMonthlyFee = compensation.flatMonthlyFee
     const targetFees = compensation.targetBasedFees
@@ -262,9 +265,6 @@ registerTemplate({
       agreementDate: rawData.agreementDate || p.agreementDate,
 
       contractorName: rawData.recipient?.name || p.recipient.name,
-      contractorRole: rawData.recipient?.role || p.recipient.role,
-      contractorAddress: rawData.recipient?.address || p.recipient.address,
-      contractorPhone: rawData.recipient?.phone || p.recipient.phone,
       contractorEmail: rawData.recipient?.email || p.recipient.email,
 
       engagementTitle: engagement.title,
@@ -272,9 +272,9 @@ registerTemplate({
       serviceCategory: rawData.serviceCategory || p.serviceCategory,
       startDate: engagement.startDate,
       endDate,
-      engagementMonths: engagement.engagementMonths,
+      engagementMonths: Number.parseInt(`${engagement.engagementMonths}`),
       renewalType: engagement.renewalType,
-      noticePeriodDays: engagement.noticePeriodDays ?? 30,
+      noticePeriodDays: Number.parseInt(`${engagement.noticePeriodDays}`) ?? 30,
       expiresIn: rawData.expiresIn || p.expiresIn,
 
       scopeOfWork: rawData.scopeOfWork && rawData.scopeOfWork.length > 0 ? rawData.scopeOfWork : p.scopeOfWork,
@@ -285,7 +285,22 @@ registerTemplate({
       onboardingFee: compensation.onboardingFee || 0,
     }
 
-    const parsedTerms: ParsedTerm[] = parseMarkdown(rawTerms, { ...transformedVariables })
+    // Evaluate {{#if}} blocks: only the clause whose condition matches the current data is kept.
+    // - Quoted literal ('Auto-Renew') matches the selected renewalType.
+    // - Bare dot-path (flatMonthlyFee) is truthy-checked against the transformed variables.
+    // The pattern matches the {{#if}} wrapper syntax, not the clause text, so new or edited
+    // bullet wording is unaffected; the wrapper tags are dropped and only the inner content is kept.
+    const isIfConditionTrue = (condition: string) => {
+      if (condition.startsWith("'") && condition.endsWith("'")) {
+        return condition.slice(1, -1) === engagement.renewalType
+      }
+      const value = (transformedVariables as Record<string, any>)[condition] ?? (engagement as Record<string, any>)[condition]
+      return value !== undefined && value !== null && value !== '' && value !== false && value !== 0
+    }
+
+    const resolvedTerms = rawTerms.replace(/\{\{#if\s+([^}]+?)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, condition: string, inner: string) => (isIfConditionTrue(condition) ? inner : ''))
+
+    const parsedTerms: ParsedTerm[] = parseMarkdown(resolvedTerms, { ...transformedVariables })
 
     return { ...transformedVariables, parsedTerms }
   },

@@ -344,21 +344,13 @@ export interface NotionDocument {
       type: 'multi_select'
       multi_select: { name: string }[]
     }
-    'Created by': {
-      type: 'created_by'
-      created_by: { id: string }
-    }
-    'Last edited by': {
-      type: 'last_edited_by'
-      last_edited_by: { id: string }
+    User: {
+      type: 'relation'
+      relation: { id: string }[]
     }
     Contact: {
-      type: 'rollup'
-      rollup: {
-        array: {
-          title: { plain_text: string }[]
-        }[]
-      }
+      type: 'relation'
+      relation: { id: string }[]
     }
     Project: {
       type: 'relation'
