@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.5
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.4...v0.3.5)
+
+### 🩹 Fixes
+
+- Handle potential null value for routingQueue ([9951a01](https://github.com/Modest-Human-Brands/mdoc/commit/9951a01))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.4
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.3...v0.3.4)
