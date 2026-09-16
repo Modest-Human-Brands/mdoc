@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const routingQueue = JSON.parse(notionTextStringify(properties['Routing Queue']?.rich_text))
+    const routingQueue = properties['Routing Queue']?.rich_text ? JSON.parse(notionTextStringify(properties['Routing Queue']?.rich_text)) : null
 
     let rawData = null
     const children = await notion.blocks.children.list({ block_id: id, page_size: 100 })
