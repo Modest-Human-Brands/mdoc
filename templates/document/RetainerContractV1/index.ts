@@ -16,7 +16,7 @@ export const retainerContractSchema = z.object({
     quoteNumber: z.string(),
     quoteDate: z.date(),
     startDate: z.date(),
-    engagementMonths: z.number().int().min(1),
+    months: z.number().int().min(1),
     renewalType: z.enum(['Auto-Renew', 'Manual Renewal', 'Fixed Term - No Renewal']),
     noticePeriodDays: z.number().int().min(0).default(30),
   }),
@@ -97,7 +97,7 @@ const placeholders: RetainerContractPayload = {
     quoteNumber: 'RT-2026-089',
     quoteDate: new Date(),
     startDate: new Date(),
-    engagementMonths: 6,
+    months: 6,
     renewalType: 'Manual Renewal',
     noticePeriodDays: 15,
   },
@@ -245,7 +245,7 @@ registerTemplate({
 
     const engagement = rawData.engagement || p.engagement
     const compensation = rawData.compensation || p.compensation
-    const endDate = subDays(addMonths(engagement.startDate, Number.parseInt(`${engagement.engagementMonths}`)), 1)
+    const endDate = subDays(addMonths(engagement.startDate, Number.parseInt(`${engagement.months}`)), 1)
 
     const flatMonthlyFee = compensation.flatMonthlyFee
     const targetFees = compensation.targetBasedFees
@@ -272,7 +272,7 @@ registerTemplate({
       serviceCategory: rawData.serviceCategory || p.serviceCategory,
       startDate: engagement.startDate,
       endDate,
-      engagementMonths: Number.parseInt(`${engagement.engagementMonths}`),
+      engagementMonths: Number.parseInt(`${engagement.months}`),
       renewalType: engagement.renewalType,
       noticePeriodDays: Number.parseInt(`${engagement.noticePeriodDays}`) ?? 30,
       expiresIn: rawData.expiresIn || p.expiresIn,

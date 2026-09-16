@@ -81,11 +81,23 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // Fetch rawData from Notion children blocks (code blocks with JSON)
     let rawData = null
     try {
-      rawData = await fsStorage.getItem(`${name}.json`)
+      const children = await notion.blocks.children.list({ block_id: id, page_size: 100 })
+      let jsonChunk = null
+      for (const child of children.results || []) {
+        // Use type assertion to bypass missing type guards in @notionhq/client
+        if ((child as any).type === 'code' && (child as any).code?.rich_text) {
+          jsonChunk = notionTextStringify((child as any).code.rich_text)
+          break
+        }
+      }
+      if (jsonChunk) {
+        rawData = JSON.parse(jsonChunk)
+      }
     } catch {
-      // Silently fail if JSON doesn't exist (e.g. for older documents)
+      // Silently fail if children blocks don't exist or parsing fails
     }
 
     return {
