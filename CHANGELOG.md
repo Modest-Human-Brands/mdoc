@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.3
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.2...v0.3.3)
+
+### 🚀 Enhancements
+
+- Enhance document retrieval and update retainer contract schema for clarity ([14dc354](https://github.com/Modest-Human-Brands/mdoc/commit/14dc354))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.2
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.1...v0.3.2)
