@@ -1,10 +1,9 @@
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
-import { useStorage } from 'nitro/storage'
+import { useRuntimeConfig } from 'nitro/runtime-config'
 
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionDocument, NotionProject, NotionContact, NotionUser } from '~/server/types'
-import { useRuntimeConfig } from 'nitro/runtime-config'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,30 +15,24 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Document ID is required',
       })
     }
-    const fsStorage = useStorage('fs')
     const config = useRuntimeConfig()
 
     const { id: docId, properties, created_time, last_edited_time } = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
 
     const name = notionTextStringify(properties.Name.title)
     const projectId = properties.Project?.relation?.[0]?.id || null
-    let projectData = null
+    let projectDetails = { id: null as string | null, name: 'Misc', slug: 'misc', status: 'N/A' }
 
     if (projectId) {
-      try {
-        const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
-        projectData = {
-          id: project.id,
-          slug: project.properties.Slug.formula.string,
-          name: notionTextStringify(project.properties.Name.title),
-        }
-      } catch (error) {
-        console.error(`Failed to fetch project for document ${id}`, error)
+      const project = (await notion.pages.retrieve({ page_id: projectId })) as unknown as NotionProject
+      projectDetails = {
+        id: projectId,
+        slug: project.properties.Slug?.formula?.string || '',
+        name: notionTextStringify(project.properties.Name.title),
+        status: project.properties.Status?.status?.name || 'N/A',
       }
     }
 
-    // Contact list is sourced from the document's Contact relation, which aggregates the
-    // contacts linked through the project relation.
     const contact: { id: string; name: string; email: string | null }[] = []
     if (properties.Contact?.relation) {
       for (const relation of properties.Contact.relation) {
@@ -56,7 +49,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // User is sourced from the document's User relation (renamed from "Created by").
     let user = null
     if (properties.User?.relation) {
       try {
@@ -71,33 +63,19 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const routingQueueRaw = notionTextStringify(properties['Routing Queue']?.rich_text)
-    let routingQueue = []
-    if (routingQueueRaw) {
-      try {
-        routingQueue = JSON.parse(routingQueueRaw)
-      } catch {
-        //
+    const routingQueue = JSON.parse(notionTextStringify(properties['Routing Queue']?.rich_text))
+
+    let rawData = null
+    const children = await notion.blocks.children.list({ block_id: id, page_size: 100 })
+    let jsonChunk = null
+    for (const child of children.results || []) {
+      if ((child as any).type === 'code' && (child as any).code?.rich_text) {
+        jsonChunk = notionTextStringify((child as any).code.rich_text)
+        break
       }
     }
-
-    // Fetch rawData from Notion children blocks (code blocks with JSON)
-    let rawData = null
-    try {
-      const children = await notion.blocks.children.list({ block_id: id, page_size: 100 })
-      let jsonChunk = null
-      for (const child of children.results || []) {
-        // Use type assertion to bypass missing type guards in @notionhq/client
-        if ((child as any).type === 'code' && (child as any).code?.rich_text) {
-          jsonChunk = notionTextStringify((child as any).code.rich_text)
-          break
-        }
-      }
-      if (jsonChunk) {
-        rawData = JSON.parse(jsonChunk)
-      }
-    } catch {
-      // Silently fail if children blocks don't exist or parsing fails
+    if (jsonChunk) {
+      rawData = JSON.parse(jsonChunk)
     }
 
     return {
@@ -108,7 +86,7 @@ export default defineEventHandler(async (event) => {
       sizeBytes: properties.SizeBytes?.number,
       status: properties.Status?.status?.name,
       organizationId: properties.Organization?.relation?.[0]?.id || null,
-      project: projectData,
+      project: projectDetails,
       contact,
       user,
       routingType: properties['Routing Type']?.select?.name || null,

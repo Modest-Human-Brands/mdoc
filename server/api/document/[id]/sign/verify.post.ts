@@ -2,7 +2,6 @@ import { defineEventHandler, HTTPError } from 'h3'
 import * as pkijs from 'pkijs'
 import * as asn1js from 'asn1js'
 import { webcrypto } from 'node:crypto'
-import z from 'zod'
 
 pkijs.setEngine(
   'nodeEngine',
