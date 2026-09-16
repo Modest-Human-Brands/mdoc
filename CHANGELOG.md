@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.4
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.3...v0.3.4)
+
+### 💅 Refactors
+
+- Streamline project data retrieval and improve error handling ([ab9a931](https://github.com/Modest-Human-Brands/mdoc/commit/ab9a931))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.3
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.2...v0.3.3)
