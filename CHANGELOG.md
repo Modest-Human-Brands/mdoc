@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.6
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.5...v0.3.6)
+
+### 🩹 Fixes
+
+- Improve null check for routingQueue property ([2f9f789](https://github.com/Modest-Human-Brands/mdoc/commit/2f9f789))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.5
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.4...v0.3.5)
