@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/session'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "signerEmail": "prior.signer@example.com"
+      }
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 409,
+        "statusMessage": "This user has already signed the document."
+      }
+order: 3000

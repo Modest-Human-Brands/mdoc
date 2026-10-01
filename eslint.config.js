@@ -1,7 +1,7 @@
 import unjs from 'eslint-config-unjs'
 
 export default unjs({
-  ignores: ['node_modules', '.output', 'static', 'asset'],
+  ignores: ['node_modules', '.output', 'static', 'asset', 'postman'],
   rules: {
     'unicorn/no-anonymous-default-export': 0,
   },

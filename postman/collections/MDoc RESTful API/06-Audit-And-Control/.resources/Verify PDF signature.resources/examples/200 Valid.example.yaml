@@ -1,0 +1,18 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/sign/verify'
+  method: POST
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "isIntact": true,
+        "signer": "Shirsendu Bairagi",
+        "message": "Document is intact and signature is valid."
+      }
+order: 1000

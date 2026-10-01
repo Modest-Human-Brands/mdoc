@@ -1,0 +1,33 @@
+$kind: http-request
+description: Fetch metadata, signer queues, and raw JSON payload for a single document.
+url: '{{base_url}}/api/document/:id'
+method: GET
+pathVariables:
+  id: '{{document_id}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["id", "name", "mimeType", "status", "previewUrl"],
+          properties: {
+            id: { type: "string" },
+            templateId: { type: ["string", "null"] },
+            name: { type: "string" },
+            mimeType: { type: "string" },
+            sizeBytes: { type: ["number", "null"] },
+            status: { type: "string" },
+            routingType: { type: ["string", "null"] },
+            nextSigner: { type: ["string", "null"] },
+            routingQueue: { type: ["array", "null"] },
+            categories: { type: "array" },
+            previewUrl: { type: "string" },
+            rawData: { type: ["object", "null"] }
+          }
+        };
+        pm.test("Single Document schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Get single document.resources/examples
+order: 7000

@@ -1,0 +1,48 @@
+$kind: http-request
+description: Update document title or status. Cannot modify if status is not Draft.
+url: '{{base_url}}/api/document/:id'
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "RCP-CERT-2026-001-Updated",
+      "status": "Ready"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          status: { type: "string", enum: ["Plan", "Draft", "Ready", "Delivered"] }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Update body schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["success", "message"],
+          properties: {
+            success: { type: "boolean" },
+            message: { type: "string" },
+            id: { type: "string" }
+          }
+        };
+        pm.test("Update response matches schema", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Update document metadata.resources/examples
+order: 9000

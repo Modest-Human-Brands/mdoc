@@ -1,0 +1,38 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template/internship-completion-certificate'
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "id": "internship-completion-certificate",
+        "label": "Internship Completion Certificate",
+        "description": "Formal proof of internship completion.",
+        "variables": {
+          "recipient": {
+            "name": "string",
+            "role": "string",
+            "email": "email"
+          }
+        },
+        "signerFields": [
+          {
+            "id": "signer-signature",
+            "type": "SIGNATURE",
+            "signerOrder": 1,
+            "pageIndex": -1,
+            "x": 380,
+            "y": 180,
+            "width": 150,
+            "height": 40,
+            "required": true
+          }
+        ]
+      }
+order: 1000

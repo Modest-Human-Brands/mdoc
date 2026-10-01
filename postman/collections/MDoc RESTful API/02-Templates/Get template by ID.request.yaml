@@ -1,0 +1,44 @@
+$kind: http-request
+description: Fetch detailed schema variables and signature stamp fields for a specific template.
+url: '{{base_url}}/api/document/template/:id'
+method: GET
+pathVariables:
+  id: '{{template_id}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["id", "label", "description", "variables", "signerFields"],
+          properties: {
+            id: { type: "string" },
+            label: { type: "string" },
+            description: { type: "string" },
+            variables: { type: "object" },
+            signerFields: {
+              type: "array",
+              items: {
+                type: "object",
+                required: ["id", "type", "signerOrder", "x", "y", "width", "height"],
+                properties: {
+                  id: { type: "string" },
+                  type: { type: "string", enum: ["SIGNATURE", "INITIALS", "DATE", "TEXT", "NAME", "EMAIL", "CHECKBOX"] },
+                  signerOrder: { type: "number" },
+                  pageIndex: { type: ["number", "string", "array"] },
+                  x: { type: "number" },
+                  y: { type: "number" },
+                  width: { type: "number" },
+                  height: { type: "number" }
+                }
+              }
+            }
+          }
+        };
+        pm.test("Template schema definition is intact", () => pm.response.to.have.jsonSchema(outputSchema));
+      } else {
+        pm.test("Status is 404", () => pm.response.to.have.status(404));
+      }
+examples: .resources/Get template by ID.resources/examples
+order: 3000

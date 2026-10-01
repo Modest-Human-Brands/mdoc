@@ -1,0 +1,7 @@
+.postman/resources.yaml:generic-api-key:8
+postman/collections/MDoc RESTful API/.resources/definition.yaml:generic-api-key:9
+postman/collections/MDoc RESTful API/04-Signer-Sessions/.resources/Create session magic link token.resources/examples/200 Success.example.yaml:generic-api-key:26
+postman/collections/MDoc RESTful API/04-Signer-Sessions/.resources/Verify session token.resources/examples/200 Success.example.yaml:generic-api-key:12
+postman/collections/MDoc RESTful API/05-Signing-Pipeline/.resources/Prepare signing session.resources/examples/200 Success.example.yaml
+postman/collections/MDoc RESTful API/05-Signing-Pipeline/.resources/Prepare signing session.resources/examples/200 Success.example.yaml:generic-api-key:12
+postman/collections/MDoc RESTful API/05-Signing-Pipeline/.resources/Prepare signing session.resources/examples/400 Missing Required Field.example.yaml:generic-api-key:12

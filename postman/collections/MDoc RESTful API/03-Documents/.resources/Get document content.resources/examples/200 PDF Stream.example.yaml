@@ -1,0 +1,14 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/content'
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/pdf
+    content-disposition: inline; filename="RCP-CERT-2026-001.pdf"
+  body:
+    type: text
+    content: '%PDF-1.7 ...binary raw stream...'
+order: 1000

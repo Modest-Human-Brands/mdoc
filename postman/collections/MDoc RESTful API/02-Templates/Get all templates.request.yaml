@@ -1,0 +1,27 @@
+$kind: http-request
+description: Fetch metadata for all registered templates in the server registry.
+url: '{{base_url}}/api/document/template'
+method: GET
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["id", "label", "description"],
+          properties: {
+            id: { type: "string" },
+            label: { type: "string" },
+            description: { type: "string" }
+          }
+        }
+      };
+
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Template List schema", () => {
+        pm.response.to.have.jsonSchema(outputSchema);
+      });
+examples: .resources/Get all templates.resources/examples
+order: 2000

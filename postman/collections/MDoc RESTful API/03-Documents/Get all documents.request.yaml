@@ -1,0 +1,49 @@
+$kind: http-request
+description: Paginated query returning documents from the Notion database.
+url: '{{base_url}}/api/document?limit=50&offset=0'
+method: GET
+queryParams:
+  - key: limit
+    value: '50'
+  - key: offset
+    value: '0'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "object",
+        required: ["results", "pagination"],
+        properties: {
+          results: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["id", "name", "mimeType", "status"],
+              properties: {
+                id: { type: "string" },
+                templateId: { type: ["string", "null"] },
+                name: { type: "string" },
+                mimeType: { type: "string" },
+                sizeBytes: { type: ["number", "null"] },
+                status: { type: "string" },
+                previewUrl: { type: "string" }
+              }
+            }
+          },
+          pagination: {
+            type: "object",
+            required: ["total", "limit", "offset"],
+            properties: {
+              total: { type: "number" },
+              limit: { type: "number" },
+              offset: { type: "number" }
+            }
+          }
+        }
+      };
+
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Paginated List schema", () => pm.response.to.have.jsonSchema(outputSchema));
+examples: .resources/Get all documents.resources/examples
+order: 6000

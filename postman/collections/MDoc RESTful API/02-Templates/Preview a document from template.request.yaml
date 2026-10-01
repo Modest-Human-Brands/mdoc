@@ -1,0 +1,56 @@
+$kind: http-request
+description: Compiles template variables and renders raw Base64 PDF output.
+url: '{{base_url}}/api/document/template/preview'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "templateId": "internship-completion-certificate",
+      "variables": {
+        "recipient": {
+          "name": "Alex Mercer",
+          "role": "Marketing Intern",
+          "address": "123 Main St",
+          "email": "alex@example.com",
+          "phone": "+1 555-0100"
+        },
+        "scopeOfWork": "Brand Strategy",
+        "startDate": "2025-06-01T00:00:00.000Z",
+        "endDate": "2025-12-31T00:00:00.000Z"
+      }
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["templateId", "variables"],
+        properties: {
+          templateId: { type: "string" },
+          variables: { type: "object" }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Request body valid against Input Schema", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["pdfBase64"],
+          properties: {
+            pdfBase64: { type: "string" }
+          }
+        };
+        pm.test("Output matches Preview Schema", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Preview a document from template.resources/examples
+order: 4000

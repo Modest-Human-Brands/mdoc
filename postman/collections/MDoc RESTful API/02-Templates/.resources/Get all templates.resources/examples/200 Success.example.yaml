@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template'
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      [
+        {
+          "id": "internship-completion-certificate",
+          "label": "Internship Completion Certificate",
+          "description": "The formal proof of completion, including start/end dates and authorized signature."
+        },
+        {
+          "id": "quotation",
+          "label": "Quotation",
+          "description": "Estimated pricing, scope of work, and commercial terms."
+        }
+      ]
+order: 1000

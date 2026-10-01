@@ -1,0 +1,70 @@
+$kind: http-request
+description: Stamps visual signature images onto the PDF and prepares ByteRange placeholders.
+url: '{{base_url}}/api/document/:id/sign/prepare'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "sessionToken": "{{session_token}}",
+      "fields": {
+        "signer-signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+        "signer-title": "Director"
+      },
+      "certificateDerHex": "30820715308205fda003020102020561fba9a7a2...",
+      "certificateChainDerHex": [],
+      "telemetry": {
+        "ipAddress": "192.168.1.1",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+      }
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["sessionToken"],
+        properties: {
+          sessionToken: { type: "string" },
+          fields: { type: "object" },
+          certificateDerHex: { type: "string" },
+          certificateChainDerHex: { type: "array", items: { type: "string" } },
+          telemetry: {
+            type: "object",
+            properties: {
+              ipAddress: { type: "string" },
+              userAgent: { type: "string" }
+            }
+          }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Prepare request schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["sessionId", "signerEmail", "documentStatus"],
+          properties: {
+            sessionId: { type: "string" },
+            digestHex: { type: ["string", "null"] },
+            signerEmail: { type: "string" },
+            documentStatus: { type: "string" }
+          }
+        };
+        pm.test("Prepare output schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+        const res = pm.response.json();
+        if (res.sessionId) pm.collectionVariables.set("signing_session_id", res.sessionId);
+      }
+examples: .resources/Prepare signing session.resources/examples
+order: 12000

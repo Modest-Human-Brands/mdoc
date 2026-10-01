@@ -1,0 +1,48 @@
+$kind: http-request
+description: Cryptographically signs document on the server using certificate.p12.
+url: '{{base_url}}/api/document/:id/sign/server'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "sessionId": "{{signing_session_id}}"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["sessionId"],
+        properties: {
+          sessionId: { type: "string" }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Server sign input schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["id", "documentStatus", "currentSigner"],
+          properties: {
+            id: { type: "string" },
+            documentStatus: { type: "string" },
+            currentSigner: { type: "object" },
+            nextSigner: { type: ["object", "null"] }
+          }
+        };
+        pm.test("Server sign output schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Sign document in server (PKCS12).resources/examples
+order: 14000

@@ -1,0 +1,49 @@
+$kind: http-request
+description: Validates JWT token and checks queue permissions.
+url: '{{base_url}}/api/document/:id/session/verify'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "sessionToken": "{{session_token}}"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["sessionToken"],
+        properties: {
+          sessionToken: { type: "string", minLength: 10 }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Verification request schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["isValid", "signerEmail", "role", "order", "status"],
+          properties: {
+            isValid: { type: "boolean", enum: [true] },
+            signerEmail: { type: "string" },
+            role: { type: "string" },
+            order: { type: "number" },
+            status: { type: "string" }
+          }
+        };
+        pm.test("Verified payload schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Verify session token.resources/examples
+order: 11000

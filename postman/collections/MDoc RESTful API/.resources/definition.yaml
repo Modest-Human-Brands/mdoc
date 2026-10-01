@@ -1,0 +1,10 @@
+$kind: collection
+description: |-
+  Complete operational API collection for MDoc (Structured Document Engine & Signing Pipeline).
+  Reflects the actual Nitro/H3 server endpoints, input validation rules, and crypto handlers.
+variables:
+  base_url: http://localhost:3002
+  document_id: 398ee3b0-289a-8197-a050-d3b993fdb642
+  template_id: internship-completion-certificate
+  session_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  signing_session_id: 9edc12f8-a541-422e-be15-a91650e06c5b

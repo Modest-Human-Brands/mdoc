@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/void'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "reason": "Cancel requested"
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 403,
+        "statusMessage": "Cannot void a document that is already Completed."
+      }
+order: 2000

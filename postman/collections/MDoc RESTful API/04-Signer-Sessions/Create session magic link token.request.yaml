@@ -1,0 +1,51 @@
+$kind: http-request
+description: Generate a time-boxed JWT for an external signer in the queue.
+url: '{{base_url}}/api/document/:id/session'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "signerEmail": "alex.mercer@example.com",
+      "expiresIn": "2026-12-31T23:59:59.000Z"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["signerEmail"],
+        properties: {
+          signerEmail: { type: "string" },
+          expiresIn: { type: "string" }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Session request schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["signer", "sessionToken"],
+          properties: {
+            signer: { type: "string" },
+            expiresAt: { type: ["string", "null"] },
+            sessionToken: { type: "string" }
+          }
+        };
+        pm.test("Session token schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+        const res = pm.response.json();
+        if (res.sessionToken) pm.collectionVariables.set("session_token", res.sessionToken);
+      }
+examples: .resources/Create session magic link token.resources/examples
+order: 10000

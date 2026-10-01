@@ -1,0 +1,26 @@
+$kind: http-example
+name: 403 Signer Turn Error
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/session'
+  method: POST
+  headers:
+    content-type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "signerEmail": "out-of-order@example.com"
+      }
+response:
+  statusCode: 403
+  statusText: Forbidden
+  headers:
+    content-type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 403,
+        "statusMessage": "It is not out-of-order@example.com's turn to sign yet."
+      }
+order: 2000

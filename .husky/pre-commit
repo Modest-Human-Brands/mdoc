@@ -1,23 +1,27 @@
 #!/usr/bin/env sh
 set -e
 
-# Get the list of staged files
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
-
-# If gitleaks is available, scan each staged file
+# 1. Secret Scanning with Gitleaks (handles filenames with spaces)
 if command -v gitleaks >/dev/null 2>&1; then
-  for file in $STAGED_FILES; do
-    [ -f "$file" ] && gitleaks detect --source="$file" --no-git --no-banner --verbose
+  git diff --cached --name-only --diff-filter=ACMR -z | while IFS= read -r -d '' file; do
+    if [ -f "$file" ]; then
+      gitleaks detect --source="$file" --no-git --no-banner --verbose
+    fi
   done
 else
   echo "⚠️ gitleaks not found; skipping secret scan"
 fi
 
-# Lint the staged files
-bun lint $STAGED_FILES
+# 2. Extract staged JS/TS/Vue files for ESLint
+LINT_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|ts|mjs|cjs|vue)$' || true)
 
-# Format the staged files, ignoring unknown files
-bun format $STAGED_FILES --ignore-unknown
+if [ -n "$LINT_FILES" ]; then
+  # Pass filtered files safely quoted via xargs
+  echo "$LINT_FILES" | tr '\n' '\0' | xargs -0 bun x eslint --fix --no-error-on-unmatched-pattern
+fi
 
-# Update the index to mark the changes in the staged files
-git update-index --again
+# 3. Format all staged files with Prettier (safely handles spaces and ignores non-formattable files)
+git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r bun x prettier --write --ignore-unknown
+
+# 4. Stage any formatting changes made by Prettier/ESLint
+git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r git add

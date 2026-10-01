@@ -1,0 +1,46 @@
+$kind: http-request
+description: Cancels document queue, marks pending signers as CANCELLED, and stamps visual VOID watermark.
+url: '{{base_url}}/api/document/:id/void'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Contract terms renegotiated with recipient."
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["reason"],
+        properties: {
+          reason: { type: "string", minLength: 5 }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Void reason input schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["documentStatus", "fileName"],
+          properties: {
+            documentStatus: { type: "string", enum: ["Voided"] },
+            fileName: { type: "string" }
+          }
+        };
+        pm.test("Void output schema matches", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Void a document.resources/examples
+order: 16000

@@ -1,0 +1,31 @@
+$kind: http-request
+description: Cryptographically verifies ByteRange digest integrity and certificate subjects.
+url: '{{base_url}}/api/document/:id/sign/verify'
+method: POST
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: formdata
+  content:
+    - key: pdf
+      type: file
+      src: ''
+      description: 'Upload signed PDF binary to verify'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["signer", "message"],
+          properties: {
+            isIntact: { type: ["boolean", "object"] },
+            signer: { type: "string" },
+            message: { type: "string" }
+          }
+        };
+        pm.test("Signature verification output schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Verify PDF signature.resources/examples
+order: 15000

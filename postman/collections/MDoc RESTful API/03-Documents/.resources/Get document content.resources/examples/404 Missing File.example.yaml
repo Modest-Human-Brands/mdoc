@@ -1,0 +1,17 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/invalid-id/content'
+  method: GET
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 404,
+        "statusMessage": "PDF file missing for document ID \"invalid-id\""
+      }
+order: 2000

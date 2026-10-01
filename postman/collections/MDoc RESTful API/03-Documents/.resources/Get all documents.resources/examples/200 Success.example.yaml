@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document?limit=50&offset=0'
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "results": [
+          {
+            "id": "398ee3b0-289a-8197-a050-d3b993fdb642",
+            "templateId": "internship-completion-certificate",
+            "name": "RCP-CERT-2026-001",
+            "mimeType": "application/pdf",
+            "sizeBytes": 896601,
+            "status": "Draft",
+            "contact": { "index": 1, "name": "Alex Mercer" },
+            "project": { "id": null, "name": "Misc", "slug": "misc", "status": "N/A" },
+            "organizationId": null,
+            "previewUrl": "http://localhost:3000/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/content",
+            "createdAt": "2026-04-20T12:00:00.000Z",
+            "updatedAt": "2026-04-20T12:00:00.000Z"
+          }
+        ],
+        "pagination": {
+          "total": 1,
+          "limit": 50,
+          "offset": 0
+        }
+      }
+order: 1000

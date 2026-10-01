@@ -1,0 +1,36 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/sign/client'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "sessionId": "9edc12f8-a541-422e-be15-a91650e06c5b",
+        "signatureHex": "788dae231e3addf99f58..."
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "id": "398ee3b0-289a-8197-a050-d3b993fdb642",
+        "documentStatus": "Completed",
+        "currentSigner": {
+          "order": 1,
+          "name": "Alex Mercer",
+          "email": "alex.mercer@example.com",
+          "role": "Recipient",
+          "status": "SIGNED",
+          "signedAt": "2026-10-01T19:30:00.000Z"
+        },
+        "nextSigner": null
+      }
+order: 1000

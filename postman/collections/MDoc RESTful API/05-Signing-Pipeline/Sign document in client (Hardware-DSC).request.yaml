@@ -1,0 +1,50 @@
+$kind: http-request
+description: Injects client USB DSC / WebCrypto signed CMS structure into the document.
+url: '{{base_url}}/api/document/:id/sign/client'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "sessionId": "{{signing_session_id}}",
+      "signatureHex": "788dae231e3addf99f58755d6e159ec2c9e465d93f91167d7e76d1457284ac89..."
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["sessionId", "signatureHex"],
+        properties: {
+          sessionId: { type: "string" },
+          signatureHex: { type: "string", minLength: 64 }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Client sign input schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["id", "documentStatus", "currentSigner"],
+          properties: {
+            id: { type: "string" },
+            documentStatus: { type: "string" },
+            currentSigner: { type: "object" },
+            nextSigner: { type: ["object", "null"] }
+          }
+        };
+        pm.test("Client sign output matches schema", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Sign document in client (Hardware-DSC).resources/examples
+order: 13000

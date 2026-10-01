@@ -1,452 +1,270 @@
 <p align="center">
-  <img src="./public/logo.png" lt="Logo" width="65" />
-<p>
+  <img src="./public/logo.png" alt="MDoc Logo" width="75" />
+</p>
 
 # MDoc
 
 ![Landing](public/previews/landing.webp)
 
-> A structured document management service for creating, storing, and collaborating on business documents and deliverables.
+> A high-performance, structured document generation and cryptographic signing service designed for automated business deliverables, legal agreements, and contract workflows.
 
-# Specs
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Engine: Bun](https://img.shields.io/badge/Runtime-Bun%20%7C%20Node%2022+-fbf0df?logo=bun)](https://bun.sh)
+[![Nitro](https://img.shields.io/badge/Framework-Nitro%20v3-ea580c?logo=nuxt)](https://nitro.unjs.io)
+[![PDF Engine](https://img.shields.io/badge/PDF-MuPDF%20%2B%20Vue--PDF-0284c7)](https://mupdf.com)
 
-## 0. Health Layer
+---
 
-### `GET /api/health`
+## Overview
 
-**Description:** Verification ping to check system readiness and isolate active compute infrastructure nodes.
+**MDoc** is an enterprise-grade document engine built on [Nitro](https://nitro.unjs.io) and [Vue](https://vuejs.org). It bridges the gap between structured business data and court-admissible, cryptographically sealed PDF documents.
 
-**Input:** _(None)_
+Unlike headless browser-based PDF generators that suffer from high memory footprints and unpredictable page splits, MDoc uses declarative, native PDF layout compilation paired with raw byte-level cryptographic signature injection.
 
-**Output (JSON):**
+### Core Capabilities
 
-```json
-{
-  "status": "OK",
-  "node": "Gigabyte"
-}
+- **Declarative PDF Compilation**: Templates built with Vue components via `@ceereals/vue-pdf` compile directly to vector PDF primitives with accurate page wrapping and layout flow.
+- **Dual Signing Engine**:
+  - **Client Hardware DSC**: Client-side signing via USB tokens, SmartCards, and WebCrypto adhering to Adobe Acrobat-compatible **CMS / PKCS#7** and standard `/ByteRange` padding.
+  - **Server-Side P12 Automation**: Automated corporate seal execution using software `.p12` certificates.
+- **Visual Stamp Placement**: Exact point-and-coordinate placement of visual signature stamps, initials, dates, and dynamic text fields using MuPDF and `@napi-rs/canvas`.
+- **Headless Notion Sync**: Stores metadata, relational associations (Users, Contacts, Projects, Organizations), and raw payloads directly in Notion databases.
+- **Workflow State Machine**: Supports sequential multi-party routing queues, status advancement (`Draft` &rarr; `Sent` &rarr; `Partially Signed` &rarr; `Completed`), and visual watermark invalidation (`Void`).
+- **Live PDF Studio**: Built-in visual development workbench (`/dev/document/:id`) with hot-reloading parameters and real-time layout introspection.
+- **Agent-Ready**: Native **MCP (Model Context Protocol)** support via `nitro-mcp-toolkit` for autonomous AI agents to inspect nodes and monitor health.
+
+---
+
+## System Architecture
+
+```text
+ ┌─────────────────────────────────────────────────────────────┐
+ │                        MDoc Service                         │
+ │                                                             │
+ │  ┌─────────────────┐   ┌────────────────────────────────┐   │
+ │  │ Document Studio │   │         Nitro Engine           │   │
+ │  │  (Vue DevTools) │   │     (H3 Event Handlers)        │   │
+ │  └────────┬────────┘   └───────────────┬────────────────┘   │
+ └───────────┼────────────────────────────┼────────────────────┘
+             │                            │
+             ▼                            ▼
+ ┌──────────────────────┐     ┌───────────────────────┐
+ │   PDF Construction   │     │  Cryptographic Core   │
+ │  ──────────────────  │     │  ───────────────────  │
+ │  • @ceereals/vue-pdf │     │  • RFC 5652 CMS / PKCS#7
+ │  • Sharp & Grayscale │     │  • PKI.js & ASN1.js   │
+ │  • MuPDF Vector Ops  │     │  • ByteRange Injector │
+ │  • pdf-lib (Watermark│     │  • @signpdf P12 Engine│
+ └───────────┬──────────┘     └───────────┬───────────┘
+             │                            │
+             └─────────────┬──────────────┘
+                           ▼
+              ┌────────────────────────┐
+              │    Persistence Layer   │
+              │  ───────────────────   │
+              │  • Notion CMS Records  │
+              │  • Unstorage (/static) │
+              │  • Local Session Cache │
+              └────────────────────────┘
 ```
 
 ---
 
-## 1. Template Management
+## Tech Stack
 
-### `GET /api/document/template`
+| Domain                | Technologies                                                                                                    |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| **Server Framework**  | [Nitro v3](https://nitro.unjs.io), [H3](https://github.com/unjs/h3)                                             |
+| **Runtime & Tooling** | [Bun](https://bun.sh), Node.js (v22+), TypeScript                                                               |
+| **PDF Rendering**     | `@ceereals/vue-pdf`, `mupdf`, `pdfjs-dist`, `pdf-lib`                                                           |
+| **Canvas & Imaging**  | `@napi-rs/canvas`, `sharp`                                                                                      |
+| **Cryptography**      | `pkijs`, `asn1js`, `@signpdf/signpdf`, `@signpdf/signer-p12`, Node WebCrypto                                    |
+| **Data Validation**   | [Zod v4](https://zod.dev)                                                                                       |
+| **Storage & Backend** | [Unstorage](https://github.com/unjs/unstorage), [@notionhq/client](https://github.com/makenotion/notion-sdk-js) |
+| **Security & Auth**   | `jsonwebtoken` (Time-boxed Signer Magic Links)                                                                  |
 
-**Description:** Fetch a list of all available dynamic document templates.
+---
 
-**Output (JSON):**
+## Project Structure
 
-```json
-[
-  {
-    "id": "quotation",
-    "name": "Standard Client Quotation",
-    "requiredFields": ["clientName", "totalAmount"]
-  },
-  {
-    "id": "internship-completion-certificate",
-    "name": "Internship Completion Certificate",
-    "requiredFields": ["recipientName", "startDate", "endDate"]
-  }
-]
-```
-
-### `POST /api/document/create`
-
-**Description:** Generate a new document in `DRAFT` status by merging payload data with a predefined template.
-
-**Input (JSON):**
-
-```json
-{
-  "template": "internship-completion-certificate",
-  "data": {
-    "recipientName": "Shreeja Sarkar",
-    "recipientRole": "Marketing Intern",
-    "scopeOfWork": "writing blogs/articles, client handling, client lead researching",
-    "startDate": "Sept 8, 2025",
-    "endDate": "Dec 8, 2025",
-    "dataOfIssue": "April 22, 2026",
-    "signerName": "Aratrik Nandy",
-    "signerTitle": "Chief Executive Officer",
-    "companyName": "RED CAT PICTURES",
-    "companylogoUrl": "https://redcatpictures.com/logo-dark.svg"
-  }
-}
-```
-
-**Output (JSON):**
-
-```json
-{
-  "success": true,
-  "message": "Document cleanly rendered and saved as draft.",
-  "documentId": "c0e6ccef-71fe-4849-99bd-616d3545f2e1",
-  "status": "DRAFT",
-  "fileName": "internship-completion-certificate_1779008723212.pdf"
-}
+```text
+mdoc/
+├── asset/                   # Fonts (Exo2, Oxanium, IslandMoments) & base vector art
+├── postman/                 # Git-native Postman workspace & collections
+│   ├── collections/         # Executable API requests, dual schemas & examples
+│   ├── environments/        # Development & production environment configurations
+│   └── globals/             # Global runtime variables
+├── public/                  # Static web preview assets & branding
+├── server/
+│   ├── api/                 # Application controllers & signing pipelines
+│   ├── mcp/                 # Model Context Protocol tools for AI runtime inspection
+│   ├── routes/dev/          # Browser-based live PDF Studio playground
+│   ├── types/               # TypeScript interfaces (Notion models, signatures)
+│   └── utils/               # Cryptographic engines, byte patchers, Notion connectors
+├── static/                  # Generated binary storage (.pdf, .png thumbnails)
+├── templates/
+│   └── document/            # Registered document templates & layout components
+│       ├── InternshipCompletionCertificateV1/
+│       ├── InvoiceV1/
+│       ├── QuotationV1/
+│       ├── RetainerContractV1/
+│       └── ShootContractV1/
+├── Dockerfile               # Production multi-stage container file
+├── nitro.config.ts          # Server, storage driver, and rollup configuration
+└── package.json
 ```
 
 ---
 
-## 2. Document Core (Query, Retrieval & Drafts)
+## Template Registry
 
-### `GET /api/document`
+MDoc includes pre-built, strongly-typed templates configured with dynamic variable validation and signer coordinates:
 
-**Description:** Retrieve metadata for all documents accessible to the authenticated user. Supports pagination (`?limit=50&offset=0`).
-
-**Output (JSON):**
-
-```json
-{
-  "results": [
-    {
-      "id": "c0e6ccef-71fe-4849-99bd-616d3545f2e1",
-      "templateId": "internship-completion-certificate",
-      "name": "Internship Completion Certificate",
-      "mimeType": "application/pdf",
-      "sizeBytes": 896601,
-      "status": "Completed",
-      "organizationId": null,
-      "projectId": null,
-      "categories": [],
-      "previewUrl": "/api/document/Internship Completion Certificate/content",
-      "createdAt": "2026-04-27T12:11:26.733Z",
-      "updatedAt": "2026-04-27T12:11:26.733Z"
-    }
-  ],
-  "pagination": {
-    "total": 1,
-    "limit": 50,
-    "offset": 0
-  }
-}
-```
-
-### `GET /api/document/:id`
-
-**Description:** Get exhaustive metadata for a specific document, including its current signature workflow status and signer queue.
-
-**Output (JSON):**
-
-```json
-{
-  "id": "371ee3b0-289a-81d0-9e6b-e539d914d969",
-  "templateId": "internship-completion-certificate",
-  "name": "RCP-C-0-0",
-  "mimeType": "application/pdf",
-  "sizeBytes": 501459,
-  "status": "Completed",
-  "organizationId": null,
-  "projectId": null,
-  "categories": [],
-  "previewUrl": "/api/document/RCP-C-0-0/content",
-  "createdAt": "2026-05-31T10:21:00.000Z",
-  "updatedAt": "2026-05-31T10:21:00.000Z"
-}
-```
-
-### `PATCH /api/document/:id`
-
-**Description:** Update a `DRAFT` document before sending it. Allows modification of custom variables or file renaming.
-
-**Input (JSON):**
-
-```json
-{
-  "name": "Updated Internship Certificate - Shreeja",
-  "customData": {
-    "endDate": "Dec 15, 2025"
-  }
-}
-```
-
-### `GET /api/document/:id/content`
-
-**Description:** Returns the raw binary PDF file of the document.
-
-**Output:** `application/pdf` (Binary Stream)
+1. **Internship Completion Certificate (`internship-completion-certificate`)**
+   - High-resolution vector-rendered certificate with tint-adjusted backgrounds.
+   - Configured with signature, authority title, and issue date stamping.
+2. **Standard Quotation (`quotation`)**
+   - Multi-page project commercial estimate with dynamic deliverable rows and financial calculation blocks.
+   - Dual-party acceptance signatures with per-page tracking.
+3. **Billing Invoice (`invoice`)**
+   - Computer-generated tax invoice with discount, tax, subtotal, and banking metadata.
+   - Watermarked with automatic dynamic payment status stamps (`PAID`, `PARTIALLY PAID`, `UNPAID`).
+4. **Retainer Contract (`retainer-contract`)**
+   - Monthly service agreement with configurable flat or target-based compensation models.
+   - Evaluates conditional Markdown terms (Auto-renew, Manual, Fixed Term) with multi-signer flow.
+5. **Production Shoot Contract (`shoot-contract`)**
+   - Media production agreement including call times, advance breakdowns, deliverables, and copyright protections.
 
 ---
 
-## 3. Envelope Routing & Signer Access
+## Getting Started
 
-### `POST /api/document/:id/envelope`
+### Prerequisites
 
-**Description:** Locks a draft document and creates a routing envelope. Dictates who needs to sign it, in what order, and transitions the status to `SENT`.
+- **Bun** `>= 1.2.9` (recommended) or **Node.js** `>= 22.11.0`
+- System build dependencies for native modules (`mupdf`, `@napi-rs/canvas`):
+  - On Ubuntu/Debian: `sudo apt-get install build-essential python3`
+  - On macOS: Xcode Command Line Tools (`xcode-select --install`)
 
-**Input (JSON):**
+### Environment Configuration
 
-```json
-{
-  "expiresInDays": 7,
-  "routingType": "SEQUENTIAL",
-  "signers": [
-    {
-      "order": 1,
-      "name": "Shreeja Sarkar",
-      "email": "shreeja@example.com",
-      "role": "Recipient",
-      "authMethod": "EMAIL_OTP",
-      "requiresAttachments": ["ID_PROOF"]
-    },
-    {
-      "order": 2,
-      "name": "Aratrik Nandy",
-      "email": "aratrik@redcatpictures.com",
-      "role": "Issuer",
-      "authMethod": "SSO"
-    }
-  ],
-  "message": "Please review and sign your completion certificate."
-}
+Create a `.env` file in the root directory:
+
+```bash
+# Server Runtime
+NODE_ENV=development
+HOSTNAME=local-node
+
+# Public Routing
+NITRO_PUBLIC_DOC_URL=http://localhost:3000
+
+# Security Secrets
+NITRO_PRIVATE_JWT_SECRET=your_jwt_signing_secret_here
+NITRO_PRIVATE_CERTIFICATE_SECRET=your_p12_certificate_passphrase_here
+
+# Notion Integration
+NOTION_API_KEY=ntn_your_notion_integration_token
+NITRO_PRIVATE_NOTION_DB_ID='{"document":"your_notion_data_source_id","user":"...","contact":"...","project":"..."}'
 ```
 
-**Output (JSON):**
+_(Note: For automated server signing, place a valid `certificate.p12` file inside `./static/certificate.p12`.)_
 
-```json
-{
-  "success": true,
-  "envelopeId": "env_88f9a2b1",
-  "status": "SENT",
-  "nextSigner": "shreeja@example.com"
-}
+### Installation & Development
+
+```bash
+# Install dependencies
+bun install
+
+# Start local server with hot module replacement
+bun run dev
 ```
 
-### `POST /api/document/:id/session`
+The service will start at `http://localhost:3000`.
 
-**Description:** Generates a secure, time-limited Magic Link/Session Token for an external signer to access the signing UI without an MHB account.
+---
 
-**Input (JSON):**
+## PDF Studio (Developer Playground)
 
-```json
-{
-  "signerEmail": "shreeja@example.com",
-  "expiresInDays": 60
-}
+MDoc includes an in-browser PDF Studio that allows you to inspect layouts, tweak variables in real time, and verify signer field overlays:
+
+```text
+http://localhost:3000/dev/document/:templateId
 ```
 
-**Output (JSON):**
+_Example:_ `http://localhost:3000/dev/document/internship-completion-certificate`
 
-```json
-{
-  "success": true,
-  "sessionToken": "jwt_token_xyz",
-  "magicLink": "https://app.redcatpictures.com/sign/env_88f9a2b1?token=jwt_token_xyz"
-}
+### Studio Features
+
+- **Live Form Sync**: Automatically parses the template's Zod schema and generates editable form fields.
+- **Client-Side Vector Render**: Renders PDF pages using PDF.js without file downloads.
+- **Signer Coordinate Grid**: Displays visual bounding boxes for signature fields, initials, names, and date positions per signer order.
+
+---
+
+## API & Integration Testing
+
+All API endpoints, schemas, validation rules, and live request examples are maintained in the **Postman Git-Native Collection** located under `/postman`:
+
+```text
+postman/collections/MDoc RESTful API/
+├── 01-Health/
+├── 02-Templates/
+├── 03-Documents/
+├── 04-Signer-Sessions/
+├── 05-Signing-Pipeline/
+└── 06-Audit-And-Control/
+```
+
+Import the collection directly into Postman or link the repository to your Postman workspace to access:
+
+- Pre-request script schema validations (AJV).
+- Post-response contract assertions.
+- Saved examples for all success and error codes (`200`, `400`, `401`, `403`, `404`, `409`, `500`).
+
+---
+
+## Docker Deployment
+
+MDoc can be built and deployed as a standalone container:
+
+```bash
+# Build production Docker image
+bun run docker:build
+
+# Run container
+docker run -d \
+  --name mdoc \
+  --env-file .env.prod \
+  -p 3000:3000 \
+  mdoc:dev
 ```
 
 ---
 
-## 4. Execution & Attachments
+## Contributing
 
-### `POST /api/document/:id/sign`
-
-**Description:** Executes a signature block on the document. Captures visual signature data alongside deep telemetry for the audit trail.
-
-**Input (JSON):**
-
-```json
-{
-  "sessionToken": "jwt_token_xyz",
-  "signatureData": "data:image/png;base64,iVBORw0KGgo...",
-  "telemetry": {
-    "ipAddress": "192.168.1.45",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)...",
-    "location": "22.4309° N, 88.4230° E"
-  }
-}
-```
-
-**Output (JSON):**
-
-```json
-{
-  "success": true,
-  "message": "Signature successfully applied.",
-  "documentStatus": "PARTIALLY_SIGNED",
-  "nextSigner": "aratrik@redcatpictures.com"
-}
-```
-
-### `POST /api/document/:id/attachments`
-
-**Description:** Allows a signer to upload supplementary files (e.g., ID proof) required for the contract.
-
-**Input (JSON):**
-
-```json
-{
-  "sessionToken": "jwt_token_xyz",
-  "attachmentType": "ID_PROOF",
-  "fileName": "passport_scan.pdf",
-  "fileBase64": "JVBERi0xLjQKJcOkw7zDts..."
-}
-```
-
-**Output (JSON):**
-
-```json
-{
-  "success": true,
-  "attachmentId": "att_91238xa"
-}
-```
+1. Clone the repository: `git clone https://github.com/Modest-Human-Brands/mdoc.git`
+2. Create a feature branch: `git checkout -b feature/new-template`
+3. Run code linting and formatting:
+   ```bash
+   bun run lint
+   bun run format
+   ```
+4. Verify commits adhere to conventional specifications:
+   ```bash
+   bun run detect
+   ```
+5. Submit a pull request.
 
 ---
-
-## 5. Workflow Interruption & Control
-
-### `POST /api/document/:id/remind`
-
-**Description:** Forces a manual nudge (via email or MCoordinate matrix chat) to the person currently holding up the queue.
-
-**Input (JSON):**
-
-```json
-{
-  "message": "Hi Shreeja, friendly reminder to sign this certificate before Friday!"
-}
-```
-
-**Output (JSON):**
-
-```json
-{
-  "success": true,
-  "message": "Reminder dispatched to shreeja@example.com"
-}
-```
-
-### `POST /api/document/:id/void`
-
-**Description:** Cancels an active envelope. No further signatures can be collected. Permanently watermarks the document as "VOID".
-
-**Input (JSON):**
-
-```json
-{
-  "reason": "Contract terms renegotiated, issuing a new version."
-}
-```
-
-**Output (JSON):**
-
-```json
-{
-  "success": true,
-  "status": "VOID",
-  "message": "Envelope voided successfully."
-}
-```
-
----
-
-## 6. Audit & Compliance
-
-### `GET /api/document/:id/audit-trail`
-
-**Description:** Generates and returns a secure, tamper-evident PDF Certificate of Completion detailing the entire lifecycle of the document (creation, views, signature timestamps, IPs).
-
-**Output:** `application/pdf` (Binary Stream)
-
-### `GET /api/document/:id/verify`
-
-**Description:** Verifies the cryptographic hash of a completed document to ensure it has not been tampered with since the final signature was applied.
-
-**Output (JSON):**
-
-```json
-{
-  "isValid": true,
-  "sealTimestamp": "2026-04-27T12:15:00.000Z",
-  "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-}
-```
-
----
-
-## 7. Cross-Service Integration & Archival
-
-### `POST /api/webhooks/subscriptions`
-
-**Description:** Registers a webhook listener (e.g., MCoordinate) to receive real-time event pushes when document statuses change.
-
-**Input (JSON):**
-
-```json
-{
-  "targetUrl": "https://api.redcatpictures.com/coordinate/webhooks/ingest",
-  "events": ["document.sent", "document.viewed", "document.signed", "document.completed", "document.voided"],
-  "secret": "........."
-}
-```
-
-### `POST /api/document/:id/export/s3`
-
-**Description:** Pushes a completed, cryptographically sealed MDoc PDF payload (and associated attachments) directly into a specified S3 bucket for immutable, compliant cold storage.
-
-**Input (JSON):**
-
-```json
-{
-  "storageProfile": "production-contracts-secure",
-  "s3Prefix": "2026/clients/redcat-pictures/",
-  "applyKmsEncryption": true,
-  "metadataTags": {
-    "client": "Red Cat Pictures",
-    "documentType": "Internship Certificate",
-    "retentionPolicy": "7_years"
-  }
-}
-```
-
-**Output (JSON):**
-
-```json
-{
-  "success": true,
-  "message": "Document and attachments successfully written to S3.",
-  "s3Details": {
-    "bucket": "mhb-secure-contracts-prod",
-    "objectKey": "2026/clients/redcat-pictures/internship-completion-certificate_1779008723212.pdf",
-    "eTag": "\"6805f2cfc46c0f04559748bb039d69ae\"",
-    "versionId": "3/L4kqtJlcpXroDTDmJ+rmSpjOSezUm"
-  }
-}
-```
-
----
-
-### Roadmap
-
-| Order  | Route                                | Module                                  | Complexity Profile                                                                                                                                                                      | Status         |
-| ------ | ------------------------------------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| **1**  | `GET /api/health`                    | 0. Health & Discovery                   | **Trivial**: Simple hardcoded static JSON response checking node availability.                                                                                                          | ✅ **Done**    |
-| **2**  | `GET /api/document/template`         | 1. Template Management                  | **Very Low**: Basic database read returning a static or simple list of available templates.                                                                                             | ✅ **Done**    |
-| **3**  | `POST /api/document/create`          | 1. Template Management                  | **Medium**: Requires a PDF rendering engine (like Puppeteer/PDFKit) to merge JSON payload with a visual template and save the output.                                                   | ✅ **Done**    |
-| **4**  | `GET /api/document`                  | 2. Document Core                        | **Low**: Standard CRUD read with pagination and basic query parameters (filtering by status).                                                                                           | ✅ **Done**    |
-| **5**  | `GET /api/document/:id`              | 2. Document Core                        | **Low**: Standard CRUD single-record lookup for document metadata.                                                                                                                      | ✅ **Done**    |
-| **6**  | `PATCH /api/document/:id`            | 2. Document Core                        | **Low**: Standard CRUD update with simple validation (only allowing edits if status is `DRAFT`).                                                                                        | ✅ **Done**    |
-| **7**  | `GET /api/document/:id/content`      | 2. Document Core                        | **Low**: Requires reading a binary stream from local storage or S3 and piping it to the HTTP response.                                                                                  | ✅ **Done**    |
-| **8**  | `POST /api/document/:id/session`     | 3. Envelope Routing & Signer Access     | **Low**: Pure compute. Generates a time-boxed JWT and formats a Magic Link. No file I/O required.                                                                                       | ✅ **Done**    |
-| **9**  | `POST /api/document/:id/remind`      | 5. Workflow Interruption & Control      | **Low-Medium**: Requires integration with an outbound notification service (SMTP or MCoordinate webhook).                                                                               | ⏳ **Pending** |
-| **10** | `POST /api/document/:id/envelope`    | 3. Envelope Routing & Signer Access     | **Medium**: State machine initialization. Validates signer arrays, builds the routing queue, locks the document, and transitions state to `SENT`.                                       | ✅ **Done**    |
-| **11** | `POST /api/webhooks/subscriptions`   | 7. Cross-Service Integration & Archival | **Medium**: Database writes coupled with registering jobs in a background worker queue (e.g., BullMQ) for future async dispatch.                                                        | ⏳ **Pending** |
-| **12** | `POST /api/document/:id/void`        | 5. Workflow Interruption & Control      | **Medium-High**: Halts the state machine queue and requires manipulating an existing PDF in-memory to stamp a visual "VOID" watermark across pages.                                     | ✅ **Done**    |
-| **13** | `POST /api/document/:id/attachments` | 4. Execution & Attachments              | **High**: Handles `multipart/form-data`, file sanitization/malware checks, limits file sizing, and manages secure temporary uploads.                                                    | ⏳ **Pending** |
-| **14** | `POST /api/document/:id/export/s3`   | 7. Cross-Service Integration & Archival | **High**: Complex networking and security. Requires AWS SDK integration, handling KMS encryption, piping large streams, and applying custom S3 metadata tags.                           | ⏳ **Pending** |
-| **15** | `POST /api/document/:id/sign`        | 4. Execution & Attachments              | **Very High**: The core engine. Requires token validation, loading the PDF into memory, mapping X/Y coordinates, image scaling/flattening, DB telemetry logging, and queue advancement. | ✅ **Done**    |
-| **16** | `GET /api/document/:id/audit-trail`  | 6. Audit & Compliance                   | **Expert**: Requires dynamic PDF generation from database event logs, drawing structured tables, and safely appending those new pages to the _existing_ signed PDF binary.              | ⏳ **Pending** |
-| **17** | `GET /api/document/:id/verify`       | 6. Audit & Compliance                   | **Expert**: Pure cryptography. Requires hashing the final PDF binary, extracting existing X.509 digital certificates, and comparing checksums to definitively prove immutability.       | ⏳ **Pending** |
-
-Progress = 11/17 = 64%
 
 ## License
 
-Published under the [MIT](https://github.com/Modest-Human-Brands/mdoc/blob/main/LICENSE) license.
-<br><br>
-<a href="https://github.com/Modest-Human-Brands/mdoc/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=Modest-Human-Brands/mdoc" />
-</a>
+Published under the [MIT License](https://github.com/Modest-Human-Brands/mdoc/blob/main/LICENSE).
+
+<br>
+<p align="center">
+  <a href="https://github.com/Modest-Human-Brands/mdoc/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=Modest-Human-Brands/mdoc" alt="Contributors" />
+  </a>
+</p>

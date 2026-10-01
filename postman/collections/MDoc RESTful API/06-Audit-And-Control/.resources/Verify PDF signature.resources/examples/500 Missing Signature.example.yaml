@@ -1,0 +1,17 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/sign/verify'
+  method: POST
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 500,
+        "statusMessage": "No digital signature (ByteRange) found in PDF."
+      }
+order: 2000

@@ -1,0 +1,71 @@
+$kind: http-request
+description: Generates a new PDF and saves a draft record in Notion. Requires valid Notion UUIDs for userId and contactId.
+url: '{{base_url}}/api/document/template'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "RCP-CERT-2026-001",
+      "template": "internship-completion-certificate",
+      "userId": "19cee3b0-289a-8072-bc12-f4728d11c002",
+      "contactId": "19cee3b0-289a-800a-b280-ff6e2055a401",
+      "orgId": "307ee3b0-289a-8116-afb0-f6a1795a27a0",
+      "projectId": "23dee3b0-289a-81d0-9e6b-e539d914d969",
+      "data": {
+        "recipient": {
+          "name": "Alex Mercer",
+          "role": "Marketing Intern",
+          "address": "45 Park Avenue, NY",
+          "email": "alex.mercer@example.com",
+          "phone": "+1 555-0199"
+        },
+        "scopeOfWork": "Brand Identity Design",
+        "startDate": "2025-06-01T00:00:00.000Z",
+        "endDate": "2025-12-31T00:00:00.000Z"
+      }
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["name", "template", "userId", "contactId", "data"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+          template: { type: "string", minLength: 1 },
+          userId: { type: "string", minLength: 1 },
+          contactId: { type: "string", minLength: 1 },
+          orgId: { type: "string" },
+          projectId: { type: "string" },
+          data: { type: "object" }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Input payload schema is valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["id", "templateId", "name", "sizeBytes"],
+          properties: {
+            id: { type: "string" },
+            templateId: { type: "string" },
+            name: { type: "string" },
+            sizeBytes: { type: "number" }
+          }
+        };
+        pm.test("Output matches Creation Schema", () => pm.response.to.have.jsonSchema(outputSchema));
+        const res = pm.response.json();
+        if (res.id) pm.collectionVariables.set("document_id", res.id);
+      }
+examples: .resources/Create document from template.resources/examples
+order: 5000

@@ -1,0 +1,28 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template/preview'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "templateId": "internship-completion-certificate",
+        "variables": {
+          "recipient": { "name": "Alex Mercer" }
+        }
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "pdfBase64": "JVBERi0xLjQKJcOkw7zDtsOf..."
+      }
+order: 1000

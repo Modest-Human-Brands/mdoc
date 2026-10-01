@@ -1,0 +1,32 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "name": "RCP-CERT-2026-001",
+        "template": "internship-completion-certificate",
+        "userId": "19cee3b0-289a-8072-bc12-f4728d11c002",
+        "contactId": "19cee3b0-289a-800a-b280-ff6e2055a401",
+        "data": { "recipient": { "name": "Alex Mercer" } }
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "id": "398ee3b0-289a-8197-a050-d3b993fdb642",
+        "templateId": "internship-completion-certificate",
+        "name": "RCP-CERT-2026-001",
+        "sizeBytes": 896601
+      }
+order: 1000

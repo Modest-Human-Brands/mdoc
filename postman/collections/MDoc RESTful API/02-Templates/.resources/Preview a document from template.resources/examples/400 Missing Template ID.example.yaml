@@ -1,0 +1,25 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template/preview'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "variables": {}
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": "Missing templateId in request body."
+      }
+order: 2000

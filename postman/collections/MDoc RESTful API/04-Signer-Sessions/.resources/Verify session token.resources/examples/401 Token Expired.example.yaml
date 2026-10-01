@@ -1,0 +1,26 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/session/verify'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "sessionToken": "invalid-or-expired-jwt"
+      }
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 401,
+        "statusMessage": "Session expired or invalid."
+      }
+order: 2000

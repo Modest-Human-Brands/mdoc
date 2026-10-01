@@ -1,0 +1,17 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template/non-existent-template'
+  method: GET
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "statusCode": 404,
+        "statusMessage": "Template not found"
+      }
+order: 2000
