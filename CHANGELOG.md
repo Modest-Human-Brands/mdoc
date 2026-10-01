@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.7
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.6...v0.3.7)
+
+### 📖 Documentation
+
+- Update postman collection to v3 git-native format and modernize readme ([c1593a8](https://github.com/Modest-Human-Brands/mdoc/commit/c1593a8))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi <shirsendu2001@gmail.com>
+
 ## v0.3.6
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.5...v0.3.6)
