@@ -41,8 +41,8 @@ export const internshipCompletionCertificateSchema = z.object({
     phone: z.string(),
   }),
   scopeOfWork: z.string(),
-  startDate: z.date(),
-  endDate: z.date(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
   organization: z.object({
     id: z.string(),
     name: z.string(),

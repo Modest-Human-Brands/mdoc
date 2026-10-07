@@ -14,8 +14,8 @@ export const shootContractSchema = z.object({
   project: z.object({
     title: z.string(),
     quoteNumber: z.string(),
-    quoteDate: z.date(),
-    shootDate: z.date(),
+    quoteDate: z.coerce.date(),
+    shootDate: z.coerce.date(),
     shootLocation: z.string(),
     callTime: z.iso.time(),
   }),
@@ -23,11 +23,11 @@ export const shootContractSchema = z.object({
   totalAmount: z.number(),
   serviceCategory: z.string(),
   advancePercentage: z.number().min(0).max(100).optional().default(0),
-  agreementDate: z.date(),
-  expiresIn: z.date(),
+  agreementDate: z.coerce.date(),
+  expiresIn: z.coerce.date(),
   terms: z.object({
     content: z.string(),
-    lastUpdated: z.date(),
+    lastUpdated: z.coerce.date(),
   }),
   organization: z.object({
     id: z.string(),

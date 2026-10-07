@@ -13,10 +13,10 @@ export const invoiceSchema = z.object({
   project: z.object({
     title: z.string(),
     quoteNumber: z.string(),
-    quoteDate: z.date(),
+    quoteDate: z.coerce.date(),
     invoiceNumber: z.string(),
-    invoiceDate: z.date(),
-    shootDate: z.date(),
+    invoiceDate: z.coerce.date(),
+    shootDate: z.coerce.date(),
     shootLocation: z.string(),
     deliverables: z.array(
       z.object({
@@ -38,7 +38,7 @@ export const invoiceSchema = z.object({
       amountPaid: z.number().min(0).optional(),
     })
     .optional(),
-  dueDate: z.date(),
+  dueDate: z.coerce.date(),
   organization: z.object({
     id: z.string(),
     name: z.string(),

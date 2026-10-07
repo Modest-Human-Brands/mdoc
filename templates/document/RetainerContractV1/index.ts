@@ -14,8 +14,8 @@ export const retainerContractSchema = z.object({
   engagement: z.object({
     title: z.string(),
     quoteNumber: z.string(),
-    quoteDate: z.date(),
-    startDate: z.date(),
+    quoteDate: z.coerce.date(),
+    startDate: z.coerce.date(),
     months: z.number().int().min(1),
     renewalType: z.enum(['Auto-Renew', 'Manual Renewal', 'Fixed Term - No Renewal']),
     noticePeriodDays: z.number().int().min(0).default(30),
@@ -42,11 +42,11 @@ export const retainerContractSchema = z.object({
       message: 'At least one of flatMonthlyFee or targetBasedFees must be provided',
       path: ['flatMonthlyFee'],
     }),
-  agreementDate: z.date(),
-  expiresIn: z.date(),
+  agreementDate: z.coerce.date(),
+  expiresIn: z.coerce.date(),
   terms: z.object({
     content: z.string(),
-    lastUpdated: z.date(),
+    lastUpdated: z.coerce.date(),
   }),
   organization: z.object({
     id: z.string(),

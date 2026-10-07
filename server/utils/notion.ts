@@ -1,6 +1,13 @@
+// server/utils/notion.ts
 import { Client } from '@notionhq/client'
+import { notionMockClient } from '~/server/utils/notion-mock'
+
+const isDev = process.env.NODE_ENV === 'development'
 
 const notionClientSingleton = () => {
+  if (isDev) {
+    return notionMockClient as unknown as Client
+  }
   return new Client({ auth: process.env.NOTION_API_KEY })
 }
 

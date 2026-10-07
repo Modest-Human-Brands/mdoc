@@ -15,8 +15,8 @@ export const quotationSchema = z.object({
   project: z.object({
     title: z.string(),
     quoteNumber: z.string(),
-    quoteDate: z.date(),
-    shootDate: z.date(),
+    quoteDate: z.coerce.date(),
+    shootDate: z.coerce.date(),
     shootLocation: z.string(),
     deliverables: z.array(
       z.object({
@@ -39,9 +39,9 @@ export const quotationSchema = z.object({
     .optional(),
   terms: z.object({
     content: z.string(),
-    lastUpdated: z.date(),
+    lastUpdated: z.coerce.date(),
   }),
-  expiresIn: z.date(),
+  expiresIn: z.coerce.date(),
   organization: z.object({
     id: z.string(),
     name: z.string(),

@@ -1,39 +1,41 @@
+// server/api/document/template/index.post.ts
 import { h, type Component } from 'vue'
 import { renderToFile } from '@ceereals/vue-pdf'
 import { defineEventHandler, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
+import { z } from 'zod'
 
 import notion from '~/server/utils/notion'
 import { templateRegistry } from '~/server/utils/template-registry'
 import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
+import { resolveOrganization } from '~/server/utils/organization-store'
+import { handleApiError } from '~/server/utils/api-error'
 import type { NotionDB } from '~/server/types'
-import type { RequestBody } from '~/server/types/templates'
 
 import '~/templates/document'
+
+const createDocSchema = z.object({
+  name: z.string().min(1, 'name is required'),
+  template: z.string().min(1, 'template identifier is required'),
+  contactId: z.string().min(1, 'contactId is required'),
+  userId: z.string().min(1, 'userId is required'),
+  orgId: z.string().optional(),
+  organizationId: z.string().optional(),
+  projectId: z.string().optional(),
+  data: z.record(z.string(), z.any()).default({}),
+})
 
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig()
-    const notionDbId = JSON.parse(config.private.notionDbId) as unknown as NotionDB
+    const notionDbId = config.private.notionDbId ? (JSON.parse(config.private.notionDbId) as NotionDB) : ({ document: 'mock-doc-db' } as NotionDB)
     const fsStorage = useStorage('fs')
 
-    const {
-      name: fileName,
-      template: templateId,
-      data: rawData,
-      orgId,
-      projectId,
-      contactId,
-      userId,
-    } = (await readBody<RequestBody & { projectId?: string; contactId?: string; orgId?: string; userId?: string }>(event))!
+    const body = await readBody(event)
+    const parsed = createDocSchema.parse(body)
 
-    if (!contactId || !userId) {
-      throw new HTTPError({
-        statusCode: 400,
-        statusMessage: 'contactId and userId are required.',
-      })
-    }
+    const { name: fileName, template: templateId, data: rawData, orgId, organizationId, projectId, contactId, userId } = parsed
 
     const targetTemplate = templateRegistry[templateId]
     if (!targetTemplate) {
@@ -43,17 +45,35 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const outputPath = `./static/${fileName}.pdf`
+    // Resolve organization from preset or template placeholder
+    const effectiveOrgId = organizationId || orgId || rawData.organizationId || rawData.organization
+    const resolvedOrg = resolveOrganization(effectiveOrgId, targetTemplate.placeholders?.organization)
 
-    await renderToFile(h(targetTemplate.component as Component, await targetTemplate.transformPayload(rawData)), outputPath)
+    const enrichedData = {
+      ...targetTemplate.placeholders,
+      ...rawData,
+      organization: resolvedOrg,
+    }
+
+    // Validate payload against template schema
+    if (targetTemplate.schema) {
+      const validationResult = targetTemplate.schema.safeParse(enrichedData)
+      if (!validationResult.success) {
+        return handleApiError(validationResult.error, 'document/template/index.post/schema')
+      }
+    }
+
+    const outputPath = `./static/${fileName}.pdf`
+    const transformedPayload = await targetTemplate.transformPayload(enrichedData)
+
+    await renderToFile(h(targetTemplate.component as Component, transformedPayload), outputPath)
 
     const file = await fsStorage.getItemRaw<Buffer>(`${fileName}.pdf`)
     if (!file) {
-      throw new Error('Generated PDF could not be found.')
+      throw new Error('Generated PDF file could not be persisted.')
     }
 
     const pngBuffer = await generatePdfThumbnail(file)
-
     await fsStorage.setItemRaw(`${fileName}.png`, pngBuffer)
 
     const notionProperties: any = {
@@ -66,15 +86,15 @@ export default defineEventHandler(async (event) => {
       User: { relation: [{ id: userId }] },
     }
 
-    if (orgId) {
-      notionProperties.Organization = { relation: [{ id: orgId }] }
+    if (orgId || organizationId) {
+      notionProperties.Organization = { relation: [{ id: orgId || organizationId }] }
     }
 
     if (projectId) {
       notionProperties.Project = { relation: [{ id: projectId }] }
     }
 
-    const rawDataString = JSON.stringify(rawData)
+    const rawDataString = JSON.stringify(enrichedData)
     const chunks = rawDataString.match(/[\s\S]{1,2000}/g) || []
 
     const childrenBlocks: any[] = []
@@ -102,15 +122,6 @@ export default defineEventHandler(async (event) => {
       sizeBytes: file?.byteLength || 0,
     }
   } catch (error: unknown) {
-    console.error('API /document/template/index POST', error)
-
-    if (error instanceof Error && 'statusCode' in error) {
-      throw error
-    }
-
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    return handleApiError(error, 'document/template/index.post')
   }
 })

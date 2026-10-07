@@ -1,6 +1,8 @@
+// server/api/document/template/[id].get.ts
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
-import zodToJsonSchema from '~/server/utils/zod-to-json-schema'
+import { parseSchemaToJsonSchema } from '~/server/utils/zod-to-json-schema'
+import { handleApiError } from '~/server/utils/api-error'
 
 import '~/templates/document'
 
@@ -24,23 +26,17 @@ export default defineEventHandler((event) => {
       })
     }
 
+    const jsonSchema = template.schema ? parseSchemaToJsonSchema(template.schema) : {}
+
     return {
       id: template.id,
       label: template.label,
       description: template.description,
-      variables: template.schema ? zodToJsonSchema(template.schema) : {},
+      schema: jsonSchema,
+      variables: jsonSchema, // Backward-compatibility
       signerFields: template.signerFields,
     }
   } catch (error: unknown) {
-    console.error('API /document/template/[id] GET', error)
-
-    if (error instanceof Error && 'statusCode' in error) {
-      throw error
-    }
-
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    return handleApiError(error, 'template/[id].get')
   }
 })
