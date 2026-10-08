@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.3.7
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.6...v0.3.7)
+
+### 🚀 Enhancements
+
+- **api:** Enhance error handling and validation across document templates ([ade50a1](https://github.com/Modest-Human-Brands/mdoc/commit/ade50a1))
+- Add new api endpoints for document templates and improve pdf rendering ([df5f90c](https://github.com/Modest-Human-Brands/mdoc/commit/df5f90c))
+
+### 📖 Documentation
+
+- Update postman collection to v3 git-native format and modernize readme ([c1593a8](https://github.com/Modest-Human-Brands/mdoc/commit/c1593a8))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.6
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.5...v0.3.6)
