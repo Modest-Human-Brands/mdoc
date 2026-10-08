@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LogoMark from '../_shared/LogoMark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 
 const props = defineProps<{
@@ -55,7 +56,7 @@ const styles = {
       </View>
 
       <View :style="styles.logoContainer">
-        <Image :src="organizationLogo" :style="styles.logoImage" />
+        <LogoMark :src="organizationLogo" :box="styles.logoImage" />
       </View>
     </Page>
   </Document>

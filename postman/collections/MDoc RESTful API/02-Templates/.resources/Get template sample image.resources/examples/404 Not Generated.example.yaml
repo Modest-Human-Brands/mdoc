@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template/invoice/sample/9.png'
+  method: GET
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": true,
+        "status": 404,
+        "statusText": "Sample image not found. Run the templates:sample-images task.",
+        "message": "Sample image not found. Run the templates:sample-images task."
+      }
+order: 1000

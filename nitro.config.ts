@@ -13,6 +13,11 @@ export default defineConfig({
   features: {
     websocket: true,
   },
+  // public/decor is also bundled for server-side rendering (read via useStorage('assets:decor'))
+  serverAssets: [
+    { baseName: 'decor', dir: './public/decor' },
+    { baseName: 'templates', dir: './public/templates' },
+  ],
   experimental: {
     tasks: true,
   },

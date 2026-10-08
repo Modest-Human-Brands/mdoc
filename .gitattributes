@@ -1,0 +1,2 @@
+# Generated template sample images (templates:sample-images task)
+public/templates/**/*.png filter=lfs diff=lfs merge=lfs -text

@@ -45,7 +45,7 @@ export const retainerContractSchema = z.object({
   agreementDate: z.coerce.date(),
   expiresIn: z.coerce.date(),
   terms: z.object({
-    content: z.string(),
+    content: z.string().meta({ 'x-boilerplate': true }),
     lastUpdated: z.coerce.date(),
   }),
   organization: z.object({
@@ -233,8 +233,8 @@ registerTemplate({
   category: 'Contracts',
   description: 'A recurring monthly engagement agreement for marketing or development work, billed as a flat fee and/or a target-based fee.',
   fonts: [
-    { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
-    { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
+    { name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' },
+    { name: 'Oxanium', family: 'Oxanium', weights: [400], path: './asset/Oxanium-Regular.ttf' },
   ],
   schema: retainerContractSchema,
   placeholders,
@@ -247,7 +247,10 @@ registerTemplate({
 
     const engagement = rawData.engagement || p.engagement
     const compensation = rawData.compensation || p.compensation
-    const endDate = subDays(addMonths(engagement.startDate, Number.parseInt(`${engagement.months}`)), 1)
+    const startDate = new Date(engagement.startDate)
+    const months = Number.parseInt(`${engagement.months}`)
+    // Tokens / unfilled fields are not dates or numbers: leave the computed end date empty
+    const endDate = Number.isNaN(startDate.getTime()) || Number.isNaN(months) ? undefined : subDays(addMonths(startDate, months), 1)
 
     const flatMonthlyFee = compensation.flatMonthlyFee
     const targetFees = compensation.targetBasedFees
@@ -260,7 +263,7 @@ registerTemplate({
       organizationGstin: org?.gstin || p.organization!.gstin,
       organizationPan: org?.pan || p.organization!.pan,
       organizationAddress: org?.address || p.organization!.address,
-      organizationLogo: orgBranding?.logo || p.organization.branding.logo,
+      organizationLogo: orgBranding?.logo ?? p.organization.branding.logo,
       organizationFont: orgBranding?.font || p.organization!.branding!.font,
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
@@ -274,9 +277,9 @@ registerTemplate({
       serviceCategory: rawData.serviceCategory || p.serviceCategory,
       startDate: engagement.startDate,
       endDate,
-      engagementMonths: Number.parseInt(`${engagement.months}`),
+      engagementMonths: Number.isNaN(months) ? `${engagement.months}` : months,
       renewalType: engagement.renewalType,
-      noticePeriodDays: Number.parseInt(`${engagement.noticePeriodDays}`) ?? 30,
+      noticePeriodDays: Number.isNaN(Number.parseInt(`${engagement.noticePeriodDays}`)) ? `${engagement.noticePeriodDays}` : Number.parseInt(`${engagement.noticePeriodDays}`),
       expiresIn: rawData.expiresIn || p.expiresIn,
 
       scopeOfWork: rawData.scopeOfWork && rawData.scopeOfWork.length > 0 ? rawData.scopeOfWork : p.scopeOfWork,

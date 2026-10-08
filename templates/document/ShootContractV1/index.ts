@@ -26,7 +26,7 @@ export const shootContractSchema = z.object({
   agreementDate: z.coerce.date(),
   expiresIn: z.coerce.date(),
   terms: z.object({
-    content: z.string(),
+    content: z.string().meta({ 'x-boilerplate': true }),
     lastUpdated: z.coerce.date(),
   }),
   organization: z.object({
@@ -142,8 +142,8 @@ registerTemplate({
   category: 'Contracts',
   description: 'The formal agreement or legal document outlining scope, terms, and obligations between parties.',
   fonts: [
-    { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
-    { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
+    { name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' },
+    { name: 'Oxanium', family: 'Oxanium', weights: [400], path: './asset/Oxanium-Regular.ttf' },
   ],
   schema: shootContractSchema,
   placeholders,
@@ -162,7 +162,7 @@ registerTemplate({
       organizationGstin: org?.gstin || p.organization!.gstin,
       organizationPan: org?.pan || p.organization!.pan,
       organizationAddress: org?.address || p.organization!.address,
-      organizationLogo: orgBranding?.logo || p.organization.branding.logo,
+      organizationLogo: orgBranding?.logo ?? p.organization.branding.logo,
       organizationFont: orgBranding?.font || p.organization!.branding!.font,
       organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
       organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,

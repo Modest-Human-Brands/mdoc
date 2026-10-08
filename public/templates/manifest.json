@@ -1,0 +1,38 @@
+{
+  "retainer-contract": {
+    "pageCount": 4,
+    "width": 1191,
+    "height": 1684,
+    "hash": "b00fdcee9703"
+  },
+  "internship-completion-certificate": {
+    "pageCount": 1,
+    "width": 1191,
+    "height": 1684,
+    "hash": "645fe31b56bc"
+  },
+  "invoice": {
+    "pageCount": 1,
+    "width": 1191,
+    "height": 1684,
+    "hash": "0b1883e3ec1f"
+  },
+  "brochure": {
+    "pageCount": 2,
+    "width": 1684,
+    "height": 1191,
+    "hash": "55d99562eacf"
+  },
+  "quotation": {
+    "pageCount": 6,
+    "width": 1191,
+    "height": 1684,
+    "hash": "81841172efe6"
+  },
+  "shoot-contract": {
+    "pageCount": 3,
+    "width": 1191,
+    "height": 1684,
+    "hash": "4058dd33c193"
+  }
+}

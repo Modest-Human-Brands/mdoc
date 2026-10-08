@@ -1,5 +1,6 @@
 $kind: http-request
-description: Compiles template variables and renders a Base64 PDF with its pageCount. Strict mode - invalid fields return 400 with data.errors[{field,message,code}]. Missing fields are filled from template placeholders. Use ?draft=true for live typing (see "Live preview (draft)").
+description: >-
+  Compiles template variables and renders a Base64 PDF with its pageCount. Strict mode - invalid fields return 400 with data.errors[{field,message,code}]. Missing fields are filled from template placeholders. Use ?draft=true for live typing (see "Live preview (draft)"). The optional variant selects what is shown for unfilled fields: filled (default, user data), branded (organisation only, every field is a {{Field Label}} token) or sample (neutral organisation, tokens). branded and sample never return 400.
 url: '{{base_url}}/api/document/template/preview'
 method: POST
 headers:
@@ -34,6 +35,7 @@ scripts:
         required: ["templateId", "variables"],
         properties: {
           templateId: { type: "string" },
+          variant: { type: "string", enum: ["sample", "branded", "filled"] },
           variables: { type: "object" }
         }
       };
@@ -48,7 +50,8 @@ scripts:
           required: ["pdfBase64", "pageCount"],
           properties: {
             pdfBase64: { type: "string" },
-            pageCount: { type: "number", minimum: 1 }
+            pageCount: { type: "number", minimum: 1 },
+            variant: { type: "string", enum: ["sample", "branded", "filled"] }
           }
         };
         pm.test("Output matches Preview Schema", () => pm.response.to.have.jsonSchema(outputSchema));

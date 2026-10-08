@@ -78,6 +78,37 @@ export const organizationPresets: Record<string, OrganizationProfile> = {
   },
 }
 
+/** Neutral, unbranded organisation used by the `sample` preview variant (grey logo placeholder, no real details). */
+export const neutralOrganization: OrganizationProfile = {
+  id: 'neutral',
+  name: 'Your Company',
+  legalName: 'Legal name',
+  entityType: 'LLP',
+  tradeRelationship: 'Primary',
+  gstin: undefined,
+  pan: 'XXXXX0000X',
+  address: 'Street, City, State, Country',
+  foundedYear: 2000,
+  accountDetails: {
+    accountName: '—',
+    accountNumber: '—' as unknown as number,
+    bankName: '—',
+    ifscCode: '—',
+  },
+  branding: {
+    logo: '',
+    color: { primary: '#1A1A1A', accent: '#9CA3AF' },
+    font: 'Exo2',
+  },
+  phone: '+00 00000 00000',
+  contactEmail: 'email@example.com',
+  billingEmail: 'billing@example.com',
+  primaryContactId: '',
+  organizationMemberIds: [],
+  createdAt: new Date(0).toISOString(),
+  updatedAt: new Date(0).toISOString(),
+}
+
 export function resolveOrganization(orgInput?: string | Record<string, any>, fallbackPreset?: Record<string, any>): OrganizationProfile {
   let targetId = 'modest-human-brands'
 

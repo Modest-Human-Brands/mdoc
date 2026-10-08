@@ -1,5 +1,6 @@
 import './RetainerContractV1'
 import './InternshipCompletionCertificateV1'
 import './InvoiceV1'
+import './BrochureV1'
 import './QuotationV1'
 import './ShootContractV1'

@@ -38,7 +38,7 @@ export const quotationSchema = z.object({
     })
     .optional(),
   terms: z.object({
-    content: z.string(),
+    content: z.string().meta({ 'x-boilerplate': true }),
     lastUpdated: z.coerce.date(),
   }),
   expiresIn: z.coerce.date(),
@@ -163,8 +163,8 @@ registerTemplate({
   category: 'Billing',
   description: 'The estimated pricing, scope of work, and terms provided to the client before finalizing the agreement.',
   fonts: [
-    { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
-    { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
+    { name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' },
+    { name: 'Oxanium', family: 'Oxanium', weights: [400], path: './asset/Oxanium-Regular.ttf' },
   ],
   component: Component,
   schema: quotationSchema,
@@ -175,7 +175,7 @@ registerTemplate({
     const orgBranding = org?.branding || p.organization!.branding
     const financials = rawData.financials || p.financials
 
-    let safeLogoUrl = orgBranding?.logo || p.organization.branding.logo
+    let safeLogoUrl = orgBranding?.logo ?? p.organization.branding.logo
     if (safeLogoUrl.endsWith('.svg')) {
       safeLogoUrl = safeLogoUrl.replace('.svg', '.png')
     }

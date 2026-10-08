@@ -1,7 +1,10 @@
 $kind: http-request
-description: Renders the template with its placeholder data as an inline PDF (cached for 1 hour). Used for the sample-data preview in the template picker.
-url: '{{base_url}}/api/document/template/:id/sample.pdf'
+description: Renders the template as an inline PDF (cached for 1 hour). variant=sample (default) is the neutral organisation with {{Field Label}} tokens; variant=branded uses the default organisation. For the picker prefer the static images (see "Get template sample image").
+url: '{{base_url}}/api/document/template/:id/sample.pdf?variant=sample'
 method: GET
+queryParams:
+  - key: variant
+    value: sample
 pathVariables:
   id: invoice
 scripts:

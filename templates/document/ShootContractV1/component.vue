@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import LogoMark from '../_shared/LogoMark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { dateText, isToken, money } from '../_shared/format'
 
 const props = defineProps<{
   organizationName: string
@@ -36,10 +38,10 @@ const props = defineProps<{
   }[]
 }>()
 
-const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
-const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
+const formatCurrency = (val: unknown) => money(val)
+const formatDate = (val: unknown) => dateText(val)
 const formatTime = (val: string) => {
-  if (!val) return ''
+  if (!val || isToken(val)) return val || ''
   if (val.toUpperCase().includes('AM') || val.toUpperCase().includes('PM')) return val
 
   const [hours, minutes] = val.split(':')
@@ -125,14 +127,14 @@ const styles = {
   <Document title="Contract" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
-        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
         <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
       <View :style="styles.headerRow">
         <View :style="{ ...styles.logoSection, marginTop: 0 }">
-          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 16 }" />
+          <LogoMark :src="organizationLogo" :box="{ width: 80, height: 80, marginBottom: 16 }" />
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
@@ -230,7 +232,7 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
-        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
         <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>

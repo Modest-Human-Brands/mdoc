@@ -1,0 +1,21 @@
+$kind: http-request
+description: Upload an image (PNG, JPG, WebP or SVG, max 2 MB). It is validated and normalised to PNG; the returned id can be used as a decor or image reference in a template payload.
+url: '{{base_url}}/api/decor/upload'
+method: POST
+body:
+  type: form-data
+  content:
+    - key: file
+      type: file
+      src: ''
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = { type: "object", required: ["id", "url"], properties: { id: { type: "string", pattern: "^upload:[a-f0-9]{40}$" }, url: { type: "string" } } };
+        pm.test("Matches Upload schema", () => pm.response.to.have.jsonSchema(outputSchema));
+      } else {
+        pm.test("Rejected with field errors", () => pm.expect(pm.response.json().data.errors[0].field).to.eql("file"));
+      }
+order: 2000

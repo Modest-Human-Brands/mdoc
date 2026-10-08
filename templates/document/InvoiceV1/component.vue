@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import LogoMark from '../_shared/LogoMark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
+import { dateText, money, optionalNumber } from '../_shared/format'
 
 const props = defineProps<{
   pricingModel: 'project' | 'day'
@@ -39,22 +41,24 @@ const props = defineProps<{
 
 const computedDeliverables = computed(() => props.deliverables.map((item) => ({ ...item, amount: item.rate * item.quantity })))
 const subtotal = computed(() => computedDeliverables.value.reduce((sum, item) => sum + item.amount, 0))
-const discountAmount = computed(() => (props.isDiscountPercentage ? (subtotal.value * props.discountValue) / 100 : props.discountValue))
+const discountAmount = computed(() => (props.isDiscountPercentage ? (subtotal.value * optionalNumber(props.discountValue)) / 100 : optionalNumber(props.discountValue)))
 const postDiscountTotal = computed(() => subtotal.value - discountAmount.value)
-const taxAmount = computed(() => (postDiscountTotal.value * props.taxRate) / 100)
+const taxAmount = computed(() => (postDiscountTotal.value * optionalNumber(props.taxRate)) / 100)
 const grandTotal = computed(() => postDiscountTotal.value + taxAmount.value)
-const amountDue = computed(() => Math.max(0, grandTotal.value - props.amountPaid))
+const paid = computed(() => optionalNumber(props.amountPaid))
+const hasTotals = computed(() => Number.isFinite(grandTotal.value))
+const amountDue = computed(() => Math.max(0, grandTotal.value - paid.value))
 
 const paymentStatus = computed(() => {
-  if (props.amountPaid >= grandTotal.value) return 'PAID'
-  if (props.amountPaid > 0) return 'PARTIALLY PAID'
+  if (paid.value >= grandTotal.value) return 'PAID'
+  if (paid.value > 0) return 'PARTIALLY PAID'
   return 'UNPAID'
 })
 
 const stampColor = computed(() => (paymentStatus.value === 'PAID' ? '#22c55e' : paymentStatus.value === 'PARTIALLY PAID' ? '#eab308' : '#ef4444'))
 
-const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
-const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
+const formatCurrency = (val: unknown) => money(val)
+const formatDate = (val: unknown) => dateText(val)
 
 const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
   switch (relationship) {
@@ -119,21 +123,21 @@ const styles = {
 <template>
   <Document title="Invoice" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
-      <View :style="styles.stampContainer" fixed>
+      <View v-if="hasTotals" :style="styles.stampContainer" fixed>
         <View :style="[styles.stampBox, { borderColor: stampColor }]">
           <Text :style="[styles.stampText, { color: stampColor }]">{{ paymentStatus }}</Text>
         </View>
       </View>
 
       <View fixed :style="styles.pageFooter">
-        <Image :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
+        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
         <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
         <Text :style="styles.systemNoticeText"> This is a computer generated electronic invoice. </Text>
       </View>
 
       <View :style="styles.headerRow">
         <View :style="styles.logoSection">
-          <Image :src="organizationLogo" :style="{ width: 80, height: 80, marginBottom: 16 }" />
+          <LogoMark :src="organizationLogo" :box="{ width: 80, height: 80, marginBottom: 16 }" />
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
@@ -237,12 +241,14 @@ const styles = {
         <Text :style="{ ...styles.colAmount, fontWeight: 'bold' }">{{ formatCurrency(grandTotal) }}</Text>
       </View>
 
-      <View v-if="amountPaid > 0" :style="styles.financialRow" :wrap="false">
+      <View v-if="paid > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#00A63E', fontSize: 12 }">Payments Made</Text>
-        <Text :style="{ ...styles.colAmount, color: '#00A63E' }">- {{ formatCurrency(amountPaid) }}</Text>
+        <Text :style="{ ...styles.colAmount, color: '#00A63E' }">- {{ formatCurrency(paid) }}</Text>
       </View>
 
-      <View :style="{ ...styles.financialDueRow, backgroundColor: paymentStatus === 'PAID' ? '#22c55e22' : paymentStatus === 'PARTIALLY PAID' ? '#eab30822' : '#ef444422' }" :wrap="false">
+      <View
+        :style="{ ...styles.financialDueRow, backgroundColor: !hasTotals || paymentStatus === 'PAID' ? '#22c55e22' : paymentStatus === 'PARTIALLY PAID' ? '#eab30822' : '#ef444422' }"
+        :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Amount Due</Text>
         <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ formatCurrency(amountDue) }}</Text>
       </View>

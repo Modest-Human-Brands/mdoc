@@ -132,7 +132,7 @@ Error responses never include server file paths. In dev mode h3 still adds a `st
 
 | Route                                                 | Purpose                                                                                                                                                                |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/document/template`                          | Cards: `id`, `label`, `shortLabel`, `category` (Billing / Contracts / Certificates), `description`, `sampleUrl`.                                                       |
+| `GET /api/document/template`                          | Cards: `id`, `label`, `shortLabel`, `category` (Billing / Contracts / Certificates / Marketing), `description`, `sampleUrl`.                                           |
 | `GET /api/document/template/:id/sample.pdf`           | Sample PDF (placeholder data) for the template picker preview.                                                                                                         |
 | `POST /api/document/template/preview?draft=true`      | Live preview while typing: never returns 400; invalid fields fall back to placeholders and are listed in `warnings[{field,message,code}]`. Always returns `pageCount`. |
 | `GET /api/document/numbering/next?templateId=invoice` | Peek the next number, e.g. `MHB-I-26-014` (not reserved). Fields marked `x-auto` in the schema should be prefilled from it.                                            |
@@ -159,6 +159,63 @@ Creating a document (`POST /api/document/template`) accepts `template` or `templ
 | `POST`          | `/api/document/:id/envelope`, `/void`                                            | Routing envelope and void.                                    |
 
 A ready-made [Postman collection](./postman) covers the template, document, session and signing routes with request and response schema tests (the routing `envelope` route is not in it yet).
+
+### 6. Decor (illustrations, patterns, frames)
+
+Templates can expose decorative images as a **picker** instead of a hard-coded asset. A decor reference is one string:
+
+| Reference       | Meaning                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `builtin:<id>`  | Shipped with the server (source files in `public/decor/`, listed by `GET /api/decor`)                                |
+| `upload:<hash>` | A user upload (`POST /api/decor/upload`, content-addressed, PNG/JPG/WebP/SVG up to 2 MB, normalised to PNG)          |
+| `https://...`   | An external image; fetched server-side (https only, private/loopback hosts blocked, 5 MB / 5 s limits, no redirects) |
+| `none` / empty  | No decor                                                                                                             |
+
+Schema hints on a field: `x-widget: "decor"` (a decor picker) or `"image"` (a plain image field that accepts the same references), plus `x-decor-slot` (e.g. `panel-corner`) to filter `GET /api/decor?slot=`. Built-ins marked `tintable` can be recoloured with a `tint` enum (`none | primary | accent`). Templates resolve references with `resolveDecor()` from `server/utils/decor.ts`, which never throws: an unreachable or rejected image is simply omitted.
+
+| Route                             | Purpose                                                                    |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `GET /api/decor[?slot=]`          | Built-in catalogue: `id`, `label`, `kind`, `tintable`, `slots`, `thumbUrl` |
+| `GET /api/decor/builtin/:id.png`  | Thumbnail / preview                                                        |
+| `POST /api/decor/upload`          | `multipart/form-data` with `file`; returns `{ id, url }`                   |
+| `GET /api/decor/upload/:hash.png` | Serves an upload                                                           |
+
+### 7. Preview Variants & Sample Images
+
+Every template has three looks, selected with `variant` on `POST /api/document/template/preview` (default `filled`):
+
+| Variant   | Organisation                                                  | Fields                                                | Used in the wizard              |
+| --------- | ------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------- |
+| `sample`  | Neutral (grey "LOGO" circle, "Your Company")                  | Every dynamic field shows its `{{Field Label}}` token | Step 1, as static images        |
+| `branded` | The client's organisation (`organizationId` / `organization`) | Tokens                                                | Step 2 (Brand), live            |
+| `filled`  | The client's organisation                                     | The user's data; anything still empty shows its token | Steps 3-4, live (`?draft=true`) |
+
+Tokens use the same label as the Details form (the schema `title`). Short or ambiguous labels are prefixed with their section so each token maps to exactly one field: `{{Recipient Name}}`, `{{Project Title}}`, `{{Deliverable Rate}}`, while specific ones stay as is (`{{Invoice Number}}`, `{{Due Date}}`). Computed values (subtotal, totals) show an em dash until their inputs are filled. `sample` and `branded` never return 400; in `filled` + `?draft=true`, invalid values are dropped (the field shows its token again) and reported in `warnings`. Strict `filled` (no `draft`) is unchanged: placeholders backfill missing fields and invalid input is a 400.
+
+**Static sample images.** The `sample` variant of every template is pre-rendered to `public/templates/<id>/sample-<n>.png` (2x, all pages) with a `manifest.json`, so step 1 needs no PDF rendering. The PNGs are tracked with **Git LFS** (`.gitattributes`); run `git lfs install` once and `git lfs pull` in CI/Docker builds before `nitro build`.
+
+```bash
+npx nitro dev                                            # in one terminal
+npx nitro task run templates:sample-images               # regenerate after changing a template
+npx nitro task run templates:sample-images --payload '{"check":true}'   # CI: fails if the images are stale
+```
+
+`GET /api/document/template` returns `thumbnailUrl`, `pageCount`, `version` and `pages[{url,width,height}]` (empty / `null` until the task has run). The URLs point at `GET /api/document/template/:id/sample/:page.png?v=<hash>` (immutable cache), which serves the files from `public/templates` through the API so dev proxies work.
+
+### 8. Fonts
+
+Fonts are resolved on demand instead of being added to `asset/` by hand. A template declares families and weights:
+
+```ts
+fonts: [{ name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' }]
+```
+
+- `name` is the value used as `fontFamily` in the component (and in `organization.branding.font`); `family` is the Google Fonts family; `weights` lists the weights to make available (default `[400]`); `path` is an optional bundled file used only as offline fallback for weight 400.
+- On first render the server resolves the family with [`unifont`](https://github.com/unjs/unifont) (Google provider), downloads a **full TTF/WOFF** file once, caches it in the `data` storage (`.data/fonts/`) and registers it with the PDF engine. WOFF2 is never used (it breaks in the PDF engine) and CDN subset files are avoided (they lose glyphs such as the rupee sign).
+- The organisation's `branding.font` is resolved the same way, so any Google font works (`Inter`, `Poppins`, `OpenSans`...). If it cannot be resolved the render falls back to `Exo2`; it never fails.
+- **Weights are global per `name`.** Only weight 400 is registered by the current templates, so `fontWeight: 'bold'` renders as regular, as designed. Registering 600/700 under a name affects every template that uses that name; give a template its own `name` if it needs a real bold.
+- `GET /api/fonts[?q=&limit=]` lists available families as `{ family, name }` (`name` is what to store in `branding.font`); without `q` it returns a short featured list.
+- `npx nitro task run fonts:warm` pre-downloads every template font (add brand fonts with `--payload '{"families":["Inter"]}'`). Run it at deploy time, and keep `.data` on a persistent volume.
 
 ## Getting Started
 

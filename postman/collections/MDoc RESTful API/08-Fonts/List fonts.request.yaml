@@ -1,0 +1,21 @@
+$kind: http-request
+description: >-
+  Fonts available for branding. Without q a short featured list is returned; with q it searches Google Fonts. name is the value to store in organization.branding.font (families are resolved and cached on first render; unknown fonts fall back to Exo2).
+url: '{{base_url}}/api/fonts?q=poppins&limit=20'
+method: GET
+queryParams:
+  - key: q
+    value: poppins
+  - key: limit
+    value: '20'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "array",
+        items: { type: "object", required: ["family", "name"], properties: { family: { type: "string" }, name: { type: "string" } } }
+      };
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Font List schema", () => pm.response.to.have.jsonSchema(outputSchema));
+order: 1000

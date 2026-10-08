@@ -4,19 +4,20 @@ import { z } from 'zod'
 
 import { templateRegistry } from '~/server/utils/template-registry'
 import { handleApiError } from '~/server/utils/api-error'
-import { applyDraftFallbacks, countPdfPages, mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
+import { buildVariantVariables, countPdfPages, mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
 
 import '~/templates/document'
 
 const previewRequestSchema = z.object({
   templateId: z.string().min(1, 'templateId is required'),
+  variant: z.enum(['sample', 'branded', 'filled']).default('filled'),
   variables: z.record(z.string(), z.any()).default({}),
 })
 
 export default defineEventHandler(async (event) => {
   try {
     const rawBody = await readBody(event)
-    const { templateId, variables } = previewRequestSchema.parse(rawBody)
+    const { templateId, variant, variables } = previewRequestSchema.parse(rawBody)
     const draft = ['1', 'true'].includes(String(getQuery(event).draft))
 
     const templateDef = templateRegistry[templateId]
@@ -27,25 +28,30 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    let mergedVariables: Record<string, any> = mergeTemplateVariables(templateDef, variables)
+    let renderVariables: Record<string, any>
     let warnings: { field: string; message: string; code: string }[] = []
 
-    if (draft) {
-      // Live typing: never reject; invalid fields fall back to placeholders and are reported as warnings
-      ;({ variables: mergedVariables, warnings } = applyDraftFallbacks(templateDef, mergedVariables))
-    } else if (templateDef.schema) {
-      const validationResult = templateDef.schema.safeParse(mergedVariables)
-      if (!validationResult.success) {
-        return handleApiError(validationResult.error, 'preview.post/schema')
+    if (variant !== 'filled' || draft) {
+      // Sample / branded / live typing: never rejects; unfilled fields show their `{{Field Label}}` token
+      ;({ variables: renderVariables, warnings } = buildVariantVariables(templateDef, variant, variables))
+    } else {
+      // Strict (final review): placeholders backfill missing fields and invalid input is a 400
+      renderVariables = mergeTemplateVariables(templateDef, variables)
+      if (templateDef.schema) {
+        const validationResult = templateDef.schema.safeParse(renderVariables)
+        if (!validationResult.success) {
+          return handleApiError(validationResult.error, 'preview.post/schema')
+        }
       }
     }
 
-    const pdfBuffer = await renderTemplatePdf(templateDef, mergedVariables)
+    const pdfBuffer = await renderTemplatePdf(templateDef, renderVariables)
 
     return {
       pdfBase64: pdfBuffer.toString('base64'),
       pageCount: countPdfPages(pdfBuffer),
-      ...(draft ? { warnings } : {}),
+      variant,
+      ...(draft || variant !== 'filled' ? { warnings } : {}),
     }
   } catch (error: any) {
     return handleApiError(error, 'preview.post')

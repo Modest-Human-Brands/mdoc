@@ -1,0 +1,29 @@
+$kind: http-request
+description: Built-in decor catalogue for the picker. Optional slot filters to decors that fit a template slot (e.g. panel-corner). Use a returned id as the decor reference in a payload.
+url: '{{base_url}}/api/decor?slot=panel-corner'
+method: GET
+queryParams:
+  - key: slot
+    value: panel-corner
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["id", "label", "kind", "tintable", "slots", "thumbUrl"],
+          properties: {
+            id: { type: "string", pattern: "^builtin:" },
+            label: { type: "string" },
+            kind: { type: "string", enum: ["illustration", "pattern", "frame"] },
+            tintable: { type: "boolean" },
+            slots: { type: "array", items: { type: "string" } },
+            thumbUrl: { type: "string" }
+          }
+        }
+      };
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Decor List schema", () => pm.response.to.have.jsonSchema(outputSchema));
+order: 1000

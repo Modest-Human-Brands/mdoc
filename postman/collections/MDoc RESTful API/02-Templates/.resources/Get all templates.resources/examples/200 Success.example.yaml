@@ -17,7 +17,11 @@ response:
           "shortLabel": "Invoice",
           "category": "Billing",
           "description": "The official document outlining the charges, payment terms, and amount due.",
-          "sampleUrl": "/api/document/template/invoice/sample.pdf"
+          "sampleUrl": "/api/document/template/invoice/sample.pdf",
+          "thumbnailUrl": "/api/document/template/invoice/sample/1.png?v=301caf3fb7a1",
+          "pageCount": 1,
+          "version": "301caf3fb7a1",
+          "pages": [{ "url": "/api/document/template/invoice/sample/1.png?v=301caf3fb7a1", "width": 1191, "height": 1684 }]
         },
         {
           "id": "internship-completion-certificate",
@@ -25,7 +29,11 @@ response:
           "shortLabel": "Internship certificate",
           "category": "Certificates",
           "description": "The formal proof of completion, including your start and end dates, role, and an authorized signature.",
-          "sampleUrl": "/api/document/template/internship-completion-certificate/sample.pdf"
+          "sampleUrl": "/api/document/template/internship-completion-certificate/sample.pdf",
+          "thumbnailUrl": null,
+          "pageCount": 0,
+          "version": null,
+          "pages": []
         }
       ]
 order: 1000

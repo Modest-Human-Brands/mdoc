@@ -1,0 +1,34 @@
+$kind: http-request
+description: Brand step preview. Only the organisation is sent; every dynamic field of the template shows its own {{Field Label}} token (short labels are prefixed with their Details section, e.g. {{Recipient Name}}) so users can see which fields are dynamic and which section they belong to. Never returns 400.
+url: '{{base_url}}/api/document/template/preview'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "templateId": "invoice",
+      "variant": "branded",
+      "variables": {
+        "organizationId": "modest-human-brands"
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "object",
+        required: ["pdfBase64", "pageCount", "variant", "warnings"],
+        properties: {
+          pdfBase64: { type: "string" },
+          pageCount: { type: "number", minimum: 1 },
+          variant: { type: "string", enum: ["branded"] },
+          warnings: { type: "array", maxItems: 0 }
+        }
+      };
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Branded Preview schema", () => pm.response.to.have.jsonSchema(outputSchema));
+order: 4600

@@ -157,8 +157,8 @@ registerTemplate({
   category: 'Billing',
   description: 'The official document outlining the charges, payment terms, and amount due.',
   fonts: [
-    { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
-    { name: 'Oxanium', path: './asset/Oxanium-Regular.ttf' },
+    { name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' },
+    { name: 'Oxanium', family: 'Oxanium', weights: [400], path: './asset/Oxanium-Regular.ttf' },
   ],
   component: Component,
   schema: invoiceSchema,
@@ -169,7 +169,7 @@ registerTemplate({
     const orgBranding = org?.branding || p.organization!.branding
     const financials = rawData.financials || p.financials
 
-    let safeLogoUrl = orgBranding?.logo || p.organization.branding.logo
+    let safeLogoUrl = orgBranding?.logo ?? p.organization.branding.logo
     if (safeLogoUrl.endsWith('.svg')) {
       safeLogoUrl = safeLogoUrl.replace('.svg', '.png')
     }
