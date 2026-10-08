@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.9
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.8...v0.3.9)
+
+### 🩹 Fixes
+
+- **docker:** Externalize css-tree to fix missing patch.json at runtime ([1c5b782](https://github.com/Modest-Human-Brands/mdoc/commit/1c5b782))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.8
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.7...v0.3.8)
