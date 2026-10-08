@@ -46,6 +46,6 @@ export default defineConfig({
     },
   },
   routeRules: {
-    '/api/document/**/content': { cors: true },
+    '/api/**': { cors: true },
   },
 })
