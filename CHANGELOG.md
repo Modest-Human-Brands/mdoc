@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.3.8
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.7...v0.3.8)
+
+### 🚀 Enhancements
+
+- **templates:** Add preview variants, decor, on-demand fonts and static sample images ([136a792](https://github.com/Modest-Human-Brands/mdoc/commit/136a792))
+
+### 💅 Refactors
+
+- Change isBlockedAddress to a private function and remove unused isToken export ([ef3937e](https://github.com/Modest-Human-Brands/mdoc/commit/ef3937e))
+
+### 🏡 Chore
+
+- Remove unused assets and exports ([888ecdf](https://github.com/Modest-Human-Brands/mdoc/commit/888ecdf))
+- Apply code fixes [skip ci] ([539d7ff](https://github.com/Modest-Human-Brands/mdoc/commit/539d7ff))
+- Remove convert-markdown.sh script ([0bd96a5](https://github.com/Modest-Human-Brands/mdoc/commit/0bd96a5))
+- Enable LFS support in workflow files ([467c2c4](https://github.com/Modest-Human-Brands/mdoc/commit/467c2c4))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+- Shba007 ([@shba007](https://github.com/shba007))
+
 ## v0.3.7
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.6...v0.3.7)
