@@ -54,7 +54,7 @@ function assertSafeSvg(svg: string) {
   }
 }
 
-export function isBlockedAddress(address: string): boolean {
+function isBlockedAddress(address: string): boolean {
   if (address.includes(':')) {
     const a = address.toLowerCase()
     return a === '::1' || a === '::' || a.startsWith('fc') || a.startsWith('fd') || a.startsWith('fe80') || a.startsWith('::ffff:')

@@ -9,7 +9,6 @@ import type { TemplateDefinition } from '~/server/utils/template-registry'
 const cache = new Map<string, Record<string, any>>()
 
 export const token = (label: string) => `{{${label}}}`
-export const isToken = (value: unknown): value is string => typeof value === 'string' && value.startsWith('{{') && value.endsWith('}}')
 
 const singular = (label: string) => (label.endsWith('s') && !label.endsWith('ss') ? label.slice(0, -1) : label)
 
