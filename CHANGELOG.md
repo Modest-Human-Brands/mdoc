@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.11
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.10...v0.3.11)
+
+### 🚀 Enhancements
+
+- **cors:** Add middleware to handle CORS preflight requests ([260b65b](https://github.com/Modest-Human-Brands/mdoc/commit/260b65b))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi <shirsendu2001@gmail.com>
+
 ## v0.3.10
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.9...v0.3.10)
