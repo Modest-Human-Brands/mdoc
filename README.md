@@ -207,7 +207,7 @@ npx nitro task run templates:sample-images --payload '{"check":true}'   # CI: fa
 Fonts are resolved on demand instead of being added to `asset/` by hand. A template declares families and weights:
 
 ```ts
-fonts: [{ name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' }]
+;[{ name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' }]
 ```
 
 - `name` is the value used as `fontFamily` in the component (and in `organization.branding.font`); `family` is the Google Fonts family; `weights` lists the weights to make available (default `[400]`); `path` is an optional bundled file used only as offline fallback for weight 400.
