@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.10
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.9...v0.3.10)
+
+### 🩹 Fixes
+
+- **nitro:** Update route rules to enable CORS for all API endpoints ([69f1b9f](https://github.com/Modest-Human-Brands/mdoc/commit/69f1b9f))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.9
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.8...v0.3.9)
