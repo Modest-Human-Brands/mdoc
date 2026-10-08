@@ -1,5 +1,5 @@
 $kind: http-request
-description: Generates a new PDF and saves a draft record in Notion. Requires valid Notion UUIDs for userId and contactId.
+description: Generates a new PDF and saves a draft record in Notion. Requires valid Notion UUIDs for userId and contactId. Accepts template or templateId, and data or variables (aliases matching the preview payload). Like preview, missing fields are filled from template placeholders; dates are ISO-8601 strings.
 url: '{{base_url}}/api/document/template'
 method: POST
 headers:
@@ -36,15 +36,18 @@ scripts:
       const ajv = new Ajv();
       const inputSchema = {
         type: "object",
-        required: ["name", "template", "userId", "contactId", "data"],
+        required: ["name", "userId", "contactId"],
+        anyOf: [{ required: ["template"] }, { required: ["templateId"] }],
         properties: {
           name: { type: "string", minLength: 1 },
           template: { type: "string", minLength: 1 },
+          templateId: { type: "string", minLength: 1 },
           userId: { type: "string", minLength: 1 },
           contactId: { type: "string", minLength: 1 },
           orgId: { type: "string" },
           projectId: { type: "string" },
-          data: { type: "object" }
+          data: { type: "object" },
+          variables: { type: "object" }
         }
       };
       const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));

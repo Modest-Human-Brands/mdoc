@@ -51,6 +51,8 @@ const paymentStatus = computed(() => {
   return 'UNPAID'
 })
 
+const stampColor = computed(() => (paymentStatus.value === 'PAID' ? '#22c55e' : paymentStatus.value === 'PARTIALLY PAID' ? '#eab308' : '#ef4444'))
+
 const formatCurrency = (val: number) => `${val.toLocaleString('en-IN')} Rupees`
 const formatDate = (val: string | Date) => (val ? new Date(val).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
 
@@ -108,7 +110,8 @@ const styles = {
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
   accountValue: { fontSize: 12, color: '#555555' },
   stampContainer: { position: 'absolute' as const, top: 448, left: 0, right: 0, alignItems: 'center' as const, zIndex: -1 },
-  stampText: { fontSize: 64, fontWeight: 'bold' as const, opacity: 0.3, whitespace: 'nowrap', padding: '8 16', lineHeight: 0.8, borderWidth: 4, transform: 'rotate(-45deg)' },
+  stampBox: { borderWidth: 4, padding: '10 20', opacity: 0.3, transform: 'rotate(-45deg)' },
+  stampText: { fontSize: 56, fontWeight: 'bold' as const, lineHeight: 1, textAlign: 'center' as const },
   systemNoticeText: { fontSize: 12, color: '#888888', textAlign: 'right' as const, width: '100%' },
 }
 </script>
@@ -117,16 +120,9 @@ const styles = {
   <Document title="Invoice" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View :style="styles.stampContainer" fixed>
-        <Text
-          :style="[
-            styles.stampText,
-            {
-              color: paymentStatus === 'PAID' ? '#22c55e' : paymentStatus === 'PARTIALLY PAID' ? '#eab308' : '#ef4444',
-              borderColor: paymentStatus === 'PAID' ? '#22c55e' : paymentStatus === 'PARTIALLY PAID' ? '#eab308' : '#ef4444',
-            },
-          ]">
-          {{ paymentStatus }}
-        </Text>
+        <View :style="[styles.stampBox, { borderColor: stampColor }]">
+          <Text :style="[styles.stampText, { color: stampColor }]">{{ paymentStatus }}</Text>
+        </View>
       </View>
 
       <View fixed :style="styles.pageFooter">

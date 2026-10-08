@@ -10,6 +10,8 @@ import type { NotionContact, NotionDB, NotionDocument, NotionProject } from '~/s
 const queryParamsSchema = z.object({
   limit: z.string().optional(),
   offset: z.string().optional(),
+  templateId: z.string().optional(),
+  status: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -24,8 +26,12 @@ export default defineEventHandler(async (event) => {
 
     const documents = await notionQueryDb<NotionDocument>(notion, notionDbId.document)
 
-    const total = documents.length
-    const paginatedContent = documents.slice(offset, offset + limit)
+    const filtered = documents.filter(
+      ({ properties }) => (!query.templateId || properties['Template ID']?.select?.name === query.templateId) && (!query.status || properties.Status?.status?.name === query.status)
+    )
+
+    const total = filtered.length
+    const paginatedContent = filtered.slice(offset, offset + limit)
 
     const results = await Promise.all(
       paginatedContent.map(async ({ id, properties, created_time, last_edited_time }) => {

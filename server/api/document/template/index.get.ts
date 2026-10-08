@@ -1,27 +1,20 @@
-import { defineEventHandler, HTTPError } from 'nitro/h3'
+import { defineEventHandler } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
+import { handleApiError } from '~/server/utils/api-error'
 
 import '~/templates/document'
 
 export default defineEventHandler(() => {
   try {
-    const templates = Object.values(templateRegistry).map((template) => ({
+    return Object.values(templateRegistry).map((template) => ({
       id: template.id,
       label: template.label,
+      shortLabel: template.shortLabel ?? template.label,
+      category: template.category ?? null,
       description: template.description,
+      sampleUrl: `/api/document/template/${template.id}/sample.pdf`,
     }))
-
-    return templates
   } catch (error: unknown) {
-    console.error('API /document/template/index GET', error)
-
-    if (error instanceof Error && 'statusCode' in error) {
-      throw error
-    }
-
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    return handleApiError(error, 'document/template/index.get')
   }
 })

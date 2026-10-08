@@ -1,12 +1,10 @@
 // server/api/document/template/preview.post.ts
-import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
-import { h } from 'vue'
-import { renderToBuffer } from '@ceereals/vue-pdf'
+import { defineEventHandler, getQuery, readBody, HTTPError } from 'nitro/h3'
 import { z } from 'zod'
 
 import { templateRegistry } from '~/server/utils/template-registry'
-import { resolveOrganization } from '~/server/utils/organization-store'
 import { handleApiError } from '~/server/utils/api-error'
+import { applyDraftFallbacks, countPdfPages, mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
 
 import '~/templates/document'
 
@@ -19,6 +17,7 @@ export default defineEventHandler(async (event) => {
   try {
     const rawBody = await readBody(event)
     const { templateId, variables } = previewRequestSchema.parse(rawBody)
+    const draft = ['1', 'true'].includes(String(getQuery(event).draft))
 
     const templateDef = templateRegistry[templateId]
     if (!templateDef) {
@@ -28,30 +27,26 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Resolve organization profile from ID preset or fallback placeholder
-    const orgInput = variables.organizationId || variables.organization || variables.orgId
-    const resolvedOrg = resolveOrganization(orgInput, templateDef.placeholders?.organization)
+    let mergedVariables: Record<string, any> = mergeTemplateVariables(templateDef, variables)
+    let warnings: { field: string; message: string; code: string }[] = []
 
-    const mergedVariables = {
-      ...templateDef.placeholders,
-      ...variables,
-      organization: resolvedOrg,
-    }
-
-    // Pre-flight validation against template schema
-    if (templateDef.schema) {
+    if (draft) {
+      // Live typing: never reject; invalid fields fall back to placeholders and are reported as warnings
+      ;({ variables: mergedVariables, warnings } = applyDraftFallbacks(templateDef, mergedVariables))
+    } else if (templateDef.schema) {
       const validationResult = templateDef.schema.safeParse(mergedVariables)
       if (!validationResult.success) {
         return handleApiError(validationResult.error, 'preview.post/schema')
       }
     }
 
-    const compiledProps = await templateDef.transformPayload(mergedVariables)
-    const pdfBuffer = await renderToBuffer(h(templateDef.component, compiledProps))
+    const pdfBuffer = await renderTemplatePdf(templateDef, mergedVariables)
 
-    const pdfBase64 = Buffer.isBuffer(pdfBuffer) ? pdfBuffer.toString('base64') : Buffer.from(pdfBuffer).toString('base64')
-
-    return { pdfBase64 }
+    return {
+      pdfBase64: pdfBuffer.toString('base64'),
+      pageCount: countPdfPages(pdfBuffer),
+      ...(draft ? { warnings } : {}),
+    }
   } catch (error: any) {
     return handleApiError(error, 'preview.post')
   }

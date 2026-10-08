@@ -24,7 +24,15 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 400,
-        "statusMessage": "contactId and userId are required."
+        "error": true,
+        "status": 400,
+        "statusText": "Bad Request",
+        "message": "Bad Request",
+        "data": {
+          "errors": [
+            { "field": "contactId", "message": "contactId is required", "code": "too_small" },
+            { "field": "userId", "message": "userId is required", "code": "too_small" }
+          ]
+        }
       }
 order: 2000

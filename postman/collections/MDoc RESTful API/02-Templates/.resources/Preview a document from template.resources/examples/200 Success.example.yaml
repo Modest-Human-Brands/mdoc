@@ -23,6 +23,7 @@ response:
     type: json
     content: |-
       {
-        "pdfBase64": "JVBERi0xLjQKJcOkw7zDtsOf..."
+        "pdfBase64": "JVBERi0xLjQKJcOkw7zDtsOf...",
+        "pageCount": 1
       }
 order: 1000

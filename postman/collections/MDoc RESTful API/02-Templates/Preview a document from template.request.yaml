@@ -1,5 +1,5 @@
 $kind: http-request
-description: Compiles template variables and renders raw Base64 PDF output.
+description: Compiles template variables and renders a Base64 PDF with its pageCount. Strict mode - invalid fields return 400 with data.errors[{field,message,code}]. Missing fields are filled from template placeholders. Use ?draft=true for live typing (see "Live preview (draft)").
 url: '{{base_url}}/api/document/template/preview'
 method: POST
 headers:
@@ -45,9 +45,10 @@ scripts:
       if (pm.response.code === 200) {
         const outputSchema = {
           type: "object",
-          required: ["pdfBase64"],
+          required: ["pdfBase64", "pageCount"],
           properties: {
-            pdfBase64: { type: "string" }
+            pdfBase64: { type: "string" },
+            pageCount: { type: "number", minimum: 1 }
           }
         };
         pm.test("Output matches Preview Schema", () => pm.response.to.have.jsonSchema(outputSchema));

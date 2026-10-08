@@ -17,7 +17,7 @@ export const retainerContractSchema = z.object({
     quoteDate: z.coerce.date(),
     startDate: z.coerce.date(),
     months: z.number().int().min(1),
-    renewalType: z.enum(['Auto-Renew', 'Manual Renewal', 'Fixed Term - No Renewal']),
+    renewalType: z.enum(['Auto-Renew', 'Manual Renewal', 'No Renewal']),
     noticePeriodDays: z.number().int().min(0).default(30),
   }),
   serviceCategory: z.string(),
@@ -143,8 +143,8 @@ This Agreement begins on the Start Date and continues for the Engagement Duratio
 - **Manual Renewal:** At the end of the Initial Term, this Agreement expires unless both parties agree in writing to renew it.
 {{/if}}
 
-{{#if 'Fixed Term - No Renewal'}}
-- **Fixed Term - No Renewal:** This Agreement expires automatically at the end of the Initial Term and does not renew.
+{{#if 'No Renewal'}}
+- **No Renewal:** This Agreement expires automatically at the end of the Initial Term and does not renew.
 {{/if}}
 
 ### 3. Compensation & Payment Terms
@@ -229,6 +229,8 @@ Each party's liability arising out of this Agreement shall be limited to the fee
 registerTemplate({
   id: 'retainer-contract',
   label: 'Retainer Contract',
+  shortLabel: 'Retainer contract',
+  category: 'Contracts',
   description: 'A recurring monthly engagement agreement for marketing or development work, billed as a flat fee and/or a target-based fee.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },

@@ -159,6 +159,8 @@ const placeholders: QuotationPayload = {
 registerTemplate({
   id: 'quotation',
   label: 'Quotation',
+  shortLabel: 'Quotation',
+  category: 'Billing',
   description: 'The estimated pricing, scope of work, and terms provided to the client before finalizing the agreement.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },

@@ -1,5 +1,5 @@
 $kind: http-request
-description: Paginated query returning documents from the Notion database.
+description: Paginated query returning documents from the Notion database. Optional templateId and status filters (e.g. list quotations for the From-quotation picker); pagination.total is the filtered count.
 url: '{{base_url}}/api/document?limit=50&offset=0'
 method: GET
 queryParams:
@@ -7,6 +7,12 @@ queryParams:
     value: '50'
   - key: offset
     value: '0'
+  - key: templateId
+    value: quotation
+    disabled: true
+  - key: status
+    value: Draft
+    disabled: true
 scripts:
   - type: afterResponse
     language: text/javascript

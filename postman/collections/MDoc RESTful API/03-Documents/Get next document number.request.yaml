@@ -1,0 +1,31 @@
+$kind: http-request
+description: Peeks the next document number, e.g. MHB-I-26-014 (org code, type letter I/Q/R/S/C, 2-digit year, 3-digit sequence). Nothing is reserved. Prefill fields marked x-auto in the template schema. Organisation comes from orgId/organizationId (preset) or organizationName.
+url: '{{base_url}}/api/document/numbering/next?templateId=invoice'
+method: GET
+queryParams:
+  - key: templateId
+    value: invoice
+  - key: orgId
+    value: modest-human-brands
+    disabled: true
+  - key: organizationName
+    value: Modest Human Brands
+    disabled: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "object",
+        required: ["templateId", "prefix", "sequence", "number"],
+        properties: {
+          templateId: { type: "string" },
+          prefix: { type: "string" },
+          sequence: { type: "number", minimum: 1 },
+          number: { type: "string", pattern: "^[A-Z]+-[A-Z]-\\d{2}-\\d{3,}$" }
+        }
+      };
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Numbering schema", () => pm.response.to.have.jsonSchema(outputSchema));
+examples: .resources/Get next document number.resources/examples
+order: 5500

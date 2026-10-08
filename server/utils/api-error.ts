@@ -1,4 +1,4 @@
-import { HTTPError, createError } from 'nitro/h3'
+import { createError } from 'nitro/h3'
 import { ZodError } from 'zod'
 
 export interface ApiValidationErrorDetail {

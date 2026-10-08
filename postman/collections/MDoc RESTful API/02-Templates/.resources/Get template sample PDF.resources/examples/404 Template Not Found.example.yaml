@@ -1,0 +1,19 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/template/unknown/sample.pdf'
+  method: GET
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": true,
+        "status": 404,
+        "statusText": "Template not found",
+        "message": "Template not found"
+      }
+order: 1000

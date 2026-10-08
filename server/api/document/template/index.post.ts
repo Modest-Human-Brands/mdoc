@@ -15,16 +15,20 @@ import type { NotionDB } from '~/server/types'
 
 import '~/templates/document'
 
-const createDocSchema = z.object({
-  name: z.string().min(1, 'name is required'),
-  template: z.string().min(1, 'template identifier is required'),
-  contactId: z.string().min(1, 'contactId is required'),
-  userId: z.string().min(1, 'userId is required'),
-  orgId: z.string().optional(),
-  organizationId: z.string().optional(),
-  projectId: z.string().optional(),
-  data: z.record(z.string(), z.any()).default({}),
-})
+const createDocSchema = z
+  .object({
+    name: z.string().min(1, 'name is required'),
+    template: z.string().min(1, 'template identifier is required').optional(),
+    templateId: z.string().min(1).optional(), // alias of `template`, matches the preview payload
+    contactId: z.string().min(1, 'contactId is required'),
+    userId: z.string().min(1, 'userId is required'),
+    orgId: z.string().optional(),
+    organizationId: z.string().optional(),
+    projectId: z.string().optional(),
+    data: z.record(z.string(), z.any()).default({}),
+    variables: z.record(z.string(), z.any()).optional(), // alias of `data`, matches the preview payload
+  })
+  .refine((body) => body.template || body.templateId, { message: 'template identifier is required', path: ['template'] })
 
 export default defineEventHandler(async (event) => {
   try {
@@ -35,7 +39,10 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const parsed = createDocSchema.parse(body)
 
-    const { name: fileName, template: templateId, data: rawData, orgId, organizationId, projectId, contactId, userId } = parsed
+    const { name: fileName, template, templateId: templateIdAlias, data, variables, orgId, organizationId, projectId, contactId, userId } = parsed
+
+    const templateId = (template || templateIdAlias)!
+    const rawData = { ...data, ...variables }
 
     const targetTemplate = templateRegistry[templateId]
     if (!targetTemplate) {

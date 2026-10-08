@@ -11,28 +11,35 @@ response:
     type: json
     content: |-
       {
-        "id": "internship-completion-certificate",
-        "label": "Internship Completion Certificate",
-        "description": "Formal proof of internship completion.",
-        "variables": {
-          "recipient": {
-            "name": "string",
-            "role": "string",
-            "email": "email"
-          }
+        "id": "invoice",
+        "label": "Billing Invoice",
+        "shortLabel": "Invoice",
+        "category": "Billing",
+        "description": "The official document outlining the charges, payment terms, and amount due.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "project": {
+              "type": "object",
+              "title": "Project",
+              "x-section": "Project",
+              "properties": {
+                "invoiceNumber": { "type": "string", "title": "Invoice Number", "x-auto": true, "x-column": 1, "x-order": 4 },
+                "invoiceDate": { "type": "string", "format": "date", "title": "Invoice Date", "x-column": 1, "x-order": 5 }
+              },
+              "required": ["invoiceNumber", "invoiceDate"]
+            },
+            "financials": {
+              "type": "object",
+              "properties": {
+                "taxRate": { "type": "number", "minimum": 0, "default": 18, "title": "Tax Rate", "x-column": 1, "x-order": 5 }
+              }
+            },
+            "dueDate": { "type": "string", "format": "date", "title": "Due Date", "x-column": 1, "x-order": 5 }
+          },
+          "required": ["recipient", "project", "dueDate"]
         },
-        "signerFields": [
-          {
-            "id": "signer-signature",
-            "type": "SIGNATURE",
-            "signerOrder": 1,
-            "pageIndex": -1,
-            "x": 380,
-            "y": 180,
-            "width": 150,
-            "height": 40,
-            "required": true
-          }
-        ]
+        "variables": {},
+        "signerFields": []
       }
 order: 1000

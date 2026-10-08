@@ -1,5 +1,6 @@
 $kind: http-request
-description: Fetch detailed schema variables and signature stamp fields for a specific template.
+description: >-
+  JSON Schema for the details form plus signature stamp fields. Dates are `{ type: string, format: date }` (send ISO-8601). The `organization` object is omitted (owned by the client). Hints: `x-section`, `x-column`, `x-order`, `x-auto` (server-generated, e.g. invoice number; prefill from /api/document/numbering/next) and `default` (numbers, booleans, enums and financial labels only).
 url: '{{base_url}}/api/document/template/:id'
 method: GET
 pathVariables:
@@ -11,11 +12,14 @@ scripts:
       if (pm.response.code === 200) {
         const outputSchema = {
           type: "object",
-          required: ["id", "label", "description", "variables", "signerFields"],
+          required: ["id", "label", "shortLabel", "description", "schema", "variables", "signerFields"],
           properties: {
             id: { type: "string" },
             label: { type: "string" },
+            shortLabel: { type: "string" },
+            category: { type: ["string", "null"] },
             description: { type: "string" },
+            schema: { type: "object", required: ["type", "properties"] },
             variables: { type: "object" },
             signerFields: {
               type: "array",
@@ -37,6 +41,7 @@ scripts:
           }
         };
         pm.test("Template schema definition is intact", () => pm.response.to.have.jsonSchema(outputSchema));
+        pm.test("Organization is not part of the form schema", () => pm.expect(pm.response.json().schema.properties).to.not.have.property("organization"));
       } else {
         pm.test("Status is 404", () => pm.response.to.have.status(404));
       }

@@ -20,6 +20,14 @@ response:
     type: json
     content: |-
       {
-        "error": "Missing templateId in request body."
+        "error": true,
+        "status": 400,
+        "statusText": "Bad Request",
+        "message": "Bad Request",
+        "data": {
+          "errors": [
+            { "field": "templateId", "message": "Invalid input: expected string, received undefined", "code": "invalid_type" }
+          ]
+        }
       }
 order: 2000

@@ -26,11 +26,13 @@ export default defineEventHandler((event) => {
       })
     }
 
-    const jsonSchema = template.schema ? parseSchemaToJsonSchema(template.schema) : {}
+    const jsonSchema = template.schema ? parseSchemaToJsonSchema(template.schema, template.placeholders) : {}
 
     return {
       id: template.id,
       label: template.label,
+      shortLabel: template.shortLabel ?? template.label,
+      category: template.category ?? null,
       description: template.description,
       schema: jsonSchema,
       variables: jsonSchema, // Backward-compatibility

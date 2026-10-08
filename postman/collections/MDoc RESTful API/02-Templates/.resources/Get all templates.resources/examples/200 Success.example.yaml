@@ -12,14 +12,20 @@ response:
     content: |-
       [
         {
-          "id": "internship-completion-certificate",
-          "label": "Internship Completion Certificate",
-          "description": "The formal proof of completion, including start/end dates and authorized signature."
+          "id": "invoice",
+          "label": "Billing Invoice",
+          "shortLabel": "Invoice",
+          "category": "Billing",
+          "description": "The official document outlining the charges, payment terms, and amount due.",
+          "sampleUrl": "/api/document/template/invoice/sample.pdf"
         },
         {
-          "id": "quotation",
-          "label": "Quotation",
-          "description": "Estimated pricing, scope of work, and commercial terms."
+          "id": "internship-completion-certificate",
+          "label": "Internship Completion Certificate",
+          "shortLabel": "Internship certificate",
+          "category": "Certificates",
+          "description": "The formal proof of completion, including your start and end dates, role, and an authorized signature.",
+          "sampleUrl": "/api/document/template/internship-completion-certificate/sample.pdf"
         }
       ]
 order: 1000

@@ -153,6 +153,8 @@ const placeholders: InvoicePayload = {
 registerTemplate({
   id: 'invoice',
   label: 'Billing Invoice',
+  shortLabel: 'Invoice',
+  category: 'Billing',
   description: 'The official document outlining the charges, payment terms, and amount due.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },

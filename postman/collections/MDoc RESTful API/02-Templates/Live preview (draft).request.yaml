@@ -1,0 +1,49 @@
+$kind: http-request
+description: Same as preview but never rejects partial input. Invalid fields fall back to template placeholders and are reported in warnings[{field,message,code}]. Call it on every keystroke; use strict preview or create for the final check.
+url: '{{base_url}}/api/document/template/preview?draft=true'
+method: POST
+queryParams:
+  - key: draft
+    value: 'true'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "templateId": "invoice",
+      "variables": {
+        "recipient": {
+          "name": "Chai Theory Pvt Ltd",
+          "address": "Bandra West, Mumbai",
+          "email": "acc",
+          "phone": "+91 98200 12345"
+        }
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const outputSchema = {
+        type: "object",
+        required: ["pdfBase64", "pageCount", "warnings"],
+        properties: {
+          pdfBase64: { type: "string" },
+          pageCount: { type: "number", minimum: 1 },
+          warnings: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["field", "message", "code"],
+              properties: { field: { type: "string" }, message: { type: "string" }, code: { type: "string" } }
+            }
+          }
+        }
+      };
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches Draft Preview schema", () => pm.response.to.have.jsonSchema(outputSchema));
+      pm.test("Invalid field is reported as a warning", () => pm.expect(pm.response.json().warnings.map(w => w.field)).to.include("recipient.email"));
+examples: .resources/Live preview (draft).resources/examples
+order: 4500

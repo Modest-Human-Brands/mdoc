@@ -1,0 +1,18 @@
+$kind: http-request
+description: Renders the template with its placeholder data as an inline PDF (cached for 1 hour). Used for the sample-data preview in the template picker.
+url: '{{base_url}}/api/document/template/:id/sample.pdf'
+method: GET
+pathVariables:
+  id: invoice
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        pm.test("Content-Type is application/pdf", () => pm.expect(pm.response.headers.get("Content-Type")).to.include("application/pdf"));
+        pm.test("Body is a PDF", () => pm.expect(pm.response.text().startsWith("%PDF")).to.be.true);
+      } else {
+        pm.test("Status is 404", () => pm.response.to.have.status(404));
+      }
+examples: .resources/Get template sample PDF.resources/examples
+order: 3500

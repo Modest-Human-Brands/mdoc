@@ -21,7 +21,7 @@ const props = defineProps<{
   startDate: string | Date
   endDate: string | Date
   engagementMonths: number
-  renewalType: 'Auto-Renew' | 'Manual Renewal' | 'Fixed Term - No Renewal'
+  renewalType: 'Auto-Renew' | 'Manual Renewal' | 'No Renewal'
   noticePeriodDays: number
   expiresIn: string | Date
   scopeOfWork: string[]
@@ -45,7 +45,7 @@ const renewalLabel = (renewalType: string) => {
       return 'Auto-renews unless notice given'
     case 'Manual Renewal':
       return 'Renews by mutual written agreement'
-    case 'Fixed Term - No Renewal':
+    case 'No Renewal':
       return 'Expires at end of term, no renewal'
     default:
       return renewalType

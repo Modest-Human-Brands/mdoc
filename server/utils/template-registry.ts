@@ -19,9 +19,13 @@ export interface DocumentField {
   signerOrder: number
 }
 
+export type TemplateCategory = 'Billing' | 'Contracts' | 'Certificates'
+
 export interface TemplateDefinition {
   id: string
   label: string
+  shortLabel?: string
+  category?: TemplateCategory
   description: string
   fonts?: Array<{ name: string; path: string }>
   component: Component

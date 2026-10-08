@@ -138,6 +138,8 @@ const placeholders: ShootContractPayload = {
 registerTemplate({
   id: 'shoot-contract',
   label: 'Shoot Contract',
+  shortLabel: 'Shoot contract',
+  category: 'Contracts',
   description: 'The formal agreement or legal document outlining scope, terms, and obligations between parties.',
   fonts: [
     { name: 'Exo2', path: './asset/Exo2-Regular.ttf' },
