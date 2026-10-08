@@ -15,7 +15,10 @@ RUN bun run build
 
 RUN mkdir -p .output/server/node_modules && \
   cp -R node_modules/mupdf .output/server/node_modules/ && \
-  cp -R node_modules/@napi-rs .output/server/node_modules/
+  cp -R node_modules/@napi-rs .output/server/node_modules/ && \
+  cp -R node_modules/css-tree .output/server/node_modules/ && \
+  cp -R node_modules/mdn-data .output/server/node_modules/ && \
+  cp -R node_modules/source-map-js .output/server/node_modules/
 
 FROM node:22-alpine AS runner
 
