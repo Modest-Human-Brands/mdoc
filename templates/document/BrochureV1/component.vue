@@ -79,7 +79,14 @@ const styles = {
   panel: { width: '33.3333%', height: '100%', overflow: 'hidden' as const },
   decor: { position: 'absolute' as const, top: 0, left: 0, width: '100%', height: '100%' },
   lockup: { flexDirection: 'row' as const, alignItems: 'center' as const },
-  lockupText: { fontSize: u(12), lineHeight: 1.5, fontWeight: 'bold' as const, letterSpacing: u(0.72), textTransform: 'uppercase' as const },
+  lockupText: {
+    flex: 1, // Allow text to take remaining width and wrap cleanly
+    fontSize: u(14),
+    lineHeight: 1.25,
+    fontWeight: 'bold' as const,
+    letterSpacing: u(0.72),
+    textTransform: 'uppercase' as const,
+  },
   heading: { fontSize: u(24), lineHeight: 1.25 },
   body: { fontSize: u(12), lineHeight: 1.5 },
 }
@@ -99,7 +106,7 @@ const styles = {
 
       <View :style="[styles.panel, { paddingTop: u(40), paddingHorizontal: u(26), backgroundColor: tint }]">
         <View :style="styles.lockup">
-          <LogoMark :src="organizationLogo" :box="{ width: u(22), height: u(22), marginRight: u(8) }" />
+          <LogoMark :src="organizationLogo" :box="{ width: u(40), height: u(40), marginRight: u(8) }" />
           <Text :style="[styles.lockupText, { color: organizationColorPrimary }]">{{ organizationName }}</Text>
         </View>
 
@@ -144,7 +151,7 @@ const styles = {
         </View>
 
         <View :style="styles.lockup">
-          <LogoMark :src="organizationLogo" :box="{ width: u(22), height: u(22), marginRight: u(8) }" />
+          <LogoMark :src="organizationLogo" :box="{ width: u(40), height: u(40), marginRight: u(8) }" />
           <Text :style="[styles.lockupText, { color: organizationColorPrimary }]">{{ organizationName }}</Text>
         </View>
 
