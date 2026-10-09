@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.12
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.11...v0.3.12)
+
+### 💅 Refactors
+
+- **templates:** Improve layout and styling for brochure components ([7778cd4](https://github.com/Modest-Human-Brands/mdoc/commit/7778cd4))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.11
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.10...v0.3.11)
