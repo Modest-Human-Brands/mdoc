@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.13
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.12...v0.3.13)
+
+### 🏡 Chore
+
+- Update dependencies and package manager version ([08eb165](https://github.com/Modest-Human-Brands/mdoc/commit/08eb165))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi <shirsendu2001@gmail.com>
+
 ## v0.3.12
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.11...v0.3.12)
