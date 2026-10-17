@@ -1,113 +1,119 @@
-<p align="center">
-  <img src="./public/logo.png" alt="MDoc Logo" width="75" />
-</p>
+<div align="center">
 
 # MDoc
 
-![Landing](public/previews/landing.webp)
-
-> A high-performance, structured document generation and cryptographic signing service designed for automated business deliverables, legal agreements, and contract workflows.
+> A high-performance, structured document generation and cryptographic signing service built on Nitro and Vue.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Engine: Bun](https://img.shields.io/badge/Runtime-Bun%20%7C%20Node%2022+-fbf0df?logo=bun)](https://bun.sh)
-[![Nitro](https://img.shields.io/badge/Framework-Nitro%20v3-ea580c?logo=nuxt)](https://nitro.unjs.io)
-[![PDF Engine](https://img.shields.io/badge/PDF-MuPDF%20%2B%20Vue--PDF-0284c7)](https://mupdf.com)
+[![Runtime: Bun | Node 22+](https://img.shields.io/badge/Runtime-Bun%20%7C%20Node%2022+-fbf0df?logo=bun)](https://bun.sh)
+[![Framework: Nitro v3](https://img.shields.io/badge/Framework-Nitro%20v3-ea580c?logo=nuxt)](https://nitro.unjs.io)
+[![PDF Engine: MuPDF + Vue-PDF](https://img.shields.io/badge/PDF-MuPDF%20%2B%20Vue--PDF-0284c7)](https://mupdf.com)
+
+</div>
 
 ---
 
 ## Overview
 
-**MDoc** is an enterprise-grade document engine built on [Nitro](https://nitro.unjs.io) and [Vue](https://vuejs.org). It bridges the gap between structured business data and court-admissible, cryptographically sealed PDF documents.
+**MDoc** is a document compilation and cryptographic signing service engineered on [Nitro v3](https://nitro.unjs.io) and [Vue 3](https://vuejs.org). It translates structured business data into cryptographically sealed, court-admissible PDF deliverables—including invoices, quotations, certificates, and multi-party service contracts.
 
-Unlike headless browser-based PDF generators that suffer from high memory footprints and unpredictable page splits, MDoc uses declarative, native PDF layout compilation paired with raw byte-level cryptographic signature injection.
+Unlike headless browser-based PDF generators that require heavy memory allocations and produce unpredictable pagination, MDoc uses declarative, native PDF layout compilation (`@ceereals/vue-pdf`) combined with exact visual stamp positioning (MuPDF, `@napi-rs/canvas`) and raw byte-level cryptographic signature injection (`@signpdf/signpdf`, `pkijs`).
 
-### Core Capabilities
+### Features
 
-- **Declarative PDF Compilation**: Templates built with Vue components via `@ceereals/vue-pdf` compile directly to vector PDF primitives with accurate page wrapping and layout flow.
-- **Dual Signing Engine**:
-  - **Client Hardware DSC**: Client-side signing via USB tokens, SmartCards, and WebCrypto adhering to Adobe Acrobat-compatible **CMS / PKCS#7** and standard `/ByteRange` padding.
-  - **Server-Side P12 Automation**: Automated corporate seal execution using software `.p12` certificates.
-- **Visual Stamp Placement**: Exact point-and-coordinate placement of visual signature stamps, initials, dates, and dynamic text fields using MuPDF and `@napi-rs/canvas`.
-- **Zero-Setup Local Dev Mode**: Development uses an offline file-backed Notion mock (`.data/notion-mock.json`), removing live Notion API dependencies during local testing.
-- **Workflow State Machine**: Supports sequential multi-party routing queues, status advancement (`Draft` &rarr; `Sent` &rarr; `Partially Signed` &rarr; `Completed`), and visual watermark invalidation (`Void`).
-- **Live PDF Studio**: Built-in visual development workbench (`/dev/document/:id`) with hot-reloading parameters and real-time layout introspection.
-- **Agent-Ready**: Native **MCP (Model Context Protocol)** support via `nitro-mcp-toolkit` for autonomous AI agents to inspect nodes and monitor health.
+- ⚡ **Declarative Native PDF Layout**: Compiles Vue 3 templates directly to vector PDF primitives with accurate page wrapping, avoiding headless Chromium overhead.
+- 🔏 **Dual Signing Architecture**: Supports client-side hardware DSC (USB tokens / SmartCards / WebCrypto) with Adobe Acrobat-compatible CMS/PKCS#7 byte-range padding, as well as automated server-side PKCS#12 (`.p12`) signing.
+- 📐 **Visual Stamp Positioning**: Places signature stamps, initials, dates, and dynamic checkboxes at precise points and coordinates across pages using MuPDF and `@napi-rs/canvas`.
+- 🔄 **Sequential & Parallel Envelopes**: Multi-party routing state machine tracking status transitions (`Draft` &rarr; `Sent` &rarr; `Partially Signed` &rarr; `Completed`), next-signer assignment, and watermark invalidation (`Void`).
+- 🎨 **Dynamic Theming & On-Demand Typography**: Automatic organization branding resolution, Google Fonts fetching and caching via `unifont`, and sanitised SVG/raster decor picker.
+- 🤖 **Agent-Ready MCP Integration**: Built-in Model Context Protocol endpoint (`/mcp`) via `nitro-mcp-toolkit` for autonomous AI agents to inspect health and node status.
 
 ---
 
-## API Consumer & Integration Guide
+## Nitro CLI Tasks & Automation
 
-### 1. Dynamic Form Generation via Standard JSON Schema
+MDoc defines Nitro tasks under `server/tasks/` for asset generation, font pre-warming, and maintenance.
 
-Querying `GET /api/document/template/:id` returns an industry-standard JSON Schema under `schema` enriched with layout hints for dynamic form engines:
+> [!NOTE]
+> Nitro tasks require the development server (`bun run dev`) to be running in another terminal.
 
-```json
-{
-  "id": "internship-completion-certificate",
-  "label": "Internship Completion Certificate",
-  "schema": {
-    "type": "object",
-    "properties": {
-      "recipient": {
-        "type": "object",
-        "title": "Recipient Details",
-        "x-section": "Recipient Information",
-        "properties": {
-          "name": { "type": "string", "title": "Full Name", "x-column": 1 },
-          "email": { "type": "string", "format": "email", "title": "Email Address", "x-column": 1 }
-        },
-        "required": ["name", "email"]
-      }
-    }
-  }
-}
+```bash
+# Generate static sample page images for template picker (public/templates/<id>/sample-<n>.png)
+bun x nitro task run templates:sample-images
+
+# CI verification: fails with non-zero exit code if template images are stale
+bun x nitro task run templates:sample-images --payload '{"check":true}'
+
+# Pre-fetch and cache Google Fonts declared by templates
+bun x nitro task run fonts:warm
+
+# Pre-fetch additional brand fonts
+bun x nitro task run fonts:warm --payload '{"families":["Inter","Poppins"]}'
+
+# Generate missing PNG thumbnails for stored PDFs
+bun x nitro task run backfill-thumbnails
+
+# Force re-generation of all thumbnails
+bun x nitro task run backfill-thumbnails --payload '{"force":true}'
 ```
 
-- **`title`**: Humanized field label.
-- **`x-section`**: High-level accordion/grouping header.
-- **`x-column`**: Suggested grid column span (`1` = half-width/standard, `2` = full-width).
-- **`x-order`**: Field sequence index for consistent top-to-bottom rendering.
-- **`x-auto`**: Server-generated field (e.g. `invoiceNumber`, `quoteNumber`). Render read-only and prefill from `GET /api/document/numbering/next`.
-- **`default`**: Only emitted for numbers, booleans, enums and financial labels (e.g. `taxRate: 18`). Never fake client or project text.
-- **`format: "date"`**: Date fields are strings; send ISO-8601 (`"2025-06-01"`).
-- The `organization` object is **not** part of the form schema (it is owned by the client's brand step) but is still accepted in the payload.
+### Task Options Reference
 
-The response also carries `shortLabel`, `category` and `signerFields`.
+| Task Name                 | Payload Option | Type       | Default | Description                                                                                                                                 |
+| :------------------------ | :------------- | :--------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `templates:sample-images` | `check`        | `boolean`  | `false` | When `true`, validates existing manifest and images against current template definitions without writing files. Exits non-zero on mismatch. |
+| `fonts:warm`              | `families`     | `string[]` | `[]`    | Extra font families to resolve via Google Fonts and cache into `.data/fonts/` alongside template fonts.                                     |
+| `backfill-thumbnails`     | `force`        | `boolean`  | `false` | When `true`, regenerates thumbnails for all `.pdf` files in storage `fs` (`static/`) even if a `.png` thumbnail already exists.             |
 
 ---
 
-### 2. Lightweight Preview with Organization Presets
+## REST API Reference
 
-When calling `POST /api/document/template/preview`, avoid sending raw base64 logo assets on every keystroke. Send `organizationId` instead:
+All API routes are exposed under `/api/**` with CORS enabled.
 
-```json
-{
-  "templateId": "internship-completion-certificate",
-  "variables": {
-    "organizationId": "modest-human-brands",
-    "recipient": {
-      "name": "Alex Mercer"
-    }
-  }
-}
-```
+### Endpoints Overview
 
-The server resolves preset branding, colors, typography, and logos, reducing payload sizes by ~95%. You can also send a full `organization` object to override the preset (partial objects are merged). The response is `{ "pdfBase64": "...", "pageCount": 2 }`.
-
-For live typing, call it with **`?draft=true`**: it never returns 400. Invalid or missing fields fall back to the template placeholders and are reported as `warnings: [{ field, message, code }]`. Nested objects you send (e.g. `project`) replace the placeholder object as a whole, so send complete nested objects.
+| Method      | Endpoint                                      | Description                                                             | Auth / Key Params                                           |
+| :---------- | :-------------------------------------------- | :---------------------------------------------------------------------- | :---------------------------------------------------------- |
+| `GET`       | `/api/health`                                 | Node status, app version, and build timestamp.                          | Public                                                      |
+| `GET`       | `/api/document/template`                      | List registered templates with category, description, and sample URLs.  | Public                                                      |
+| `GET`       | `/api/document/template/:id`                  | Template JSON Schema, field hints, and signer requirements.             | `:id` (Template ID)                                         |
+| `GET`       | `/api/document/template/:id/sample.pdf`       | Sample PDF stream with placeholder tokens (`?variant=sample\|branded`). | `:id`, `variant` (default: `sample`)                        |
+| `GET`       | `/api/document/template/:id/sample/:page.png` | Pre-rendered template page PNG for preview galleries.                   | `:id`, `:page`, `v` (cache hash)                            |
+| `POST`      | `/api/document/template/preview`              | Live PDF rendering (`{ pdfBase64, pageCount, warnings }`).              | `?draft=true`, body: `{ templateId, variant, variables }`   |
+| `POST`      | `/api/document/template`                      | Generate PDF, create thumbnail, and persist draft record in Notion.     | Body: `{ name, templateId, contactId, userId, data }`       |
+| `GET`       | `/api/document/numbering/next`                | Peek next document serial number (`{OrgCode}-{Type}-{YY}-{Seq}`).       | `templateId` (req), `organizationId`, `organizationName`    |
+| `GET`       | `/api/document`                               | Filtered, paginated list of documents.                                  | Query: `limit`, `offset`, `templateId`, `status`            |
+| `GET`       | `/api/document/:id`                           | Fetch document record, status, relations, and stored `rawData`.         | `:id` (Notion Page ID)                                      |
+| `PATCH`     | `/api/document/:id`                           | Update document metadata (`name`, `status`).                            | `:id`, body: `{ name?, status? }`                           |
+| `GET`       | `/api/document/:id/content`                   | Serve PDF file or thumbnail PNG (`?type=image`, `?download`).           | `:id`, query: `type`, `download`                            |
+| `POST`      | `/api/document/:id/envelope`                  | Configure signer queue and initiate envelope (`Sent` status).           | `:id`, body: `{ routingType, signers }`                     |
+| `POST`      | `/api/document/:id/session`                   | Generate JWT signer session token for magic-link signing.               | `:id`, body: `{ signerEmail, expiresIn? }`                  |
+| `POST`      | `/api/document/:id/session/verify`            | Verify active signer session token.                                     | `:id`, body: `{ sessionToken }`                             |
+| `POST`      | `/api/document/:id/sign/prepare`              | Apply visual stamps and inject `/ByteRange` placeholder for signing.    | `:id`, body: `{ sessionToken, fields, certificateDerHex? }` |
+| `POST`      | `/api/document/:id/sign/client`               | Inject hardware DSC signature (USB token / SmartCard / WebCrypto).      | Body: `{ sessionId, signatureHex }`                         |
+| `POST`      | `/api/document/:id/sign/server`               | Apply automated server-side digital signature (`certificate.p12`).      | Body: `{ sessionId }`                                       |
+| `POST`      | `/api/document/:id/sign/verify`               | Cryptographically verify digital signature integrity via PKCS#7 / CMS.  | `multipart/form-data` with `pdf` file                       |
+| `POST`      | `/api/document/:id/void`                      | Invalidate document with a diagonal VOID watermark across all pages.    | `:id`, body: `{ reason }` (&ge; 5 characters)               |
+| `GET`       | `/api/decor`                                  | List built-in SVG/raster decor assets (`?slot=`).                       | Query: `slot` (e.g. `panel-corner`)                         |
+| `GET`       | `/api/decor/builtin/:file.png`                | Serve built-in decor thumbnail.                                         | `:file` (e.g. `leaf.png`)                                   |
+| `POST`      | `/api/decor/upload`                           | Upload custom decor asset (PNG, JPG, WebP, SVG &le; 2 MB).              | `multipart/form-data` with `file`                           |
+| `GET`       | `/api/decor/upload/:file.png`                 | Serve uploaded content-addressed decor asset.                           | `:file` (e.g. `<sha1>.png`)                                 |
+| `GET`       | `/api/fonts`                                  | Search Google Fonts catalog available for on-demand resolution.         | Query: `q`, `limit` (max 50, default 20)                    |
+| `GET\|POST` | `/mcp`                                        | Model Context Protocol endpoint for autonomous agent tooling.           | MCP Protocol                                                |
 
 ---
 
-### 3. Unified Error Contract
+## Integration Guide & Code Examples
 
-Payload validation errors return a clean `400 Bad Request` with exact field paths:
+### 1. Unified Error Contract
+
+Validation errors return HTTP `400 Bad Request` with an exact path to the offending field:
 
 ```json
 {
-  "error": true,
-  "status": 400,
-  "statusText": "Bad Request",
-  "message": "Bad Request",
+  "statusCode": 400,
+  "statusMessage": "Bad Request",
   "data": {
     "errors": [
       {
@@ -120,128 +126,311 @@ Payload validation errors return a clean `400 Bad Request` with exact field path
 }
 ```
 
-Error responses never include server file paths. In dev mode h3 still adds a `stack` array containing only the status text; in production it is omitted. Full stack traces for 500s are logged to the server terminal only.
+> [!NOTE]
+> Stack traces and local file system paths are completely stripped from error payloads across both development and production environments.
 
-**Date contract:** date fields (e.g. `startDate`, `dueDate`) are sent as ISO-8601 strings (`"2025-06-01"` or full datetime). The JSON schema advertises them as `{ "type": "string", "format": "date" }`.
+### 2. Live Preview with Draft Tolerances
 
-**Defaults & required fields:** both `preview` and create merge the template's placeholder values under your payload before validating, so partial payloads succeed. The `required` list in the schema describes the fields a client should collect; enforce it client-side before "Review & send".
+When rendering live previews during user input, call `POST /api/document/template/preview?draft=true`. Missing or temporarily invalid values will fall back to placeholders and emit `warnings` rather than throwing HTTP 400:
+
+```typescript
+// Live Preview Request (TypeScript / Fetch)
+const response = await fetch('http://localhost:3000/api/document/template/preview?draft=true', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    templateId: 'invoice',
+    variant: 'filled',
+    variables: {
+      organizationId: 'modest-human-brands', // Resolves preset branding & logo
+      recipient: {
+        name: 'Wayne Enterprises',
+        email: 'billing@wayne.ent',
+        address: '1007 Mountain Drive, Gotham',
+        phone: '+1 555-0199',
+      },
+      project: {
+        title: 'Brand Refresh & UI System',
+        invoiceNumber: 'MHB-I-26-001',
+        invoiceDate: '2026-10-15',
+        quoteNumber: 'MHB-Q-26-001',
+        quoteDate: '2026-10-01',
+        shootLocation: 'Remote',
+        shootDate: '2026-10-10',
+        deliverables: [
+          { title: 'Brand Guidelines', quantity: 1, rate: 5000 },
+          { title: 'Design System Tokens', quantity: 1, rate: 8500 },
+        ],
+      },
+      dueDate: '2026-10-31',
+    },
+  }),
+})
+
+const { pdfBase64, pageCount, warnings } = await response.json()
+console.log(`Rendered ${pageCount} pages. Warnings:`, warnings ?? 'none')
+```
+
+#### Preview Variants
+
+| Variant   | Organization Scope                               | Data Fields                         | Typical Wizard Stage           |
+| :-------- | :----------------------------------------------- | :---------------------------------- | :----------------------------- |
+| `sample`  | Neutral placeholder ("Your Company", gray logo)  | Shows `{{Field Label}}` tokens      | Template gallery cards         |
+| `branded` | Organization branding applied (`organizationId`) | Shows `{{Field Label}}` tokens      | Brand selection step           |
+| `filled`  | Organization branding applied                    | User variables merged over defaults | Form completion / final review |
 
 ---
 
-### 4. Wizard Helpers
+### 3. Creating & Persisting a Document
 
-| Route                                                 | Purpose                                                                                                                                                                |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/document/template`                          | Cards: `id`, `label`, `shortLabel`, `category` (Billing / Contracts / Certificates / Marketing), `description`, `sampleUrl`.                                           |
-| `GET /api/document/template/:id/sample.pdf`           | Sample PDF (placeholder data) for the template picker preview.                                                                                                         |
-| `POST /api/document/template/preview?draft=true`      | Live preview while typing: never returns 400; invalid fields fall back to placeholders and are listed in `warnings[{field,message,code}]`. Always returns `pageCount`. |
-| `GET /api/document/numbering/next?templateId=invoice` | Peek the next number, e.g. `MHB-I-26-014` (not reserved). Fields marked `x-auto` in the schema should be prefilled from it.                                            |
-| `GET /api/document?templateId=quotation&status=Draft` | Filter documents (e.g. the "From quotation" list); `GET /api/document/:id` returns the stored `rawData` for prefill.                                                   |
+Calling `POST /api/document/template` compiles the PDF, creates a PNG thumbnail, and writes a record to Notion:
 
-Creating a document (`POST /api/document/template`) accepts `template` or `templateId`, and `data` or `variables` (aliases that match the preview payload). Like preview, it fills missing fields from the template placeholders, so enforce the schema's `required` list on the client.
+```typescript
+const response = await fetch('http://localhost:3000/api/document/template', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'MHB-I-26-001',
+    templateId: 'invoice',
+    contactId: 'contact-page-id', // Notion Contact relation ID
+    userId: 'user-page-id', // Notion User relation ID
+    organizationId: 'modest-human-brands',
+    data: {
+      recipient: {
+        name: 'Wayne Enterprises',
+        email: 'billing@wayne.ent',
+        address: '1007 Mountain Drive, Gotham',
+        phone: '+1 555-0199',
+      },
+      project: {
+        title: 'Brand Refresh',
+        invoiceNumber: 'MHB-I-26-001',
+        invoiceDate: '2026-10-15',
+        quoteNumber: 'MHB-Q-26-001',
+        quoteDate: '2026-10-01',
+        shootLocation: 'Remote',
+        shootDate: '2026-10-10',
+        deliverables: [{ title: 'Brand Strategy', quantity: 1, rate: 5000 }],
+      },
+      dueDate: '2026-10-31',
+    },
+  }),
+})
 
-### 5. Endpoint Reference
+const result = await response.json()
+// Returns: { id: "notion-id", templateId: "invoice", name: "MHB-I-26-001", sizeBytes: 160578 }
+```
 
-| Method          | Route                                                                            | Description                                                   |
-| --------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `GET`           | `/api/health`                                                                    | Service health.                                               |
-| `GET`           | `/api/document/template`                                                         | Template cards (`shortLabel`, `category`, `sampleUrl`).       |
-| `GET`           | `/api/document/template/:id`                                                     | JSON Schema + `signerFields`.                                 |
-| `GET`           | `/api/document/template/:id/sample.pdf`                                          | Sample PDF with placeholder data.                             |
-| `POST`          | `/api/document/template/preview[?draft=true]`                                    | Render `{ pdfBase64, pageCount[, warnings] }`.                |
-| `POST`          | `/api/document/template`                                                         | Generate the PDF and save a draft record.                     |
-| `GET`           | `/api/document/numbering/next?templateId=`                                       | Peek the next document number (not reserved).                 |
-| `GET`           | `/api/document?limit=&offset=&templateId=&status=`                               | Paginated, filterable document list.                          |
-| `GET` / `PATCH` | `/api/document/:id`                                                              | Document details (incl. stored `rawData`) / update metadata.  |
-| `GET`           | `/api/document/:id/content`                                                      | PDF (or `?type=image` thumbnail, `?download` for attachment). |
-| `POST`          | `/api/document/:id/session`, `/session/verify`                                   | Signer magic-link sessions.                                   |
-| `POST`          | `/api/document/:id/sign/prepare`, `/sign/client`, `/sign/server`, `/sign/verify` | Signing pipeline and signature verification.                  |
-| `POST`          | `/api/document/:id/envelope`, `/void`                                            | Routing envelope and void.                                    |
+---
 
-A ready-made [Postman collection](./postman) covers the template, document, session and signing routes with request and response schema tests (the routing `envelope` route is not in it yet).
+### 4. End-to-End Cryptographic Signing Pipeline
 
-### 6. Decor (illustrations, patterns, frames)
+The signing pipeline supports both automated corporate seals and interactive client hardware tokens:
 
-Templates can expose decorative images as a **picker** instead of a hard-coded asset. A decor reference is one string:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+    actor Signer
+    participant API as MDoc Server
+    participant Storage as File Storage (fs / data)
+    participant Notion as Notion DB / Mock
 
-| Reference       | Meaning                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `builtin:<id>`  | Shipped with the server (source files in `public/decor/`, listed by `GET /api/decor`)                                |
-| `upload:<hash>` | A user upload (`POST /api/decor/upload`, content-addressed, PNG/JPG/WebP/SVG up to 2 MB, normalised to PNG)          |
-| `https://...`   | An external image; fetched server-side (https only, private/loopback hosts blocked, 5 MB / 5 s limits, no redirects) |
-| `none` / empty  | No decor                                                                                                             |
+    Admin->>API: POST /api/document/:id/envelope (Define Signers & Order)
+    API->>Notion: Update Status -> "Sent"
+    API->>Admin: 200 OK (Next Signer: signer@example.com)
 
-Schema hints on a field: `x-widget: "decor"` (a decor picker) or `"image"` (a plain image field that accepts the same references), plus `x-decor-slot` (e.g. `panel-corner`) to filter `GET /api/decor?slot=`. Built-ins marked `tintable` can be recoloured with a `tint` enum (`none | primary | accent`). Templates resolve references with `resolveDecor()` from `server/utils/decor.ts`, which never throws: an unreachable or rejected image is simply omitted.
+    Signer->>API: POST /api/document/:id/session (signerEmail)
+    API->>Signer: 200 OK (sessionToken JWT)
 
-| Route                             | Purpose                                                                    |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| `GET /api/decor[?slot=]`          | Built-in catalogue: `id`, `label`, `kind`, `tintable`, `slots`, `thumbUrl` |
-| `GET /api/decor/builtin/:id.png`  | Thumbnail / preview                                                        |
-| `POST /api/decor/upload`          | `multipart/form-data` with `file`; returns `{ id, url }`                   |
-| `GET /api/decor/upload/:hash.png` | Serves an upload                                                           |
+    Signer->>API: POST /api/document/:id/sign/prepare (sessionToken, visual fields)
+    API->>API: MuPDF & Canvas apply visual stamps
+    API->>API: @signpdf adds /ByteRange placeholder (16,384 bytes)
+    API->>Storage: Cache session (TTL: 300s)
+    API->>Signer: 200 OK (sessionId, digestHex)
 
-### 7. Preview Variants & Sample Images
+    alt Server-Side Signing (P12 Certificate)
+        Signer->>API: POST /api/document/:id/sign/server (sessionId)
+        API->>Storage: Load static/certificate.p12
+        API->>API: Sign byte range with SignPdf & P12Signer
+    else Client Hardware DSC (SmartCard / USB Token)
+        Signer->>API: POST /api/document/:id/sign/client (sessionId, signatureHex)
+        API->>API: Embed signed CMS into ByteRange
+    end
 
-Every template has three looks, selected with `variant` on `POST /api/document/template/preview` (default `filled`):
+    API->>Storage: Save signed PDF (e.g. <title>-signed.pdf)
+    API->>Notion: Update Status -> "Partially Signed" or "Completed"
+    API->>Signer: 200 OK (documentStatus: "Completed")
+```
 
-| Variant   | Organisation                                                  | Fields                                                | Used in the wizard              |
-| --------- | ------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------- |
-| `sample`  | Neutral (grey "LOGO" circle, "Your Company")                  | Every dynamic field shows its `{{Field Label}}` token | Step 1, as static images        |
-| `branded` | The client's organisation (`organizationId` / `organization`) | Tokens                                                | Step 2 (Brand), live            |
-| `filled`  | The client's organisation                                     | The user's data; anything still empty shows its token | Steps 3-4, live (`?draft=true`) |
-
-Tokens use the same label as the Details form (the schema `title`). Short or ambiguous labels are prefixed with their section so each token maps to exactly one field: `{{Recipient Name}}`, `{{Project Title}}`, `{{Deliverable Rate}}`, while specific ones stay as is (`{{Invoice Number}}`, `{{Due Date}}`). Computed values (subtotal, totals) show an em dash until their inputs are filled. `sample` and `branded` never return 400; in `filled` + `?draft=true`, invalid values are dropped (the field shows its token again) and reported in `warnings`. Strict `filled` (no `draft`) is unchanged: placeholders backfill missing fields and invalid input is a 400.
-
-**Static sample images.** The `sample` variant of every template is pre-rendered to `public/templates/<id>/sample-<n>.png` (2x, all pages) with a `manifest.json`, so step 1 needs no PDF rendering. The PNGs are tracked with **Git LFS** (`.gitattributes`); run `git lfs install` once and `git lfs pull` in CI/Docker builds before `nitro build`.
+#### Step A: Initiate Envelope
 
 ```bash
-npx nitro dev                                            # in one terminal
-npx nitro task run templates:sample-images               # regenerate after changing a template
-npx nitro task run templates:sample-images --payload '{"check":true}'   # CI: fails if the images are stale
+curl -X POST http://localhost:3000/api/document/DOC_ID/envelope \
+  -H "Content-Type: application/json" \
+  -d '{
+    "routingType": "SEQUENTIAL",
+    "signers": [
+      { "order": 1, "name": "Jane Doe", "email": "signer@example.com", "role": "Contractor" },
+      { "order": 2, "name": "Corporate Officer", "email": "officer@example.com", "role": "Company" }
+    ]
+  }'
 ```
 
-`GET /api/document/template` returns `thumbnailUrl`, `pageCount`, `version` and `pages[{url,width,height}]` (empty / `null` until the task has run). The URLs point at `GET /api/document/template/:id/sample/:page.png?v=<hash>` (immutable cache), which serves the files from `public/templates` through the API so dev proxies work.
+#### Step B: Create Session Token
 
-### 8. Fonts
-
-Fonts are resolved on demand instead of being added to `asset/` by hand. A template declares families and weights:
-
-```ts
-;[{ name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' }]
+```bash
+curl -X POST http://localhost:3000/api/document/DOC_ID/session \
+  -H "Content-Type: application/json" \
+  -d '{ "signerEmail": "signer@example.com" }'
 ```
 
-- `name` is the value used as `fontFamily` in the component (and in `organization.branding.font`); `family` is the Google Fonts family; `weights` lists the weights to make available (default `[400]`); `path` is an optional bundled file used only as offline fallback for weight 400.
-- On first render the server resolves the family with [`unifont`](https://github.com/unjs/unifont) (Google provider), downloads a **full TTF/WOFF** file once, caches it in the `data` storage (`.data/fonts/`) and registers it with the PDF engine. WOFF2 is never used (it breaks in the PDF engine) and CDN subset files are avoided (they lose glyphs such as the rupee sign).
-- The organisation's `branding.font` is resolved the same way, so any Google font works (`Inter`, `Poppins`, `OpenSans`...). If it cannot be resolved the render falls back to `Exo2`; it never fails.
-- **Weights are global per `name`.** Only weight 400 is registered by the current templates, so `fontWeight: 'bold'` renders as regular, as designed. Registering 600/700 under a name affects every template that uses that name; give a template its own `name` if it needs a real bold.
-- `GET /api/fonts[?q=&limit=]` lists available families as `{ family, name }` (`name` is what to store in `branding.font`); without `q` it returns a short featured list.
-- `npx nitro task run fonts:warm` pre-downloads every template font (add brand fonts with `--payload '{"families":["Inter"]}'`). Run it at deploy time, and keep `.data` on a persistent volume.
+#### Step C: Prepare Visual Stamps & Byte Range
 
-## Getting Started
+```bash
+curl -X POST http://localhost:3000/api/document/DOC_ID/sign/prepare \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionToken": "JWT_TOKEN_HERE",
+    "fields": {
+      "contractor-signature": "data:image/png;base64,iVBORw0KGgo...",
+      "contractor-city": "Mumbai"
+    }
+  }'
+# Returns: { "sessionId": "UUID", "digestHex": "...", "signerEmail": "signer@example.com" }
+```
+
+#### Step D: Execute Signature
+
+```bash
+# Option 1: Automated Server Seal (.p12)
+curl -X POST http://localhost:3000/api/document/DOC_ID/sign/server \
+  -H "Content-Type: application/json" \
+  -d '{ "sessionId": "UUID_FROM_PREPARE" }'
+
+# Option 2: Client Hardware Signature
+curl -X POST http://localhost:3000/api/document/DOC_ID/sign/client \
+  -H "Content-Type: application/json" \
+  -d '{ "sessionId": "UUID_FROM_PREPARE", "signatureHex": "CMS_SIGNATURE_HEX" }'
+```
+
+#### Step E: Verify Cryptographic Integrity
+
+```bash
+curl -X POST http://localhost:3000/api/document/DOC_ID/sign/verify \
+  -F "pdf=@signed-document.pdf"
+# Returns: { "isIntact": true, "signer": "Modest Human Brands LLP", "message": "Document is intact and signature is valid." }
+```
+
+---
+
+## Template Catalog
+
+The server registers 5 production document templates:
+
+| Template ID                         | Label                             | Category     | Default Pages | Signers | Fonts Used                         |
+| :---------------------------------- | :-------------------------------- | :----------- | :-----------: | :-----: | :--------------------------------- |
+| `invoice`                           | Billing Invoice                   | Billing      |       1       |    0    | `Exo2`, `Oxanium`                  |
+| `quotation`                         | Quotation                         | Billing      |       6       |    2    | `Exo2`, `Oxanium`                  |
+| `internship-completion-certificate` | Internship Completion Certificate | Certificates |       1       |    1    | `Exo2`, `IslandMoments`, `Oxanium` |
+| `retainer-contract`                 | Retainer Contract                 | Contracts    |       4       |    2    | `Exo2`, `Oxanium`                  |
+| `shoot-contract`                    | Shoot Contract                    | Contracts    |       3       |    2    | `Exo2`, `Oxanium`                  |
+
+### JSON Schema Layout Hints
+
+Calling `GET /api/document/template/:id` generates standard JSON Schema enriched with UI layout hints:
+
+- **`x-section`**: Heading for grouping fields in forms/accordions.
+- **`x-column`**: Suggested layout width (`1` = half-width, `2` = full-width).
+- **`x-order`**: 1-based sequential sort index for input rendering.
+- **`x-auto`**: Field is server-calculated (`invoiceNumber`, `quoteNumber`). Render as read-only and prefill via `/api/document/numbering/next`.
+- **`x-boilerplate`**: Long-form legal or Markdown terms content.
+
+---
+
+## Local Development & Operations
+
+<details>
+<summary><strong>Environment Configuration, Build Scripts & Docker</strong></summary>
 
 ### Prerequisites
 
 - **Bun** `>= 1.2.9` (recommended) or **Node.js** `>= 22.11.0`
-- System build dependencies for native modules (`mupdf`, `@napi-rs/canvas`):
-  - On Ubuntu/Debian: `sudo apt-get install build-essential python3`
-  - On macOS: Xcode Command Line Tools (`xcode-select --install`)
+- Native module compilation tools (required for `mupdf` and `@napi-rs/canvas`):
+  - **Linux (Ubuntu/Debian)**: `sudo apt-get install -y build-essential python3 pkg-config libpixman-1-dev libcairo2-dev libpango1.0-dev`
+  - **macOS**: `xcode-select --install`
+  - **Windows**: Visual Studio C++ Build Tools
 
-### Installation & Development
+### Environment Variables
+
+| Variable                           | Type     | Default                      | Description                                                                                                                   |
+| :--------------------------------- | :------- | :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                         | `string` | `development`                | Set to `development` for offline file-backed Notion mock (`.data/notion-mock.json`). Set to `production` for live Notion API. |
+| `PORT`                             | `number` | `3000`                       | Port for the HTTP server.                                                                                                     |
+| `NITRO_PRESET`                     | `string` | `node-server`                | Nitro deployment target (e.g. `node-server`, `bun`).                                                                          |
+| `NITRO_APP_VERSION`                | `string` | `package.json version`       | Application version emitted by `/api/health`.                                                                                 |
+| `NITRO_APP_BUILD_TIME`             | `string` | `Build timestamp`            | Build time string emitted by `/api/health`.                                                                                   |
+| `NITRO_PUBLIC_DOC_URL`             | `string` | `http://localhost:3000`      | Base public URL of the service used when constructing preview URLs.                                                           |
+| `NITRO_PRIVATE_NOTION_DB_ID`       | `string` | `{"document":"mock-doc-db"}` | JSON string containing Notion Database IDs: `{"document":"<db-id>"}`.                                                         |
+| `NITRO_PRIVATE_JWT_SECRET`         | `string` | (required)                   | Secret key for signing and verifying magic-link session tokens.                                                               |
+| `NITRO_PRIVATE_CERTIFICATE_SECRET` | `string` | (required for .p12)          | Passphrase for unlocking `static/certificate.p12`.                                                                            |
+| `NOTION_API_KEY`                   | `string` | (optional in dev)            | Notion integration secret key (required when `NODE_ENV=production`).                                                          |
+
+### Storage Mounts
+
+The service relies on two storage layers defined in `nitro.config.ts`:
+
+- **`static/` (`fs` storage)**: Stores generated `.pdf` documents, `.png` page thumbnails, and signing keys (`certificate.p12`). Should be mounted to persistent storage in production.
+- **`.data/` (`data` storage)**: Stores the font cache (`.data/fonts/`), uploaded decor assets (`.data/decor-uploads/`), signing sessions (`.data/sign/`), and the local database mock (`.data/notion-mock.json`).
+
+### Package Scripts
+
+| Script                 | Command                                              | Description                                                                 |
+| :--------------------- | :--------------------------------------------------- | :-------------------------------------------------------------------------- |
+| `bun run dev`          | `nitro dev`                                          | Starts local development server with hot-reload at `http://localhost:3000`. |
+| `bun run build`        | `nitro build`                                        | Compiles server output to `.output/server/index.mjs`.                       |
+| `bun run start`        | `node --env-file=.env.prod .output/server/index.mjs` | Starts built production server using Node.js runtime.                       |
+| `bun run preview`      | `nitro preview`                                      | Previews production build locally.                                          |
+| `bun run lint`         | `eslint . --fix`                                     | Runs ESLint over project code.                                              |
+| `bun run format`       | `prettier . --write`                                 | Formats codebase with Prettier.                                             |
+| `bun run test:load`    | `k6 run tests/load.test.ts`                          | Runs k6 load tests against endpoints.                                       |
+| `bun run clean`        | `nitro cleanup`                                      | Cleans up Nitro build artifacts.                                            |
+| `bun run docker:build` | `docker build ...`                                   | Builds container image `mdoc:dev`.                                          |
+| `bun run docker:start` | `docker run ...`                                     | Runs containerized server on port `3500`.                                   |
+
+### Docker Deployment
+
+Build and run using the optimized multi-stage `Dockerfile`:
 
 ```bash
-# Install dependencies
-bun install
+# Build production Docker image
+docker build --build-arg VERSION=0.3.12 --build-arg BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ') -t mdoc:latest .
 
-# Start local server with hot module replacement
-bun run dev
+# Run container with persistent storage volumes
+docker run -d \
+  --name mdoc \
+  -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e NITRO_PUBLIC_DOC_URL=https://doc.example.com \
+  -e NITRO_PRIVATE_JWT_SECRET="your-jwt-secret" \
+  -e NITRO_PRIVATE_CERTIFICATE_SECRET="your-p12-secret" \
+  -e NOTION_API_KEY="secret_..." \
+  -e NITRO_PRIVATE_NOTION_DB_ID='{"document":"your-notion-db-id"}' \
+  -v $(pwd)/static:/app/static \
+  -v $(pwd)/.data:/app/.data \
+  mdoc:latest
 ```
 
-The service will start at `http://localhost:3000`.
-
-_Note: In `NODE_ENV=development`, document data stores locally in `.data/notion-mock.json`. You do not need live Notion API credentials to develop or test._
+</details>
 
 ---
 
 ## License
 
 Published under the [MIT License](https://github.com/Modest-Human-Brands/mdoc/blob/main/LICENSE).
+
+<br>
+
+<a href="https://github.com/Modest-Human-Brands/mdoc/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Modest-Human-Brands/mdoc" alt="Contributors" />
+</a>

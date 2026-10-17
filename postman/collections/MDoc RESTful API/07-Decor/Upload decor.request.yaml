@@ -3,7 +3,7 @@ description: Upload an image (PNG, JPG, WebP or SVG, max 2 MB). It is validated 
 url: '{{base_url}}/api/decor/upload'
 method: POST
 body:
-  type: form-data
+  type: formdata
   content:
     - key: file
       type: file
