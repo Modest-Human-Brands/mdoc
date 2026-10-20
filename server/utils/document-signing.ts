@@ -6,6 +6,7 @@ import mime from 'mime-types'
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import { getTemplateOrThrow, requiredSignerOrders } from '~/server/utils/signer-requirements'
 
 export interface SignerDetails {
   order: number
@@ -180,6 +181,13 @@ export async function resolveSigningContext(id: string, sessionToken: string, jw
   const signers = JSON.parse(queueData) as SignerDetails[]
   const signerIndex = signers.findIndex((s) => s.email === decodedToken.signerEmail)
   if (signerIndex === -1) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in queue.' })
+
+  // Envelopes created before the signer count was enforced may contain signers the template has no fields for
+  const templateDef = getTemplateOrThrow(document.properties['Template ID']?.select?.name)
+  const allowedOrders = requiredSignerOrders(templateDef)
+  if (signers.length !== allowedOrders.length || !allowedOrders.includes(signers[signerIndex]!.order)) {
+    throw new HTTPError({ statusCode: 409, statusMessage: `This envelope has ${signers.length} signer(s) but "${templateDef.label}" requires ${allowedOrders.length}. Recreate the envelope.` })
+  }
 
   const currentSigner = signers[signerIndex]
   if (currentSigner?.status === 'SIGNED') throw new HTTPError({ statusCode: 409, statusMessage: 'Already signed.' })

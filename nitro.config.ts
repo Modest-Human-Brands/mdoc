@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'nitro'
 import vue from 'unplugin-vue/rollup'
 import mcp from 'nitro-mcp-toolkit/module'
@@ -5,6 +6,8 @@ import mcp from 'nitro-mcp-toolkit/module'
 export default defineConfig({
   modules: [mcp()],
   serverDir: './server',
+  // `~/server/...` and `~/templates/...` imports resolve from the project root
+  alias: { '~': fileURLToPath(new URL('.', import.meta.url)) },
   rollupConfig: {
     plugins: [vue()],
     external: ['mupdf', '@napi-rs/canvas', 'css-tree', 'mdn-data', 'source-map-js'],

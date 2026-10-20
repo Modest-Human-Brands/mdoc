@@ -1,6 +1,9 @@
 import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
 import notion from '~/server/utils/notion'
+import { handleApiError } from '~/server/utils/api-error'
+import { getTemplateOrThrow, validateEnvelopeSigners } from '~/server/utils/signer-requirements'
+import type { NotionDocument } from '~/server/types'
 
 const envelopeSchema = z.object({
   routingType: z.enum(['SEQUENTIAL', 'PARALLEL']).default('SEQUENTIAL'),
@@ -24,6 +27,14 @@ export default defineEventHandler(async (event) => {
 
     const { signers, routingType } = await readValidatedBody(event, envelopeSchema)
 
+    // The template fixes the number of signers (one per distinct `signerOrder` in its signerFields)
+    const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    const templateDef = getTemplateOrThrow(document.properties['Template ID']?.select?.name)
+    const signerErrors = validateEnvelopeSigners(templateDef, signers)
+    if (signerErrors.length > 0) {
+      throw new HTTPError({ statusCode: 400, statusMessage: 'Bad Request', data: { errors: signerErrors } })
+    }
+
     const sortedSigners = signers.sort((a, b) => a.order - b.order)
     const nextSigner = sortedSigners[0]
 
@@ -45,15 +56,6 @@ export default defineEventHandler(async (event) => {
       queueSize: sortedSigners.length,
     }
   } catch (error: unknown) {
-    console.error(`API /document/[id]/envelope POST`, error)
-
-    if (error instanceof Error && 'statusCode' in error) {
-      throw error
-    }
-
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    return handleApiError(error, 'document/[id]/envelope.post')
   }
 })

@@ -355,7 +355,7 @@ Calling `GET /api/document/template/:id` generates standard JSON Schema enriched
 
 ### Prerequisites
 
-- **Bun** `>= 1.2.9` (recommended) or **Node.js** `>= 22.11.0`
+- **Bun** `>= 1.2.9` (recommended) or **Node.js** `>= 22.12.0`
 - Native module compilation tools (required for `mupdf` and `@napi-rs/canvas`):
   - **Linux (Ubuntu/Debian)**: `sudo apt-get install -y build-essential python3 pkg-config libpixman-1-dev libcairo2-dev libpango1.0-dev`
   - **macOS**: `xcode-select --install`
