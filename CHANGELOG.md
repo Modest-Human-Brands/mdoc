@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.3.13
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.12...v0.3.13)
+
+### 🚀 Enhancements
+
+- Enforce signer requirements based on template definitions ([c1a96e6](https://github.com/Modest-Human-Brands/mdoc/commit/c1a96e6))
+
+### 🏡 Chore
+
+- Update dependencies and package manager version ([08eb165](https://github.com/Modest-Human-Brands/mdoc/commit/08eb165))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.12
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.11...v0.3.12)
