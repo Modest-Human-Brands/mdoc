@@ -1,4 +1,3 @@
-// server/utils/rasterize-pdf.ts
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { createCanvas } from '@napi-rs/canvas'
 
@@ -12,7 +11,6 @@ export interface RasterPage {
   height: number
 }
 
-/** Rasterise every page of a PDF to PNG. `scale` 1 = 72 dpi (A4 = 595 x 842 px). */
 export default async function rasterizePdfPages(pdfBuffer: Buffer | ArrayBuffer | Uint8Array, scale = 2): Promise<RasterPage[]> {
   const pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(pdfBuffer as ArrayBuffer) }).promise
   const pages: RasterPage[] = []

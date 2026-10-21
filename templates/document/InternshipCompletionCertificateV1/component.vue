@@ -17,7 +17,6 @@ const styles = {
   page: { fontFamily: 'Exo2', position: 'relative' as const, width: '100%', height: '100%' },
   bgImage: { position: 'absolute' as const, top: 0, left: 0, width: 595, height: 841, objectFit: 'fill' as const },
 
-  // New Header Sections
   headerContainer: { position: 'absolute' as const, left: 105, top: 92, width: 386, alignItems: 'center' as const },
   certificateTitle: { fontSize: 64, fontWeight: 'bold' as const, color: '#1a0a00' },
   subtitle: { fontSize: 24, color: '#555555', marginTop: 0 },

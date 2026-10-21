@@ -1,26 +1,20 @@
-// server/utils/render-template.ts
 import { h } from 'vue'
 import { renderToBuffer } from '@ceereals/vue-pdf'
 import { HTTPError } from 'nitro/h3'
 
 import type { TemplateDefinition } from '~/server/utils/template-registry'
-import { neutralOrganization, resolveOrganization } from '~/server/utils/organization-store'
+import { neutralOrganization, organizationFrom } from '~/server/utils/organization-store'
 import { deepMerge, getTokenPayload } from '~/server/utils/token-payload'
 import { ensureFonts, resolveBrandFont } from '~/server/utils/fonts'
-import type { ApiValidationErrorDetail } from '~/server/utils/api-error'
+import type { ApiValidationErrorDetail } from '~/server/types'
 
 const RENDER_TIMEOUT_MS = 20_000
 
-export function mergeTemplateVariables(templateDef: TemplateDefinition, variables: Record<string, any> = {}) {
-  const orgInput = variables.organizationId || variables.organization || variables.orgId
-  const organization = resolveOrganization(orgInput, templateDef.placeholders?.organization)
-
-  return {
-    ...templateDef.placeholders,
-    ...variables,
-    organization,
-  }
-}
+export const mergeTemplateVariables = (templateDef: TemplateDefinition, variables: Record<string, any> = {}) => ({
+  ...templateDef.placeholders,
+  ...variables,
+  organization: organizationFrom(variables, templateDef.placeholders.organization),
+})
 
 function setPath(target: any, path: PropertyKey[], value: any) {
   let cursor = target
@@ -33,13 +27,6 @@ function setPath(target: any, path: PropertyKey[], value: any) {
 
 export type PreviewVariant = 'sample' | 'branded' | 'filled'
 
-/**
- * Variables for a preview variant. Every dynamic field the user has not filled shows its own `{{Field Label}}` token.
- * - sample:  neutral organisation + tokens (static picker images)
- * - branded: the client's organisation + tokens (Brand step)
- * - filled:  the client's organisation + the user's data over tokens (Details step, live)
- * Invalid user values never fail the render: they are dropped (the field shows its token again) and reported as warnings.
- */
 export function buildVariantVariables(templateDef: TemplateDefinition, variant: PreviewVariant, variables: Record<string, any> = {}) {
   const warnings: ApiValidationErrorDetail[] = []
   const tokens = getTokenPayload(templateDef)
@@ -48,7 +35,7 @@ export function buildVariantVariables(templateDef: TemplateDefinition, variant: 
     return { variables: { ...tokens, organization: neutralOrganization }, warnings }
   }
 
-  const organization = resolveOrganization(variables.organizationId || variables.organization || variables.orgId, templateDef.placeholders?.organization)
+  const organization = organizationFrom(variables, templateDef.placeholders.organization)
   if (variant === 'branded') {
     return { variables: { ...tokens, organization }, warnings }
   }
@@ -58,20 +45,16 @@ export function buildVariantVariables(templateDef: TemplateDefinition, variant: 
 
   const cleaned = structuredClone(userData)
   if (templateDef.schema) {
-    // Validate against the demo placeholders so only the user's own values can fail
     const result = templateDef.schema.safeParse({ ...deepMerge(templateDef.placeholders, cleaned), organization })
     if (!result.success) {
-      for (const issue of result.error.issues) {
-        warnings.push({ field: issue.path.join('.'), message: issue.message, code: issue.code })
-        setPath(cleaned, issue.path, undefined)
-      }
+      warnings.push(...result.error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })))
+      for (const issue of result.error.issues) setPath(cleaned, issue.path, undefined)
     }
   }
 
   return { variables: { ...deepMerge(tokens, cleaned), organization }, warnings }
 }
 
-/** Makes sure the template's fonts and the organisation's brand font are registered; an unavailable brand font falls back to the default. */
 async function prepareFonts(templateDef: TemplateDefinition, variables: Record<string, any>) {
   await ensureFonts(templateDef.fonts ?? [])
 
@@ -103,7 +86,6 @@ export async function renderTemplatePdf(templateDef: TemplateDefinition, rawVari
   }
 }
 
-/** Count pages without parsing the PDF: every page object carries `/Type /Page` (not `/Pages`). */
 export function countPdfPages(pdf: Buffer): number {
   return (pdf.toString('latin1').match(/\/Type\s*\/Page(?![s\w])/g) || []).length || 1
 }

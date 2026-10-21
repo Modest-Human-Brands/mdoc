@@ -62,11 +62,7 @@ export interface StorageEngine {
 interface MuPDFAnnotation {
   setRect(rect: [number, number, number, number]): void
   setFlags(flags: number): void
-  // setStampImage scales the image to fit whatever Rect was set via setRect() —
-  // this is the correct API for "drop an image into a Stamp annotation".
-  // setAppearance(appearance, state, transform, bbox, resources, contents) is a
-  // different, lower-level primitive for hand-built content streams; it is NOT
-  // an (image, matrix) API despite the similar-looking call shape.
+
   setStampImage(image: unknown): void
   update(): void
 }
@@ -182,7 +178,6 @@ export async function resolveSigningContext(id: string, sessionToken: string, jw
   const signerIndex = signers.findIndex((s) => s.email === decodedToken.signerEmail)
   if (signerIndex === -1) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in queue.' })
 
-  // Envelopes created before the signer count was enforced may contain signers the template has no fields for
   const templateDef = getTemplateOrThrow(document.properties['Template ID']?.select?.name)
   const allowedOrders = requiredSignerOrders(templateDef)
   if (signers.length !== allowedOrders.length || !allowedOrders.includes(signers[signerIndex]!.order)) {

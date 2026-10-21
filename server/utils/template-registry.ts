@@ -29,7 +29,7 @@ export interface TemplateDefinition {
   shortLabel?: string
   category?: TemplateCategory
   description: string
-  /** Fonts the template uses. `{ name, family, weights }` entries are fetched on demand (see server/utils/fonts.ts). */
+
   fonts?: TemplateFont[]
   component: Component
   schema: z.ZodObject<any, any>
@@ -45,7 +45,6 @@ export default function registerTemplate(definition: TemplateDefinition) {
 
   if (definition.fonts) {
     for (const font of definition.fonts) {
-      // Entries with a `family` are resolved online at render time; plain `{ name, path }` entries are bundled files
       if (font.family || !font.path) continue
 
       const fontKey = `${font.name}:${font.weight ?? 'normal'}`

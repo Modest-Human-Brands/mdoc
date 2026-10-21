@@ -6,17 +6,17 @@ import mcp from 'nitro-mcp-toolkit/module'
 export default defineConfig({
   modules: [mcp()],
   serverDir: './server',
-  // `~/server/...` and `~/templates/...` imports resolve from the project root
+
   alias: { '~': fileURLToPath(new URL('.', import.meta.url)) },
   rollupConfig: {
     plugins: [vue()],
     external: ['mupdf', '@napi-rs/canvas', 'css-tree', 'mdn-data', 'source-map-js'],
   },
-  // imports: {},
+
   features: {
     websocket: true,
   },
-  // public/decor is also bundled for server-side rendering (read via useStorage('assets:decor'))
+
   serverAssets: [
     { baseName: 'decor', dir: './public/decor' },
     { baseName: 'templates', dir: './public/templates' },

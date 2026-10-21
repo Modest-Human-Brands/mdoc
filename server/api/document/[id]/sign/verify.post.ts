@@ -1,4 +1,4 @@
-import { defineEventHandler, HTTPError } from 'h3'
+import { defineEventHandler, HTTPError } from 'nitro/h3'
 import * as pkijs from 'pkijs'
 import * as asn1js from 'asn1js'
 import { webcrypto } from 'node:crypto'
@@ -62,16 +62,15 @@ export default defineEventHandler(async (event) => {
       signer: signerName,
       message: verificationResult ? 'Document is intact and signature is valid.' : 'Document is tampered or signature is invalid.',
     }
-  } catch (error: any) {
-    console.error(`API /document/[id]/sign/verify POST`, error)
-
+  } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
       throw error
     }
 
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    console.error('document/[id]/sign/verify POST', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

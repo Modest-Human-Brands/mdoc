@@ -1,4 +1,3 @@
-// server/utils/organization-store.ts
 export interface OrganizationProfile {
   id: string
   name: string
@@ -78,7 +77,6 @@ export const organizationPresets: Record<string, OrganizationProfile> = {
   },
 }
 
-/** Neutral, unbranded organisation used by the `sample` preview variant (grey logo placeholder, no real details). */
 export const neutralOrganization: OrganizationProfile = {
   id: 'neutral',
   name: 'Your Company',
@@ -141,3 +139,6 @@ export function resolveOrganization(orgInput?: string | Record<string, any>, fal
 
   return base
 }
+
+export const organizationFrom = (variables: Record<string, any>, fallbackPreset?: Record<string, any>) =>
+  resolveOrganization(variables.organization || variables.organizationId || variables.orgId, fallbackPreset)

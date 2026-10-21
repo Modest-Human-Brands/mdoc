@@ -1,10 +1,6 @@
-// server/api/decor/upload/[file].get.ts
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
 import { useStorage } from 'nitro/storage'
 
-import { handleApiError } from '~/server/utils/api-error'
-
-/** Serves a previously uploaded decor (content-addressed, so it can be cached forever). */
 export default defineEventHandler(async (event) => {
   try {
     const hash = (getRouterParam(event, 'file') || '').replace(/\.png$/, '')
@@ -15,6 +11,14 @@ export default defineEventHandler(async (event) => {
     event.res.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
     return Buffer.from(stored)
   } catch (error: unknown) {
-    return handleApiError(error, 'decor/upload.get')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('decor/upload.get', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

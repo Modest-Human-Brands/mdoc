@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
-import { dateText, isToken, money } from '../_shared/format'
+import { dateText, isToken, money, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
   organizationName: string
@@ -27,10 +28,10 @@ const props = defineProps<{
   callTime: string
   expiresIn: string | Date
   deliverables: string[]
-  totalAmount: number
-  advancePercentage: number
-  advanceAmount: number
-  balanceAmount: number
+  totalAmount: number | string
+  advancePercentage: number | string
+  advanceAmount: number | string
+  balanceAmount: number | string
   parsedTerms: {
     type: string
     text?: string
@@ -38,8 +39,6 @@ const props = defineProps<{
   }[]
 }>()
 
-const formatCurrency = (val: unknown) => money(val)
-const formatDate = (val: unknown) => dateText(val)
 const formatTime = (val: string) => {
   if (!val || isToken(val)) return val || ''
   if (val.toUpperCase().includes('AM') || val.toUpperCase().includes('PM')) return val
@@ -54,27 +53,6 @@ const formatTime = (val: string) => {
   return `${h12}:${minutes.slice(0, 2)} ${ampm}`
 }
 
-const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
-  switch (relationship) {
-    case 'Trading As':
-      return `Trading as ${legalName}`
-
-    case 'Operating Division':
-      return `An operating division of ${legalName}`
-
-    case 'Wholly-Owned Subsidiary':
-      return `A wholly-owned subsidiary of ${legalName}`
-
-    case 'Special Purpose Vehicle':
-      return `A special purpose vehicle of ${legalName}`
-
-    case 'Primary':
-    default:
-      return legalName
-  }
-}
-
-// --- 8-Point Grid & Harmonized Quotation Styles ---
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', lineHeight: 1.4, fontStyle: 'normal' as const },
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 16 },
@@ -127,8 +105,7 @@ const styles = {
   <Document title="Contract" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -155,13 +132,13 @@ const styles = {
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(agreementDate) }}
+              {{ dateText(agreementDate) }}
             </Text>
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(expiresIn) }}
+              {{ dateText(expiresIn) }}
             </Text>
           </View>
         </View>
@@ -180,7 +157,7 @@ const styles = {
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Project Details</Text>
-          <Text :style="{ fontSize: 12 }">Date: {{ formatDate(shootDate) }}</Text>
+          <Text :style="{ fontSize: 12 }">Date: {{ dateText(shootDate) }}</Text>
           <Text :style="{ fontSize: 12 }">Location: {{ shootLocation }}</Text>
           <Text :style="{ fontSize: 12 }">Call Time: {{ formatTime(callTime) }}</Text>
         </View>
@@ -199,17 +176,17 @@ const styles = {
 
       <View :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Total Fee</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(totalAmount) }}</Text>
+        <Text :style="styles.colAmount">{{ money(totalAmount) }}</Text>
       </View>
 
       <View v-if="advanceAmount > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#888888', fontSize: 12 }"> Advance ({{ advancePercentage }}%) </Text>
-        <Text :style="{ ...styles.colAmount, color: '#888888' }">{{ formatCurrency(advanceAmount) }}</Text>
+        <Text :style="{ ...styles.colAmount, color: '#888888' }">{{ money(advanceAmount) }}</Text>
       </View>
 
       <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33', marginBottom: 32 }" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Remaining Balance</Text>
-        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ formatCurrency(balanceAmount) }}</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ money(balanceAmount) }}</Text>
       </View>
 
       <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
@@ -232,8 +209,7 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 

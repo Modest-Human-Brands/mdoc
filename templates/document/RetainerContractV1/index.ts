@@ -1,6 +1,7 @@
 import Component from './component.vue'
 import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
+import { organizationSchema, placeholderOrganization } from '../_shared/organization'
 import parseMarkdown from '~/server/utils/parse-markdown.ts'
 import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
 
@@ -48,41 +49,7 @@ export const retainerContractSchema = z.object({
     content: z.string().meta({ 'x-boilerplate': true }),
     lastUpdated: z.coerce.date(),
   }),
-  organization: z.object({
-    id: z.string(),
-    name: z.string(),
-    legalName: z.string(),
-    entityType: z.enum(['LLP', 'Private Limited', 'Proprietorship']),
-    tradeRelationship: z.enum(['Primary', 'Trading As', 'Operating Division', 'Wholly-Owned Subsidiary', 'Special Purpose Vehicle']),
-    gstin: z.string().optional(),
-    pan: z.string().optional(),
-    address: z.string(),
-    foundedYear: z.number(),
-    accountDetails: z.object({
-      accountName: z.string(),
-      accountNumber: z.number(),
-      bankName: z.string(),
-      ifscCode: z.string(),
-    }),
-    branding: z.object({
-      logo: z.string(),
-      color: z.object({
-        primary: z.string(),
-        accent: z.string(),
-      }),
-      font: z.string(),
-    }),
-    website: z.string().optional(),
-    phone: z.string().optional(),
-    contactEmail: z.email(),
-    billingEmail: z.email(),
-    whatsapp: z.string().optional(),
-    socials: z.record(z.any(), z.any()).optional(),
-    primaryContactId: z.string(),
-    organizationMemberIds: z.array(z.string()),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  }),
+  organization: organizationSchema,
 })
 
 export type RetainerContractPayload = z.infer<typeof retainerContractSchema>
@@ -184,46 +151,7 @@ The Service Provider is an independent contractor. Nothing in this Agreement sha
 Each party's liability arising out of this Agreement shall be limited to the fees paid or payable under this Agreement in the {{engagementMonths}} months preceding the event giving rise to the claim, except in cases of gross negligence, willful misconduct, or breach of confidentiality.`,
     lastUpdated: new Date(),
   },
-  organization: {
-    id: 'modest-human-brands',
-    name: 'Modest Human Brands',
-    legalName: 'Modest Human Brands LLP',
-    entityType: 'LLP',
-    tradeRelationship: 'Primary',
-    gstin: undefined,
-    pan: 'ABCDE0123F',
-    address: '17 NO, N S Road,harinavi Beltola, South 24 Parganas, West Bengal, India',
-    foundedYear: 2025,
-    accountDetails: {
-      accountName: 'Modest Human Brands LLP',
-      accountNumber: 1_234_567_890,
-      bankName: 'HDFC Bank',
-      ifscCode: 'HDFC0001234',
-    },
-    website: 'https://modesthumanbrands.com',
-    contactEmail: 'contact@modesthumanbrands.com',
-    billingEmail: 'billing@modesthumanbrands.com',
-    primaryContactId: 'contact-1',
-    organizationMemberIds: ['member-1'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    branding: {
-      logo: 'https://modesthumanbrands.com/logo.svg',
-      color: {
-        primary: '#111827',
-        accent: '#5945EA',
-      },
-      font: 'Exo2',
-    },
-    phone: '+919999999999',
-    whatsapp: '+919999999999',
-    socials: {
-      instagram: 'https://www.instagram.com/modesthumanbrands/',
-      facebook: 'https://facebook.com/modesthumanbrands',
-      linkedin: 'https://linkedin.com/company/modest-human-brands',
-      youtube: 'https://www.youtube.com/@modesthumanbrands',
-    },
-  },
+  organization: placeholderOrganization,
 }
 
 registerTemplate({
@@ -249,7 +177,7 @@ registerTemplate({
     const compensation = rawData.compensation || p.compensation
     const startDate = new Date(engagement.startDate)
     const months = Number.parseInt(`${engagement.months}`)
-    // Tokens / unfilled fields are not dates or numbers: leave the computed end date empty
+
     const endDate = Number.isNaN(startDate.getTime()) || Number.isNaN(months) ? undefined : subDays(addMonths(startDate, months), 1)
 
     const flatMonthlyFee = compensation.flatMonthlyFee
@@ -290,11 +218,6 @@ registerTemplate({
       onboardingFee: compensation.onboardingFee || 0,
     }
 
-    // Evaluate {{#if}} blocks: only the clause whose condition matches the current data is kept.
-    // - Quoted literal ('Auto-Renew') matches the selected renewalType.
-    // - Bare dot-path (flatMonthlyFee) is truthy-checked against the transformed variables.
-    // The pattern matches the {{#if}} wrapper syntax, not the clause text, so new or edited
-    // bullet wording is unaffected; the wrapper tags are dropped and only the inner content is kept.
     const isIfConditionTrue = (condition: string) => {
       if (condition.startsWith("'") && condition.endsWith("'")) {
         return condition.slice(1, -1) === engagement.renewalType

@@ -100,16 +100,15 @@ export default defineEventHandler(async (event) => {
       documentStatus: 'Voided',
       fileName: voidedFileName,
     }
-  } catch (error: any) {
-    console.error(`API /document/[id]/void POST`, error)
-
+  } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
       throw error
     }
 
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    console.error('document/[id]/void POST', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

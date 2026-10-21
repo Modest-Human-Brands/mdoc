@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
 import { SignPdf } from '@signpdf/signpdf'
 import { P12Signer } from '@signpdf/signer-p12'
 
@@ -49,10 +49,23 @@ export default defineEventHandler(async (event) => {
 
     return result
   } catch (error: unknown) {
-    console.error(`[ServerSign - FATAL ERROR]`, error)
-    if (typeof error === 'object' && error !== null && 'statusCode' in error) {
+    if (error instanceof ZodError) {
+      const validationError = new HTTPError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
+      })
+      validationError.stack = undefined
+      throw validationError
+    }
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
       throw error
     }
-    throw new HTTPError({ statusCode: 500, statusMessage: 'An error occurred during server-side document signing.' })
+
+    console.error('[ServerSign - FATAL ERROR]', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'An error occurred during server-side document signing.' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

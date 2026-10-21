@@ -1,5 +1,4 @@
-// server/api/document/numbering/next.get.ts
-import { defineEventHandler, getValidatedQuery } from 'nitro/h3'
+import { defineEventHandler, getValidatedQuery, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
 
@@ -8,7 +7,6 @@ import notionQueryDb from '~/server/utils/notion-query-db'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { resolveOrganization } from '~/server/utils/organization-store'
 import { templateRegistry } from '~/server/utils/template-registry'
-import { handleApiError } from '~/server/utils/api-error'
 import type { NotionDB, NotionDocument } from '~/server/types'
 
 import '~/templates/document'
@@ -37,16 +35,12 @@ function orgCode(name: string): string {
   return letters || 'DOC'
 }
 
-/**
- * Peek the next document number, e.g. `MHB-I-26-014` (org code - type - 2-digit year - sequence).
- * Nothing is reserved; creating the document is the source of truth.
- */
 export default defineEventHandler(async (event) => {
   try {
     const query = await getValidatedQuery(event, querySchema)
 
     if (!templateRegistry[query.templateId]) {
-      return handleApiError(Object.assign(new Error('Template not found'), { statusCode: 404, statusMessage: 'Template not found' }), 'numbering/next')
+      throw new HTTPError({ statusCode: 404, statusMessage: 'Template not found' })
     }
 
     const orgName = query.organizationName || resolveOrganization(query.organizationId || query.orgId).name
@@ -67,6 +61,14 @@ export default defineEventHandler(async (event) => {
     const sequence = max + 1
     return { templateId: query.templateId, prefix, sequence, number: `${prefix}-${String(sequence).padStart(3, '0')}` }
   } catch (error: unknown) {
-    return handleApiError(error, 'numbering/next')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('numbering/next', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

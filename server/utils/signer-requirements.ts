@@ -1,14 +1,10 @@
-// server/utils/signer-requirements.ts
-// A template fixes how many signers a document has: one per distinct `signerOrder` in its `signerFields`
-// (none for templates without signature fields). Envelopes must match that exactly.
 import { HTTPError } from 'nitro/h3'
 
-import type { ApiValidationErrorDetail } from '~/server/utils/api-error'
+import type { ApiValidationErrorDetail } from '~/server/types'
 import { templateRegistry, type TemplateDefinition } from '~/server/utils/template-registry'
 
 import '~/templates/document'
 
-/** Sorted distinct signer orders the template defines, e.g. [1] or [1, 2]. Empty when the template is not signable. */
 export function requiredSignerOrders(templateDef: Pick<TemplateDefinition, 'signerFields'>): number[] {
   return [...new Set((templateDef.signerFields ?? []).map((field) => Number(field.signerOrder)))].sort((a, b) => a - b)
 }
@@ -21,7 +17,6 @@ export function getTemplateOrThrow(templateId: string | undefined): TemplateDefi
   return templateDef
 }
 
-/** Field errors (same shape as validation errors) when `signers` do not match the template's required signers. */
 export function validateEnvelopeSigners(templateDef: TemplateDefinition, signers: { order: number }[]): ApiValidationErrorDetail[] {
   const required = requiredSignerOrders(templateDef)
 

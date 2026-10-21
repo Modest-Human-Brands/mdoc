@@ -1,8 +1,3 @@
-// server/utils/token-payload.ts
-// Builds a "token payload" for a template: every dynamic field holds its own label as `{{Field Label}}`, using the same
-// label the Details form shows (schema `title`). Rendering it makes the dynamic fields of any template easy to scan.
-// A short or ambiguous label is prefixed with its Details section, e.g. `{{Recipient Name}}`,
-// `{{Project Title}}`, `{{Deliverable Title}}`, so each token maps to exactly one form field.
 import { parseSchemaToJsonSchema } from '~/server/utils/zod-to-json-schema'
 import type { TemplateDefinition } from '~/server/utils/template-registry'
 
@@ -12,14 +7,12 @@ export const token = (label: string) => `{{${label}}}`
 
 const singular = (label: string) => (label.endsWith('s') && !label.endsWith('ss') ? label.slice(0, -1) : label)
 
-/** Section of a field: the nearest array (e.g. "Deliverable"), else its top-level group (e.g. "Recipient"), else none. */
 function sectionOf(parents: any[]): string {
   const nearestArray = [...parents].reverse().find((parent) => parent.type === 'array')
   if (nearestArray) return singular(nearestArray.title || '')
   return parents[0]?.title || ''
 }
 
-/** The root object is not a section; everything below it is. */
 const parentsFor = (parents: any[], node: any) => (parents.length === 0 && node['x-root'] ? [] : [...parents, node])
 
 function isLeaf(node: any) {
@@ -55,19 +48,17 @@ function build(node: any, placeholder: any, parents: any[], counts: Map<string, 
     return item === undefined ? [] : [item]
   }
 
-  // Enums and booleans must stay valid values (they switch layout); everything else becomes its label
   if (Array.isArray(node.enum)) return placeholder !== undefined && node.enum.includes(placeholder) ? placeholder : node.enum[0]
   if (node.type === 'boolean') return typeof placeholder === 'boolean' ? placeholder : false
-  // Long boilerplate (e.g. terms text) keeps its default so the sample still shows the real wording
+
   if (node['x-boilerplate'] && typeof placeholder === 'string') return placeholder
 
-  // Decor / image pickers hold a reference, not text: keep the template's default (or none)
   if (node['x-widget']) return typeof placeholder === 'string' ? placeholder : ''
 
   if (isLeaf(node)) {
     const section = sectionOf(parents)
     const title = node.title || section || 'Value'
-    // Multi-word labels ('Invoice Number') are already specific; short ones ('Name', 'Rate') get their section
+
     const specific = title.includes(' ') && (counts.get(title) || 0) <= 1
     return token(specific || !section || title.toLowerCase().includes(section.toLowerCase()) ? title : `${section} ${title}`)
   }
@@ -75,7 +66,6 @@ function build(node: any, placeholder: any, parents: any[], counts: Map<string, 
   return undefined
 }
 
-/** Token payload for a template (no `organization`; that is resolved per variant). Cached per template. */
 export function getTokenPayload(templateDef: TemplateDefinition): Record<string, any> {
   const hit = cache.get(templateDef.id)
   if (hit) return structuredClone(hit)
@@ -92,7 +82,6 @@ export function getTokenPayload(templateDef: TemplateDefinition): Record<string,
   return structuredClone(payload)
 }
 
-/** Deep-merge `override` over `base`; arrays and primitives in `override` replace, `undefined`/`null`/empty strings are skipped. */
 export function deepMerge(base: any, override: any): any {
   if (override === undefined || override === null || override === '') return base
   if (Array.isArray(override) || typeof override !== 'object' || typeof base !== 'object' || base === null || Array.isArray(base)) return override

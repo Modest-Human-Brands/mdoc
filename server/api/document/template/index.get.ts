@@ -1,6 +1,5 @@
-import { defineEventHandler } from 'nitro/h3'
+import { defineEventHandler, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
-import { handleApiError } from '~/server/utils/api-error'
 import { readSampleManifest, sampleUrls } from '~/server/utils/sample-manifest'
 
 import '~/templates/document'
@@ -19,6 +18,14 @@ export default defineEventHandler(async () => {
       ...sampleUrls(template.id, manifest[template.id]),
     }))
   } catch (error: unknown) {
-    return handleApiError(error, 'document/template/index.get')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('document/template/index.get', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

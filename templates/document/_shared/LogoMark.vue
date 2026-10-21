@@ -9,7 +9,6 @@ const props = defineProps<{
 
 const size = computed(() => Math.min(Number(props.box.width) || 80, Number(props.box.height) || 80))
 
-// Ensure the image never shrinks in a flex row and retains its 1:1 aspect ratio
 const imageStyle = computed(() => ({
   flexShrink: 0,
   objectFit: 'contain' as const,

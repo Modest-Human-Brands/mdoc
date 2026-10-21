@@ -1,8 +1,3 @@
-// server/utils/decor.ts
-// Decorative images (illustrations, patterns, frames) for templates.
-// A decor reference is a string: `builtin:<id>`, `upload:<hash>` or an `https://...` URL ('' / 'none' = no decor).
-// Every reference is resolved server-side to a PNG data URI, because the PDF engine cannot draw SVGs
-// and must never be pointed at arbitrary remote URLs while rendering.
 import { createHash } from 'node:crypto'
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
@@ -15,11 +10,11 @@ export interface BuiltinDecor {
   id: string
   label: string
   kind: 'illustration' | 'pattern' | 'frame'
-  /** Single-colour line art that can be recoloured to the brand colours. */
+
   tintable: boolean
-  /** File in public/decor (bundled as a server asset). */
+
   file: string
-  /** Placement slots a template declares via `x-decor-slot`. */
+
   slots: string[]
 }
 
@@ -47,7 +42,6 @@ export async function readBuiltinDecorFile(file: string): Promise<Buffer | undef
   return raw == null ? undefined : Buffer.from(raw as any)
 }
 
-/** Reject SVGs that could pull in files/URLs or run active content when rasterised. */
 function assertSafeSvg(svg: string) {
   if (/<\s*(script|foreignObject|image|use|iframe)\b|<!ENTITY|<!DOCTYPE|\bhref\s*=\s*["'](?!#)|url\(\s*["']?(?!#)/i.test(svg)) {
     throw new Error('SVG contains unsupported elements')
@@ -75,7 +69,6 @@ async function fetchRemoteImage(rawUrl: string): Promise<Buffer> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), REMOTE_TIMEOUT_MS)
   try {
-    // redirect: 'error' so a redirect cannot bypass the host check above
     const response = await fetch(url, { signal: controller.signal, redirect: 'error' })
     if (!response.ok) throw new Error(`Image request failed (${response.status})`)
     if (!(response.headers.get('content-type') || '').startsWith('image/')) throw new Error('URL is not an image')
@@ -96,14 +89,13 @@ async function fetchRemoteImage(rawUrl: string): Promise<Buffer> {
   }
 }
 
-/** Validate and normalise any uploaded/remote image to a bounded PNG. Throws on anything that is not a plain image. */
 export async function normalizeImage(input: Buffer, tintColor?: string): Promise<Buffer> {
   const isSvg = input.subarray(0, 512).toString('utf8').trimStart().startsWith('<')
   let source = input
   if (isSvg) {
     const svg = input.toString('utf8')
     assertSafeSvg(svg)
-    // Line art: recolour strokes/fills (but never `none`) to the requested tint
+
     source = Buffer.from(tintColor ? svg.replaceAll(/(stroke|fill)="(?!none)[^"]*"/g, `$1="${tintColor}"`) : svg)
   }
 
@@ -122,10 +114,6 @@ export function decorColorFor(tint: DecorTint | undefined, colors: { primary: st
   return undefined
 }
 
-/**
- * Resolve a decor reference to a PNG data URI for `<Image :src>`.
- * Never throws: any failure returns '' so the template simply omits the decor.
- */
 export async function resolveDecor(ref: string | undefined | null, options: { tintColor?: string } = {}): Promise<string> {
   const value = (ref || '').trim()
   if (!value || value === 'none') return ''

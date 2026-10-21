@@ -29,7 +29,10 @@
     "start": "node --env-file=.env.prod .output/server/index.mjs",
     "clean": "nitro cleanup",
     "docker:build": "docker build --build-arg VERSION=dev --build-arg BUILD_TIME=now -t mdoc:dev .",
-    "docker:start": "docker run --detach --name mdoc-dev --env-file .env.prod -p 3500:3000 mdoc:dev"
+    "docker:start": "docker run --detach --name mdoc-dev --env-file .env.prod -p 3500:3000 mdoc:dev",
+    "samples": "nitro task run templates:sample-images",
+    "samples:check": "nitro task run templates:sample-images --payload {\"check\":true}",
+    "fonts:warm": "nitro task run fonts:warm"
   },
   "dependencies": {
     "@ceereals/vue-pdf": "^0.3.1",

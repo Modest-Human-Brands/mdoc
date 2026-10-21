@@ -1,7 +1,6 @@
 import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
 import { z } from 'zod'
 import notion from '~/server/utils/notion'
-import { handleApiError } from '~/server/utils/api-error'
 import { getTemplateOrThrow, validateEnvelopeSigners } from '~/server/utils/signer-requirements'
 import type { NotionDocument } from '~/server/types'
 
@@ -27,7 +26,6 @@ export default defineEventHandler(async (event) => {
 
     const { signers, routingType } = await readValidatedBody(event, envelopeSchema)
 
-    // The template fixes the number of signers (one per distinct `signerOrder` in its signerFields)
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
     const templateDef = getTemplateOrThrow(document.properties['Template ID']?.select?.name)
     const signerErrors = validateEnvelopeSigners(templateDef, signers)
@@ -56,6 +54,14 @@ export default defineEventHandler(async (event) => {
       queueSize: sortedSigners.length,
     }
   } catch (error: unknown) {
-    return handleApiError(error, 'document/[id]/envelope.post')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('document/[id]/envelope.post', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

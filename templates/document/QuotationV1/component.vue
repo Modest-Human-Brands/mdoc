@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
-import { dateText, money, optionalNumber } from '../_shared/format'
+import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
   pricingModel: 'project' | 'day'
@@ -28,12 +29,12 @@ const props = defineProps<{
   projectIssuedDate: string | Date
   deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number }[]
   discountLabel: string
-  discountValue: number
+  discountValue: number | string
   isDiscountPercentage: boolean
   taxLabel: string
-  taxRate: number
+  taxRate: number | string
   accountName: string
-  accountNumber: number
+  accountNumber: number | string
   bankName: string
   ifscCode: string
   parsedTerms: {
@@ -51,29 +52,7 @@ const postDiscountTotal = computed(() => subtotal.value - discountAmount.value)
 const taxAmount = computed(() => (postDiscountTotal.value * optionalNumber(props.taxRate)) / 100)
 const grandTotal = computed(() => postDiscountTotal.value + taxAmount.value)
 
-const formatCurrency = (val: unknown) => money(val)
 const plain = (val: number) => (Number.isFinite(val) ? val : '—')
-const formatDate = (val: unknown) => dateText(val)
-
-const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
-  switch (relationship) {
-    case 'Trading As':
-      return `Trading as ${legalName}`
-
-    case 'Operating Division':
-      return `An operating division of ${legalName}`
-
-    case 'Wholly-Owned Subsidiary':
-      return `A wholly-owned subsidiary of ${legalName}`
-
-    case 'Special Purpose Vehicle':
-      return `A special purpose vehicle of ${legalName}`
-
-    case 'Primary':
-    default:
-      return legalName
-  }
-}
 
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', lineHeight: 1.4, fontStyle: 'normal' as const },
@@ -124,8 +103,7 @@ const styles = {
   <Document title="Quotation" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -157,13 +135,13 @@ const styles = {
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(projectIssuedDate) }}
+              {{ dateText(projectIssuedDate) }}
             </Text>
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(expiresIn) }}
+              {{ dateText(expiresIn) }}
             </Text>
           </View>
         </View>
@@ -184,7 +162,7 @@ const styles = {
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Shoot Details</Text>
           <Text :style="{ fontSize: 12 }">
             Date:
-            {{ formatDate(shootDate) }}
+            {{ dateText(shootDate) }}
           </Text>
           <Text :style="{ fontSize: 12 }">Address: {{ shootAddress }}</Text>
         </View>
@@ -227,18 +205,18 @@ const styles = {
 
       <View v-if="discountAmount > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#888888', fontSize: 12 }">{{ discountLabel }}</Text>
-        <Text :style="{ ...styles.colAmount, color: '#888888' }">- {{ formatCurrency(discountAmount) }}</Text>
+        <Text :style="{ ...styles.colAmount, color: '#888888' }">- {{ money(discountAmount) }}</Text>
       </View>
 
       <View v-if="taxAmount > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontSize: 12 }">{{ taxLabel }}</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(taxAmount) }}</Text>
+        <Text :style="styles.colAmount">{{ money(taxAmount) }}</Text>
       </View>
 
       <View :style="{ ...styles.financialTotalRow, backgroundColor: organizationColorAccent + '33' }" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Total</Text>
         <Text :style="{ ...styles.colAmount, fontSize: 16 }">
-          {{ formatCurrency(grandTotal) }}
+          {{ money(grandTotal) }}
         </Text>
       </View>
 
@@ -264,8 +242,7 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -290,8 +267,7 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 

@@ -55,7 +55,7 @@ export async function buildPreparedSignerInfo(params: { certDer: ArrayBuffer; co
     digestAlgorithm: new pkijs.AlgorithmIdentifier({ algorithmId: OID_SHA256, algorithmParams: new asn1js.Null() }),
     signedAttrs: reparsedAttrs,
     signatureAlgorithm: new pkijs.AlgorithmIdentifier({ algorithmId: OID_RSA_ENCRYPTION, algorithmParams: new asn1js.Null() }),
-    signature: new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }), // placeholder — filled in below
+    signature: new asn1js.OctetString({ valueHex: new ArrayBuffer(0) }),
   })
 
   return {
@@ -68,18 +68,6 @@ function dnToString(dn: pkijs.RelativeDistinguishedNames): string {
   return dn.typesAndValues.map((tv) => `${tv.type}=${tv.value.valueBlock.value}`).join(',')
 }
 
-/**
- * Reconstructs the real, minimal certificate chain for `certDer` by walking issuer -> subject
- * DN links starting from the leaf, rather than trusting whatever the caller supplied.
- *
- * Local signing bridges (e.g. USB DSC token middleware) sometimes hand back every certificate
- * cached in the local trust store instead of just this cert's actual chain -- embedding that
- * verbatim can blow the CMS well past what a PDF /Contents hex string can hold. This walks
- * issuer(leaf) -> matching subject in the pool -> issuer(that cert) -> ... until either no match
- * is found or a self-signed root is reached, and returns only the certs that are genuinely part
- * of the chain, excluding the self-signed root itself (verifiers already trust roots
- * out-of-band, so it never needs to be embedded).
- */
 export function buildMinimalChain(certDer: ArrayBuffer, candidatePoolDer: ArrayBuffer[]): ArrayBuffer[] {
   const leaf = pkijs.Certificate.fromBER(certDer)
   const pool = candidatePoolDer.map((der) => ({ der, cert: pkijs.Certificate.fromBER(der) }))
@@ -92,10 +80,10 @@ export function buildMinimalChain(certDer: ArrayBuffer, candidatePoolDer: ArrayB
     visitedIssuers.add(wantIssuerDn)
 
     const match = pool.find((p) => dnToString(p.cert.subject) === wantIssuerDn)
-    if (!match) break // no cert in the pool issues for wantIssuerDn -- chain is as complete as it can be
+    if (!match) break
 
     const isSelfSigned = dnToString(match.cert.issuer) === dnToString(match.cert.subject)
-    if (isSelfSigned) break // this is the root -- don't embed it
+    if (isSelfSigned) break
 
     chain.push(match.der)
     wantIssuerDn = dnToString(match.cert.issuer)

@@ -1,7 +1,3 @@
-// server/tasks/templates/sample-images.ts
-// Renders the neutral "sample" variant of every template and writes static page images to public/templates/<id>/sample-<n>.png
-// plus public/templates/manifest.json. Run after changing a template:
-//   npx nitro task run templates:sample-images            (payload: { "check": true } only compares, exits non-zero if stale)
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'

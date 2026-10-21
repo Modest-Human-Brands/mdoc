@@ -1,6 +1,3 @@
-// server/tasks/fonts/warm.ts
-// Downloads and caches every font the templates declare (and any extra families) so the first render is not slow.
-//   npx nitro task run fonts:warm                                  (payload: { "families": ["Inter", "Roboto"] } adds brand fonts)
 import { defineTask } from 'nitro/task'
 
 import { DEFAULT_FONT, ensureFonts, isFontRegistered, type TemplateFont } from '~/server/utils/fonts'

@@ -1,4 +1,3 @@
-// server/utils/notion.ts
 import { Client } from '@notionhq/client'
 import { notionMockClient } from '~/server/utils/notion-mock'
 

@@ -1,13 +1,10 @@
-// server/api/document/template/[id]/sample.pdf.get.ts
 import { defineEventHandler, getQuery, getRouterParam, HTTPError } from 'nitro/h3'
 
 import { templateRegistry } from '~/server/utils/template-registry'
-import { handleApiError } from '~/server/utils/api-error'
 import { buildVariantVariables, renderTemplatePdf } from '~/server/utils/render-template'
 
 import '~/templates/document'
 
-/** `?variant=sample` (default, neutral + tokens) or `?variant=branded` (default organisation + tokens). */
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
@@ -26,6 +23,14 @@ export default defineEventHandler(async (event) => {
 
     return pdf
   } catch (error: unknown) {
-    return handleApiError(error, 'template/[id]/sample.pdf.get')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('template/[id]/sample.pdf.get', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
-import { dateText, money, optionalNumber } from '../_shared/format'
+import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
   pricingModel: 'project' | 'day'
@@ -28,13 +29,13 @@ const props = defineProps<{
   dueDate: string | Date
   deliverables: { title: string; description: string; points: string[]; rate: number; quantity: number }[]
   discountLabel: string
-  discountValue: number
+  discountValue: number | string
   isDiscountPercentage: boolean
   taxLabel: string
-  taxRate: number
-  amountPaid: number
+  taxRate: number | string
+  amountPaid: number | string
   accountName: string
-  accountNumber: number
+  accountNumber: number | string
   bankName: string
   ifscCode: string
 }>()
@@ -56,29 +57,6 @@ const paymentStatus = computed(() => {
 })
 
 const stampColor = computed(() => (paymentStatus.value === 'PAID' ? '#22c55e' : paymentStatus.value === 'PARTIALLY PAID' ? '#eab308' : '#ef4444'))
-
-const formatCurrency = (val: unknown) => money(val)
-const formatDate = (val: unknown) => dateText(val)
-
-const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
-  switch (relationship) {
-    case 'Trading As':
-      return `Trading as ${legalName}`
-
-    case 'Operating Division':
-      return `An operating division of ${legalName}`
-
-    case 'Wholly-Owned Subsidiary':
-      return `A wholly-owned subsidiary of ${legalName}`
-
-    case 'Special Purpose Vehicle':
-      return `A special purpose vehicle of ${legalName}`
-
-    case 'Primary':
-    default:
-      return legalName
-  }
-}
 
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', fontStyle: 'normal' as const },
@@ -130,8 +108,7 @@ const styles = {
       </View>
 
       <View fixed :style="styles.pageFooter">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :style="styles.systemNoticeText"> This is a computer generated electronic invoice. </Text>
       </View>
 
@@ -167,13 +144,13 @@ const styles = {
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Date of Issue</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(projectIssuedDate) }}
+              {{ dateText(projectIssuedDate) }}
             </Text>
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Due Date</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(dueDate) }}
+              {{ dateText(dueDate) }}
             </Text>
           </View>
         </View>
@@ -216,41 +193,41 @@ const styles = {
             <Text :style="styles.bulletText">{{ item.description }}</Text>
           </View>
         </View>
-        <Text :style="styles.colRate">{{ formatCurrency(item.rate) }}</Text>
+        <Text :style="styles.colRate">{{ money(item.rate) }}</Text>
         <Text :style="styles.colQty">{{ item.quantity }}</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(item.amount) }}</Text>
+        <Text :style="styles.colAmount">{{ money(item.amount) }}</Text>
       </View>
 
       <View :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Subtotal</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(subtotal) }}</Text>
+        <Text :style="styles.colAmount">{{ money(subtotal) }}</Text>
       </View>
 
       <View v-if="discountAmount > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#888888', fontSize: 12 }">{{ discountLabel }}</Text>
-        <Text :style="{ ...styles.colAmount, color: '#888888' }">- {{ formatCurrency(discountAmount) }}</Text>
+        <Text :style="{ ...styles.colAmount, color: '#888888' }">- {{ money(discountAmount) }}</Text>
       </View>
 
       <View v-if="taxAmount > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontSize: 12 }">{{ taxLabel }}</Text>
-        <Text :style="styles.colAmount">{{ formatCurrency(taxAmount) }}</Text>
+        <Text :style="styles.colAmount">{{ money(taxAmount) }}</Text>
       </View>
 
       <View :style="styles.financialTotalRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Total</Text>
-        <Text :style="{ ...styles.colAmount, fontWeight: 'bold' }">{{ formatCurrency(grandTotal) }}</Text>
+        <Text :style="{ ...styles.colAmount, fontWeight: 'bold' }">{{ money(grandTotal) }}</Text>
       </View>
 
       <View v-if="paid > 0" :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, color: '#00A63E', fontSize: 12 }">Payments Made</Text>
-        <Text :style="{ ...styles.colAmount, color: '#00A63E' }">- {{ formatCurrency(paid) }}</Text>
+        <Text :style="{ ...styles.colAmount, color: '#00A63E' }">- {{ money(paid) }}</Text>
       </View>
 
       <View
         :style="{ ...styles.financialDueRow, backgroundColor: !hasTotals || paymentStatus === 'PAID' ? '#22c55e22' : paymentStatus === 'PARTIALLY PAID' ? '#eab30822' : '#ef444422' }"
         :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 16 }">Amount Due</Text>
-        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ formatCurrency(amountDue) }}</Text>
+        <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ money(amountDue) }}</Text>
       </View>
 
       <View :style="styles.accountBox" :wrap="false">

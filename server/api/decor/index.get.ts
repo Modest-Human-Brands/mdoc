@@ -1,10 +1,7 @@
-// server/api/decor/index.get.ts
-import { defineEventHandler, getQuery } from 'nitro/h3'
+import { defineEventHandler, getQuery, HTTPError } from 'nitro/h3'
 
 import { builtinDecors } from '~/server/utils/decor'
-import { handleApiError } from '~/server/utils/api-error'
 
-/** Built-in decor catalogue for the picker. Optional `?slot=` filters to decors that fit a template slot. */
 export default defineEventHandler((event) => {
   try {
     const slot = getQuery(event).slot
@@ -19,6 +16,14 @@ export default defineEventHandler((event) => {
         thumbUrl: `/api/decor/builtin/${id}.png`,
       }))
   } catch (error: unknown) {
-    return handleApiError(error, 'decor/index.get')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('decor/index.get', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

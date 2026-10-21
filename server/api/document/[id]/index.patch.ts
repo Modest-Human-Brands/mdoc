@@ -1,5 +1,5 @@
 import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
 import notion from '~/server/utils/notion'
 
 const updateSchema = z.object({
@@ -55,16 +55,24 @@ export default defineEventHandler(async (event) => {
       message: 'Document updated successfully',
       id: updatedPage.id,
     }
-  } catch (error: any) {
-    console.error(`API /document/[id]/index PATCH`, error)
-
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      const validationError = new HTTPError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
+      })
+      validationError.stack = undefined
+      throw validationError
+    }
     if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
       throw error
     }
 
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    console.error('document/[id]/index PATCH', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

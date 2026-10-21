@@ -1,8 +1,6 @@
-// server/api/document/template/[id].get.ts
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
 import { parseSchemaToJsonSchema } from '~/server/utils/zod-to-json-schema'
-import { handleApiError } from '~/server/utils/api-error'
 
 import '~/templates/document'
 
@@ -35,10 +33,18 @@ export default defineEventHandler((event) => {
       category: template.category ?? null,
       description: template.description,
       schema: jsonSchema,
-      variables: jsonSchema, // Backward-compatibility
+      variables: jsonSchema,
       signerFields: template.signerFields,
     }
   } catch (error: unknown) {
-    return handleApiError(error, 'template/[id].get')
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('template/[id].get', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
-import { dateText, money } from '../_shared/format'
+import { dateText, money, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
   organizationName: string
@@ -21,16 +22,16 @@ const props = defineProps<{
   engagementTitle: string
   serviceCategory: string
   startDate: string | Date
-  endDate: string | Date
+  endDate?: string | Date
   engagementMonths: number | string
   renewalType: 'Auto-Renew' | 'Manual Renewal' | 'No Renewal'
   noticePeriodDays: number | string
   expiresIn: string | Date
   scopeOfWork: string[]
   currency: string
-  flatMonthlyFee?: number
+  flatMonthlyFee?: number | string
   targetBasedFees?: { description: string; amountPerUnit: number; unit: string; estimatedMonthlyUnits?: number }[]
-  onboardingFee?: number
+  onboardingFee?: number | string
   parsedTerms: {
     type: string
     text?: string
@@ -39,7 +40,6 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (val?: unknown) => money(val ?? 0, props.currency)
-const formatDate = (val: unknown) => dateText(val)
 
 const renewalLabel = (renewalType: string) => {
   switch (renewalType) {
@@ -54,27 +54,6 @@ const renewalLabel = (renewalType: string) => {
   }
 }
 
-const organizationRelationshipLabel = (relationship: string, legalName: string): string => {
-  switch (relationship) {
-    case 'Trading As':
-      return `Trading as ${legalName}`
-
-    case 'Operating Division':
-      return `An operating division of ${legalName}`
-
-    case 'Wholly-Owned Subsidiary':
-      return `A wholly-owned subsidiary of ${legalName}`
-
-    case 'Special Purpose Vehicle':
-      return `A special purpose vehicle of ${legalName}`
-
-    case 'Primary':
-    default:
-      return legalName
-  }
-}
-
-// --- 8-Point Grid & Harmonized Quotation Styles (matches shoot-contract) ---
 const styles = {
   page: { padding: '40 40 120 40', fontSize: 12, color: '#1A1A1A', lineHeight: 1.4, fontStyle: 'normal' as const },
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 16 },
@@ -127,8 +106,7 @@ const styles = {
   <Document title="Retainer Agreement" :author="organizationName" creator="Modest Human Brands" producer="MDoc">
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="styles.pageFooter">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :style="styles.pageFooterText">Signature: ______________________</Text>
       </View>
 
@@ -155,13 +133,13 @@ const styles = {
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Issued</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(agreementDate) }}
+              {{ dateText(agreementDate) }}
             </Text>
           </View>
           <View :style="styles.metaGridRow">
             <Text :style="{ ...styles.metaGridLabel, color: organizationColorPrimary }">Expiry</Text>
             <Text :style="styles.metaGridValue">
-              {{ formatDate(expiresIn) }}
+              {{ dateText(expiresIn) }}
             </Text>
           </View>
         </View>
@@ -180,7 +158,7 @@ const styles = {
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Engagement Details</Text>
-          <Text :style="{ fontSize: 12 }">{{ formatDate(startDate) }} &ndash; {{ formatDate(endDate) }}</Text>
+          <Text :style="{ fontSize: 12 }">{{ dateText(startDate) }} &ndash; {{ dateText(endDate) }}</Text>
           <Text :style="{ fontSize: 12 }">{{ typeof engagementMonths === 'number' ? `${engagementMonths} month${engagementMonths > 1 ? 's' : ''} term` : engagementMonths }}</Text>
           <Text :style="{ fontSize: 12 }">{{ renewalLabel(renewalType) }}</Text>
         </View>
@@ -234,8 +212,7 @@ const styles = {
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
       <View fixed :style="[styles.footer, { flexDirection: 'row-reverse' }]">
-        <Image v-if="organizationLogo" :src="organizationLogo" :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180 }" />
-        <View :style="{ position: 'absolute', left: -65, bottom: -65, width: 180, height: 180, backgroundColor: 'white', opacity: 0.8 }"> </View>
+        <LogoWatermark :src="organizationLogo" />
         <Text :render="(ctx) => `Page ${ctx.pageNumber} of ${ctx.totalPages}`" :style="styles.footerText" />
       </View>
 

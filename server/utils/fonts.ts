@@ -1,32 +1,27 @@
-// server/utils/fonts.ts
-// On-demand fonts for the PDF engine. A template (or an organisation's brand font) names a font family and weights;
-// the files are resolved with unifont (Google Fonts), cached in Nitro storage and registered with the PDF font store.
-// Only full TTF/WOFF files are used: WOFF2 breaks in the PDF engine and CDN subset files (e.g. "latin") lose glyphs such as the rupee sign.
 import { createUnifont, providers, type Unifont } from 'unifont'
 import { fontStore } from '@ceereals/vue-pdf'
 import { useStorage } from 'nitro/storage'
 
 export interface TemplateFont {
-  /** Name used as `fontFamily` in components, e.g. 'Exo2'. */
   name: string
-  /** Legacy: a bundled file registered immediately. With `family` it is only the offline fallback for weight 400. */
+
   path?: string
   weight?: number | string
-  /** Font family to resolve online, e.g. 'Exo 2'. Omit to use the bundled `path` only. */
+
   family?: string
-  /** Weights to make available (default: 400 only). Declare e.g. [400, 600] for components that use `fontWeight: 'bold'` to get a real bold. */
+
   weights?: number[]
 }
 
 export const DEFAULT_FONT = 'Exo2'
-// Regular only by default: documents were designed without bold, so `fontWeight: 'bold'` stays regular unless a template declares more weights
+
 export const DEFAULT_WEIGHTS = [400]
 
 const FORMAT_PRIORITY = ['truetype', 'woff'] as const
 const FETCH_TIMEOUT_MS = 8000
 const NEGATIVE_TTL_MS = 10 * 60 * 1000
 
-const registered = new Set<string>() // `${name}:${weight}`
+const registered = new Set<string>()
 const knownNames = new Set<string>()
 const inflight = new Map<string, Promise<boolean>>()
 const missing = new Map<string, number>()
@@ -40,7 +35,6 @@ export const isFontRegistered = (name: string) => knownNames.has(name)
 
 const getUnifont = () => (unifontPromise ??= createUnifont([providers.google()]))
 
-/** 'Exo2' -> ['Exo2', 'Exo 2'], 'IslandMoments' -> ['IslandMoments', 'Island Moments'] */
 export function candidateFamilies(name: string): string[] {
   const spaced = name
     .replaceAll(/([a-z])([A-Z0-9])/g, '$1 $2')
@@ -63,7 +57,6 @@ async function download(url: string): Promise<Buffer> {
   }
 }
 
-/** Font file for family + weight: from the storage cache, else resolved with unifont and downloaded once. */
 async function loadFontFile(family: string, weight: number): Promise<{ data: Buffer; format: 'ttf' | 'woff' } | undefined> {
   const storage = useStorage('data')
 
@@ -131,13 +124,11 @@ async function registerWeight(name: string, family: string | undefined, weight: 
   return task
 }
 
-/** Make sure every listed font (and weight) is registered. Never throws. */
 export async function ensureFonts(fonts: TemplateFont[]): Promise<void> {
   const jobs: Promise<boolean>[] = []
 
   for (const font of fonts) {
     if (!font.family && font.path) {
-      // Legacy bundled-file entry: registered at template registration time
       continue
     }
     for (const weight of font.weights ?? DEFAULT_WEIGHTS) {
@@ -148,7 +139,6 @@ export async function ensureFonts(fonts: TemplateFont[]): Promise<void> {
   await Promise.allSettled(jobs)
 }
 
-/** The font an organisation picked, falling back to the default when it cannot be resolved. */
 export async function resolveBrandFont(name: string | undefined): Promise<string> {
   const requested = (name || DEFAULT_FONT).trim()
   if (isFontRegistered(requested)) return requested
@@ -159,7 +149,6 @@ export async function resolveBrandFont(name: string | undefined): Promise<string
 
 let catalogue: string[] | undefined
 
-/** Google Fonts families (cached). */
 export async function listFontFamilies(): Promise<string[]> {
   if (!catalogue) {
     const unifont = await getUnifont()

@@ -1,9 +1,7 @@
-// server/api/document/template/preview.post.ts
 import { defineEventHandler, getQuery, readBody, HTTPError } from 'nitro/h3'
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
 
 import { templateRegistry } from '~/server/utils/template-registry'
-import { handleApiError } from '~/server/utils/api-error'
 import { buildVariantVariables, countPdfPages, mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
 
 import '~/templates/document'
@@ -32,15 +30,13 @@ export default defineEventHandler(async (event) => {
     let warnings: { field: string; message: string; code: string }[] = []
 
     if (variant !== 'filled' || draft) {
-      // Sample / branded / live typing: never rejects; unfilled fields show their `{{Field Label}}` token
       ;({ variables: renderVariables, warnings } = buildVariantVariables(templateDef, variant, variables))
     } else {
-      // Strict (final review): placeholders backfill missing fields and invalid input is a 400
       renderVariables = mergeTemplateVariables(templateDef, variables)
       if (templateDef.schema) {
         const validationResult = templateDef.schema.safeParse(renderVariables)
         if (!validationResult.success) {
-          return handleApiError(validationResult.error, 'preview.post/schema')
+          throw validationResult.error
         }
       }
     }
@@ -53,7 +49,24 @@ export default defineEventHandler(async (event) => {
       variant,
       ...(draft || variant !== 'filled' ? { warnings } : {}),
     }
-  } catch (error: any) {
-    return handleApiError(error, 'preview.post')
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      const validationError = new HTTPError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
+      })
+      validationError.stack = undefined
+      throw validationError
+    }
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('preview.post', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

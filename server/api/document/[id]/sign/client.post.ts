@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
 import { useStorage } from 'nitro/storage'
-import { z } from 'zod'
+import { z, ZodError } from 'zod'
 import { finalizeSignedData, buildMinimalChain } from '~/server/utils/cms-signer'
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
 import { embedSignature } from '~/server/utils/pdf-byte-range'
@@ -55,8 +55,23 @@ export default defineEventHandler(async (event) => {
 
     return result
   } catch (error: unknown) {
-    console.error(`API /document/[id]/client POST`, error)
-    if (error instanceof Error && 'statusCode' in error) throw error
-    throw new HTTPError({ statusCode: 500, statusMessage: 'An error occurred while injecting the hardware signature.' })
+    if (error instanceof ZodError) {
+      const validationError = new HTTPError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
+      })
+      validationError.stack = undefined
+      throw validationError
+    }
+    if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
+      throw error
+    }
+
+    console.error('document/[id]/client POST', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'An error occurred while injecting the hardware signature.' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

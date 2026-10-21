@@ -27,7 +27,6 @@ export default defineEventHandler(async (event) => {
     const currentStatus = properties.Status?.status?.name
     const fsStorage = useStorage('fs')
 
-    // Handle image preview requests
     if (requestType === 'image') {
       const imageFileName = `${baseTitle}.png`
 
@@ -62,7 +61,7 @@ export default defineEventHandler(async (event) => {
             targetFileName = `${baseTitle}-${maxSignedOrder}.${ext}`
           }
         } catch {
-          // Fallback to baseline if queue fails to parse
+          console.warn('Routing queue could not be parsed; serving the baseline file')
         }
       }
     }
@@ -93,15 +92,14 @@ export default defineEventHandler(async (event) => {
 
     return pdfBuffer
   } catch (error: unknown) {
-    console.error('API document/[id]/content GET', error)
-
     if (error instanceof Error && 'statusCode' in error) {
+      error.stack = undefined
       throw error
     }
 
-    throw new HTTPError({
-      statusCode: 500,
-      statusMessage: 'Some Unknown Error Found',
-    })
+    console.error('document/[id]/content GET', error)
+    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
+    serverError.stack = undefined
+    throw serverError
   }
 })

@@ -1,3 +1,9 @@
+export interface ApiValidationErrorDetail {
+  field: string
+  message: string
+  code: string
+}
+
 export const resourceTypes = ['user', 'contact', 'project', 'document'] as const
 
 export type ResourceType = (typeof resourceTypes)[number]

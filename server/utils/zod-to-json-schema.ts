@@ -1,4 +1,3 @@
-// server/utils/zod-to-json-schema.ts
 import { z } from 'zod'
 
 function humanizeFieldName(name: string): string {
@@ -23,14 +22,12 @@ function determineColumnSpan(key: string, propSchema: any): number {
   return 1
 }
 
-// Fields the server generates; the form should show them read-only and prefill via GET /document/numbering/next
 const AUTO_FIELDS = new Set(['invoiceNumber', 'quoteNumber'])
 
-// Owned by the frontend (brand step); not part of the generic details form
 const EXCLUDED_TOP_LEVEL = new Set(['organization'])
 
 function toDefault(value: any): any {
-  if (value instanceof Date) return undefined // placeholder dates are stale server-start values
+  if (value instanceof Date) return undefined
   if (Array.isArray(value)) return value.map((item) => toDefault(item))
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, toDefault(v)]))
@@ -42,7 +39,6 @@ export function parseSchemaToJsonSchema(schema: z.ZodTypeAny, placeholders: Reco
   const rawJsonSchema = z.toJSONSchema(schema, {
     unrepresentable: 'any',
     override: (ctx) => {
-      // Dates travel as ISO-8601 strings over JSON; z.coerce.date() accepts them.
       if (ctx.zodSchema._zod.def.type === 'date') {
         ctx.jsonSchema.type = 'string'
         ctx.jsonSchema.format = 'date'
@@ -63,7 +59,6 @@ export function parseSchemaToJsonSchema(schema: z.ZodTypeAny, placeholders: Reco
         const childDefault = defaults?.[key]
         const enrichedChild = enrichSchema(prop, key, depth + 1, childDefault)
 
-        // Only sensible defaults: numbers, booleans, enums and financial labels. Never fake client/project text.
         const defaultable = ['number', 'integer', 'boolean'].includes(enrichedChild.type) || enrichedChild.enum || parentKey === 'financials'
         const defaultValue = toDefault(childDefault)
         if (defaultValue !== undefined && enrichedChild.type !== 'object' && enrichedChild.type !== 'array' && defaultable) {
@@ -73,17 +68,14 @@ export function parseSchemaToJsonSchema(schema: z.ZodTypeAny, placeholders: Reco
           enrichedChild['x-auto'] = true
         }
 
-        // Set humanized title if not explicitly provided
         if (!enrichedChild.title) {
           enrichedChild.title = humanizeFieldName(key)
         }
 
-        // Layout hint: assign section label to top-level object containers
         if (depth === 0 && enrichedChild.type === 'object') {
           enrichedChild['x-section'] = humanizeFieldName(key)
         }
 
-        // Layout hint: column span & sequence index
         enrichedChild['x-column'] = determineColumnSpan(key, enrichedChild)
         enrichedChild['x-order'] = orderIndex++
 
@@ -110,7 +102,6 @@ export function parseSchemaToJsonSchema(schema: z.ZodTypeAny, placeholders: Reco
   return enrichSchema(rawJsonSchema, '', 0, placeholders)
 }
 
-// Backward-compatible fallback for legacy consumers
 export default function parseSchemaVariables(schema: z.ZodTypeAny): Record<string, any> {
   return parseSchemaToJsonSchema(schema)
 }
