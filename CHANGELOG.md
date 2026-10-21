@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.14
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.13...v0.3.14)
+
+### 💅 Refactors
+
+- Organization schema and placeholders across document templates ([f6675e6](https://github.com/Modest-Human-Brands/mdoc/commit/f6675e6))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.13
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.12...v0.3.13)
