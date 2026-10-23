@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.15
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.14...v0.3.15)
+
+### 🚀 Enhancements
+
+- Add document storage configuration and implement document handling utilities ([5850a0e](https://github.com/Modest-Human-Brands/mdoc/commit/5850a0e))
+- Update unstorage beta, modify organization profile structure, and enhance template rendering ([6290535](https://github.com/Modest-Human-Brands/mdoc/commit/6290535))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.14
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.13...v0.3.14)
