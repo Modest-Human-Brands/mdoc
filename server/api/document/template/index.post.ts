@@ -1,6 +1,5 @@
 import { defineEventHandler, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
-import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
 
 import notion from '~/server/utils/notion'
@@ -12,6 +11,7 @@ import { mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render
 import type { NotionDB } from '~/server/types'
 
 import '~/templates/document'
+import { writeDocument } from '~/server/utils/documents'
 
 const notionId = z.string().regex(NOTION_ID, 'must be a Notion page ID')
 
@@ -60,10 +60,9 @@ export default defineEventHandler(async (event) => {
     const validation = templateDef.schema.safeParse(enrichedData)
     if (!validation.success) throw validation.error
 
-    const fsStorage = useStorage('fs')
     const pdf = await renderTemplatePdf(templateDef, enrichedData)
-    await fsStorage.setItemRaw(`${fileName}.pdf`, pdf)
-    await fsStorage.setItemRaw(`${fileName}.png`, await generatePdfThumbnail(pdf))
+    await writeDocument(`${fileName}.pdf`, pdf)
+    await writeDocument(`${fileName}.png`, await generatePdfThumbnail(pdf))
 
     const config = useRuntimeConfig()
     const notionDbId = config.private.notionDbId ? (JSON.parse(config.private.notionDbId) as NotionDB) : ({ document: 'mock-doc-db' } as NotionDB)

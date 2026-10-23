@@ -32,7 +32,8 @@
     "docker:start": "docker run --detach --name mdoc-dev --env-file .env.prod -p 3500:3000 mdoc:dev",
     "samples": "nitro task run templates:sample-images",
     "samples:check": "nitro task run templates:sample-images --payload {\"check\":true}",
-    "fonts:warm": "nitro task run fonts:warm"
+    "fonts:warm": "nitro task run fonts:warm",
+    "documents:migrate": "nitro task run documents:migrate"
   },
   "dependencies": {
     "@ceereals/vue-pdf": "^0.3.1",
@@ -43,6 +44,7 @@
     "@signpdf/signpdf": "^4.0.0",
     "@types/mime-types": "^3.0.1",
     "asn1js": "^4.0.0",
+    "aws4fetch": "^1.0.20",
     "date-fns": "^4.4.0",
     "jsonwebtoken": "^9.0.3",
     "magic-regexp": "^0.11.2",
@@ -57,6 +59,7 @@
     "sharp": "^0.35.5",
     "unifont": "^1.0.3",
     "unplugin-vue": "^8.0.0",
+    "unstorage": "2.0.0-alpha.11",
     "vue": "^3.5.44",
     "zod": "^4.6.7"
   },

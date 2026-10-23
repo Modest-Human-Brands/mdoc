@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
     const { sessionId } = serverSignSchema.parse(body)
 
     const config = useRuntimeConfig()
-    const fsStorage = useStorage('fs')
     const signStorage = useStorage<SignSession>('data:sign')
 
     const session = await signStorage.getItem(`session:${sessionId}`)
@@ -27,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
     const pdfWithPlaceholder = Buffer.from(session.patchedPdfHex, 'hex')
 
-    const certificateBuffer = await fsStorage.getItemRaw<Buffer>('certificate.p12')
+    const certificateBuffer = await useStorage('fs').getItemRaw<Buffer>('certificate.p12')
     if (!certificateBuffer) {
       throw new HTTPError({ statusCode: 500, statusMessage: 'Server signing certificate (certificate.p12) not found.' })
     }
@@ -43,7 +42,7 @@ export default defineEventHandler(async (event) => {
     const isCompleted = pendingSigners.length === 1
     const targetFileName = isCompleted ? ctx.signedFileName : ctx.currentFileName
 
-    const result = await finalizeAndPersist(fsStorage, session.documentId, targetFileName, signedPdfBuffer, ctx.signers, ctx.currentSigner, telemetry)
+    const result = await finalizeAndPersist(session.documentId, targetFileName, signedPdfBuffer, ctx.signers, ctx.currentSigner, telemetry)
 
     await signStorage.removeItem(`session:${sessionId}`)
 

@@ -1,5 +1,4 @@
 import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
-import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
 import { finalizeSignedData, buildMinimalChain } from '~/server/utils/cms-signer'
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
@@ -15,7 +14,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { sessionId, signatureHex } = clientSignSchema.parse(body)
 
-    const fsStorage = useStorage('fs')
     const signStorage = useStorage<SignSession>('data:sign')
 
     const session = await signStorage.getItem(`session:${sessionId}`)
@@ -50,7 +48,7 @@ export default defineEventHandler(async (event) => {
     const isCompleted = pendingSigners.length === 1
     const targetFileName = isCompleted ? ctx.signedFileName : ctx.currentFileName
 
-    const result = await finalizeAndPersist(fsStorage, session.documentId, targetFileName, signedPdfBuffer, ctx.signers, ctx.currentSigner, telemetry)
+    const result = await finalizeAndPersist(session.documentId, targetFileName, signedPdfBuffer, ctx.signers, ctx.currentSigner, telemetry)
     await signStorage.removeItem(`session:${sessionId}`)
 
     return result

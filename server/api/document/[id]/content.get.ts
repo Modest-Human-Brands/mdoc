@@ -1,10 +1,10 @@
 import { defineEventHandler, getRouterParam, getQuery, HTTPError } from 'nitro/h3'
-import { useStorage } from 'nitro/storage'
 import mime from 'mime-types'
 
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import { readDocument } from '~/server/utils/documents'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -25,7 +25,6 @@ export default defineEventHandler(async (event) => {
     const baseTitle = notionTextStringify(properties.Name.title)
     const ext = mime.extension(properties['Mime Type'].select.name) || 'pdf'
     const currentStatus = properties.Status?.status?.name
-    const fsStorage = useStorage('fs')
 
     if (requestType === 'image') {
       const imageFileName = `${baseTitle}.png`
@@ -33,7 +32,7 @@ export default defineEventHandler(async (event) => {
       event.res.headers.set('Content-Type', 'image/png')
       event.res.headers.set('Content-Disposition', `inline; filename="${imageFileName}"`)
 
-      const imageBuffer = await fsStorage.getItemRaw<Buffer>(imageFileName)
+      const imageBuffer = await readDocument(imageFileName)
 
       if (!imageBuffer) {
         throw new HTTPError({
@@ -76,11 +75,11 @@ export default defineEventHandler(async (event) => {
     event.res.headers.set('X-Created-At', created_time)
     event.res.headers.set('X-Updated-At', last_edited_time)
 
-    let pdfBuffer = await fsStorage.getItemRaw<Buffer>(targetFileName)
+    let pdfBuffer = await readDocument(targetFileName)
 
     if (!pdfBuffer && targetFileName !== `${baseTitle}.${ext}`) {
       console.warn(`Target file "${targetFileName}" missing, falling back to baseline "${baseTitle}.${ext}"`)
-      pdfBuffer = await fsStorage.getItemRaw<Buffer>(`${baseTitle}.${ext}`)
+      pdfBuffer = await readDocument(`${baseTitle}.${ext}`)
     }
 
     if (!pdfBuffer) {

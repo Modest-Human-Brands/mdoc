@@ -1,6 +1,5 @@
 import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
-import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
 import crypto from 'node:crypto'
 import { plainAddPlaceholder } from '@signpdf/placeholder-plain'
@@ -11,6 +10,7 @@ import { templateRegistry } from '~/server/utils/template-registry'
 import { buildPreparedSignerInfo } from '~/server/utils/cms-signer'
 import { type SignSession, resolveSigningContext, applyFieldStamps } from '~/server/utils/document-signing'
 import { patchByteRange, extractSigningContent } from '~/server/utils/pdf-byte-range'
+import { readDocument } from '~/server/utils/documents'
 
 const prepareSchema = z.object({
   sessionToken: z.string(),
@@ -26,7 +26,6 @@ export default defineEventHandler(async (event) => {
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
     const config = useRuntimeConfig()
-    const fsStorage = useStorage('fs')
     const signStorage = useStorage<SignSession>('data:sign')
 
     const body = await readBody(event)
@@ -34,7 +33,7 @@ export default defineEventHandler(async (event) => {
 
     const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret)
 
-    const pdfBuffer = await fsStorage.getItemRaw<Buffer>(ctx.fileName)
+    const pdfBuffer = await readDocument(ctx.fileName)
     if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: `PDF file missing for document "${ctx.fileName}"` })
 
     const targetTemplate = templateRegistry[ctx.document.properties['Template ID'].select.name]

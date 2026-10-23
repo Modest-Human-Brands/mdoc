@@ -5,6 +5,7 @@ import jwt, { type JwtPayload } from 'jsonwebtoken'
 import mime from 'mime-types'
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
+import { writeDocument } from '~/server/utils/documents'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { getTemplateOrThrow, requiredSignerOrders } from '~/server/utils/signer-requirements'
 
@@ -53,10 +54,6 @@ export interface AppConfig {
   private: {
     jwtSecret: string
   }
-}
-
-export interface StorageEngine {
-  setItemRaw(key: string, value: Buffer): Promise<void>
 }
 
 interface MuPDFAnnotation {
@@ -309,7 +306,6 @@ export function applyFieldStamps(
 }
 
 export async function finalizeAndPersist(
-  fsStorage: StorageEngine,
   id: string,
   targetFileName: string,
   signedBytes: Uint8Array | Buffer,
@@ -325,7 +321,7 @@ export async function finalizeAndPersist(
   signerInArray.signedAt = new Date().toISOString()
   signerInArray.telemetry = telemetry
 
-  await fsStorage.setItemRaw(targetFileName, Buffer.from(signedBytes))
+  await writeDocument(targetFileName, signedBytes)
 
   const pendingSigners = signers.filter((s) => s.status === 'PENDING')
   const isCompleted = pendingSigners.length === 0

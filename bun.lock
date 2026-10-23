@@ -13,6 +13,7 @@
         "@signpdf/signpdf": "^4.0.0",
         "@types/mime-types": "^3.0.1",
         "asn1js": "^4.0.0",
+        "aws4fetch": "^1.0.20",
         "date-fns": "^4.4.0",
         "jsonwebtoken": "^9.0.3",
         "magic-regexp": "^0.11.2",
@@ -27,6 +28,7 @@
         "sharp": "^0.35.5",
         "unifont": "^1.0.3",
         "unplugin-vue": "^8.0.0",
+        "unstorage": "2.0.0-alpha.11",
         "vue": "^3.5.44",
         "zod": "^4.6.7",
       },
@@ -425,6 +427,8 @@
     "asn1js": ["asn1js@4.0.0", "", { "dependencies": { "@peculiar/utils": "^4.1.0" } }, "sha512-81NlooYbXCbBWL2+p1/ivGyT4AR2+bnfKYlPq/3rCoIPJSuLbdS8G70XYt561wOJnbaYfBS2HQDMENaX5hM2vA=="],
 
     "available-typed-arrays": ["available-typed-arrays@1.0.7", "", { "dependencies": { "possible-typed-array-names": "^1.0.0" } }, "sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ=="],
+
+    "aws4fetch": ["aws4fetch@1.0.20", "", {}, "sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g=="],
 
     "balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="],
 

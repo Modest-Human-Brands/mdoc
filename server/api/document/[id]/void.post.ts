@@ -1,5 +1,4 @@
 import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
-import { useStorage } from 'nitro/storage'
 import { z } from 'zod'
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
 import mime from 'mime-types'
@@ -7,6 +6,7 @@ import mime from 'mime-types'
 import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import { readDocument, removeDocument, writeDocument } from '~/server/utils/documents'
 
 const voidSchema = z.object({
   reason: z.string().min(5, 'A reason must be provided to void the document.'),
@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
-    const fsStorage = useStorage('fs')
     const { reason } = await readValidatedBody(event, voidSchema)
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
@@ -42,7 +41,7 @@ export default defineEventHandler(async (event) => {
     const currentFileName = currentSigner ? `${baseTitle}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${ext}` : `${baseTitle}.${ext}`
     const voidedFileName = `${baseTitle}-voided.${ext}`
 
-    const pdfBuffer = await fsStorage.getItemRaw<Buffer>(currentFileName)
+    const pdfBuffer = await readDocument(currentFileName)
     if (!pdfBuffer) {
       throw new HTTPError({ statusCode: 404, statusMessage: 'Original PDF file missing from storage.' })
     }
@@ -79,8 +78,8 @@ export default defineEventHandler(async (event) => {
 
     const voidedPdfBytes = await pdfDoc.save()
 
-    await fsStorage.setItemRaw(voidedFileName, Buffer.from(voidedPdfBytes))
-    await fsStorage.removeItem(currentFileName).catch(() => {})
+    await writeDocument(voidedFileName, Buffer.from(voidedPdfBytes))
+    await removeDocument(currentFileName).catch(() => {})
 
     const updatedSigners = signers.map((s: any) => {
       if (s.status === 'PENDING') return { ...s, status: 'CANCELLED' }

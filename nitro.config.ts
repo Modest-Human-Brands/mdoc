@@ -36,6 +36,11 @@ export default defineConfig({
       notionDbId: '',
       jwtSecret: '',
       certificateSecret: '',
+      documentBucket: '',
+      documentEndpoint: '',
+      documentRegion: 'auto',
+      documentAccessKeyId: '',
+      documentSecretAccessKey: '',
     },
   },
   storage: {

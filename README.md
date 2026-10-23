@@ -59,11 +59,12 @@ bun x nitro task run backfill-thumbnails --payload '{"force":true}'
 
 ### Task Options Reference
 
-| Task Name                 | Payload Option | Type       | Default | Description                                                                                                                                 |
-| :------------------------ | :------------- | :--------- | :------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| `templates:sample-images` | `check`        | `boolean`  | `false` | When `true`, validates existing manifest and images against current template definitions without writing files. Exits non-zero on mismatch. |
-| `fonts:warm`              | `families`     | `string[]` | `[]`    | Extra font families to resolve via Google Fonts and cache into `.data/fonts/` alongside template fonts.                                     |
-| `backfill-thumbnails`     | `force`        | `boolean`  | `false` | When `true`, regenerates thumbnails for all `.pdf` files in storage `fs` (`static/`) even if a `.png` thumbnail already exists.             |
+| Task Name                 | Payload Option    | Type       | Default | Description                                                                                                                                                                    |
+| :------------------------ | :---------------- | :--------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `templates:sample-images` | `check`           | `boolean`  | `false` | When `true`, validates existing manifest and images against current template definitions without writing files. Exits non-zero on mismatch.                                    |
+| `fonts:warm`              | `families`        | `string[]` | `[]`    | Extra font families to resolve via Google Fonts and cache into `.data/fonts/` alongside template fonts.                                                                        |
+| `documents:migrate`       | `dryRun`, `force` | `boolean`  | `false` | Copies generated `.pdf`/`.png` files from the local `static/` folder to the document storage (R2/S3). Idempotent; skips keys that already exist unless `force`. Never deletes. |
+| `backfill-thumbnails`     | `force`           | `boolean`  | `false` | When `true`, regenerates thumbnails for all `.pdf` files in the `documents` storage even if a `.png` thumbnail already exists.                                                 |
 
 ---
 
@@ -363,24 +364,30 @@ Calling `GET /api/document/template/:id` generates standard JSON Schema enriched
 
 ### Environment Variables
 
-| Variable                           | Type     | Default                      | Description                                                                                                                   |
-| :--------------------------------- | :------- | :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                         | `string` | `development`                | Set to `development` for offline file-backed Notion mock (`.data/notion-mock.json`). Set to `production` for live Notion API. |
-| `PORT`                             | `number` | `3000`                       | Port for the HTTP server.                                                                                                     |
-| `NITRO_PRESET`                     | `string` | `node-server`                | Nitro deployment target (e.g. `node-server`, `bun`).                                                                          |
-| `NITRO_APP_VERSION`                | `string` | `package.json version`       | Application version emitted by `/api/health`.                                                                                 |
-| `NITRO_APP_BUILD_TIME`             | `string` | `Build timestamp`            | Build time string emitted by `/api/health`.                                                                                   |
-| `NITRO_PUBLIC_DOC_URL`             | `string` | `http://localhost:3000`      | Base public URL of the service used when constructing preview URLs.                                                           |
-| `NITRO_PRIVATE_NOTION_DB_ID`       | `string` | `{"document":"mock-doc-db"}` | JSON string containing Notion Database IDs: `{"document":"<db-id>"}`.                                                         |
-| `NITRO_PRIVATE_JWT_SECRET`         | `string` | (required)                   | Secret key for signing and verifying magic-link session tokens.                                                               |
-| `NITRO_PRIVATE_CERTIFICATE_SECRET` | `string` | (required for .p12)          | Passphrase for unlocking `static/certificate.p12`.                                                                            |
-| `NOTION_API_KEY`                   | `string` | (optional in dev)            | Notion integration secret key (required when `NODE_ENV=production`).                                                          |
+| Variable                                   | Type     | Default                      | Description                                                                                                                   |
+| :----------------------------------------- | :------- | :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                 | `string` | `development`                | Set to `development` for offline file-backed Notion mock (`.data/notion-mock.json`). Set to `production` for live Notion API. |
+| `PORT`                                     | `number` | `3000`                       | Port for the HTTP server.                                                                                                     |
+| `NITRO_PRESET`                             | `string` | `node-server`                | Nitro deployment target (e.g. `node-server`, `bun`).                                                                          |
+| `NITRO_APP_VERSION`                        | `string` | `package.json version`       | Application version emitted by `/api/health`.                                                                                 |
+| `NITRO_APP_BUILD_TIME`                     | `string` | `Build timestamp`            | Build time string emitted by `/api/health`.                                                                                   |
+| `NITRO_PUBLIC_DOC_URL`                     | `string` | `http://localhost:3000`      | Base public URL of the service used when constructing preview URLs.                                                           |
+| `NITRO_PRIVATE_NOTION_DB_ID`               | `string` | `{"document":"mock-doc-db"}` | JSON string containing Notion Database IDs: `{"document":"<db-id>"}`.                                                         |
+| `NITRO_PRIVATE_JWT_SECRET`                 | `string` | (required)                   | Secret key for signing and verifying magic-link session tokens.                                                               |
+| `NITRO_PRIVATE_CERTIFICATE_SECRET`         | `string` | (required for .p12)          | Passphrase for unlocking `static/certificate.p12`.                                                                            |
+| `NITRO_PRIVATE_DOCUMENT_BUCKET`            | `string` | (required in production)     | Bucket for generated documents (Cloudflare R2 or any S3-compatible service).                                                  |
+| `NITRO_PRIVATE_DOCUMENT_ENDPOINT`          | `string` | (required with bucket)       | S3 endpoint, e.g. `https://<account>.r2.cloudflarestorage.com` or `https://s3.<region>.amazonaws.com`.                        |
+| `NITRO_PRIVATE_DOCUMENT_REGION`            | `string` | `auto`                       | Bucket region (`auto` for R2).                                                                                                |
+| `NITRO_PRIVATE_DOCUMENT_ACCESS_KEY_ID`     | `string` | (required with bucket)       | Access key ID with read/write access to the bucket.                                                                           |
+| `NITRO_PRIVATE_DOCUMENT_SECRET_ACCESS_KEY` | `string` | (required with bucket)       | Secret access key.                                                                                                            |
+| `NOTION_API_KEY`                           | `string` | (optional in dev)            | Notion integration secret key (required when `NODE_ENV=production`).                                                          |
 
 ### Storage Mounts
 
 The service relies on two storage layers defined in `nitro.config.ts`:
 
-- **`static/` (`fs` storage)**: Stores generated `.pdf` documents, `.png` page thumbnails, and signing keys (`certificate.p12`). Should be mounted to persistent storage in production.
+- **`documents` storage**: Generated `.pdf` documents and `.png` thumbnails. In production it is an S3-compatible bucket (Cloudflare R2, AWS S3) configured through `NITRO_PRIVATE_DOCUMENT_*` and mounted by `server/plugins/storage.ts`; startup fails if it is not configured. In development without those variables it falls back to `.data/documents/`. Move existing files with `bun run documents:migrate`.
+- **`static/` (`fs` storage)**: Only the server signing certificate (`certificate.p12`). It is deliberately kept out of the bucket.
 - **`.data/` (`data` storage)**: Stores the font cache (`.data/fonts/`), uploaded decor assets (`.data/decor-uploads/`), signing sessions (`.data/sign/`), and the local database mock (`.data/notion-mock.json`).
 
 ### Package Scripts

@@ -1,6 +1,6 @@
-import { useStorage } from 'nitro/storage'
 import { defineTask } from 'nitro/task'
 import generatePdfThumbnail from '../utils/generate-pdf-thumbnail'
+import { hasDocument, listDocumentKeys, readDocument, writeDocument } from '~/server/utils/documents'
 
 export default defineTask({
   meta: {
@@ -10,9 +10,7 @@ export default defineTask({
   async run({ payload }) {
     console.log('🚀 Starting thumbnail backfill task...')
 
-    const fsStorage = useStorage('fs')
-
-    const allKeys = await fsStorage.getKeys()
+    const allKeys = await listDocumentKeys()
 
     const pdfKeys = allKeys.filter((key) => key.endsWith('.pdf'))
     console.log(`Found ${pdfKeys.length} total PDFs in storage.`)
@@ -25,7 +23,7 @@ export default defineTask({
       const baseName = pdfKey.replace('.pdf', '')
       const previewKey = `${baseName}.png`
 
-      const alreadyHasPreview = await fsStorage.hasItem(previewKey)
+      const alreadyHasPreview = await hasDocument(previewKey)
       if (alreadyHasPreview && !payload?.force) {
         console.log(`⏭️  Skipped ${baseName} (Thumbnail already exists)`)
         skippedCount++
@@ -35,14 +33,14 @@ export default defineTask({
       console.log(`⏳ Generating thumbnail for ${baseName}...`)
 
       try {
-        const pdfBuffer = await fsStorage.getItemRaw<Buffer>(pdfKey)
+        const pdfBuffer = await readDocument(pdfKey)
         if (!pdfBuffer) {
           throw new Error('Buffer is empty or could not be read.')
         }
 
         const pngBuffer = await generatePdfThumbnail(pdfBuffer)
 
-        await fsStorage.setItemRaw(previewKey, pngBuffer)
+        await writeDocument(previewKey, pngBuffer)
 
         console.log(`✅ Success: ${baseName}`)
         successCount++
