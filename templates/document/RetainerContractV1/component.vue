@@ -2,17 +2,17 @@
 import LogoMark from '../_shared/LogoMark.vue'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
-import { dateText, money, organizationRelationshipLabel } from '../_shared/format'
+import { dateText, isToken, money, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
   organizationName: string
-  organizationLegalName: string
-  organizationEntityType: string
-  organizationTradeRelationship: string
+  organizationLegalName?: string
+  organizationEntityType?: string
+  organizationTradeRelationship?: string
   organizationGstin?: string
   organizationPan?: string
-  organizationAddress: string
-  organizationLogo: string
+  organizationAddress?: string
+  organizationLogo?: string
   organizationFont: string
   organizationColorPrimary: string
   organizationColorAccent: string
@@ -40,6 +40,12 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (val?: unknown) => money(val ?? 0, props.currency)
+
+function period() {
+  const start = dateText(props.startDate)
+  if (props.endDate) return `${start} – ${dateText(props.endDate)}`
+  return isToken(props.startDate) ? `${start} – {{End Date (calculated)}}` : start
+}
 
 const renewalLabel = (renewalType: string) => {
   switch (renewalType) {
@@ -116,10 +122,10 @@ const styles = {
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{ organizationRelationshipLabel(organizationTradeRelationship, organizationLegalName) }}
+            {{ organizationRelationshipLabel(organizationTradeRelationship ?? '', organizationLegalName ?? '') }}
           </Text>
 
-          <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+          <Text v-if="organizationAddress" :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
           <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }"> GSTIN: {{ organizationGstin }} </Text>
           <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }"> PAN: {{ organizationPan }} </Text>
         </View>
@@ -158,7 +164,7 @@ const styles = {
         </View>
         <View :style="styles.bannerCol">
           <Text :style="{ ...styles.labelBold, color: organizationColorPrimary }">Engagement Details</Text>
-          <Text :style="{ fontSize: 12 }">{{ dateText(startDate) }} &ndash; {{ dateText(endDate) }}</Text>
+          <Text :style="{ fontSize: 12 }">{{ period() }}</Text>
           <Text :style="{ fontSize: 12 }">{{ typeof engagementMonths === 'number' ? `${engagementMonths} month${engagementMonths > 1 ? 's' : ''} term` : engagementMonths }}</Text>
           <Text :style="{ fontSize: 12 }">{{ renewalLabel(renewalType) }}</Text>
         </View>

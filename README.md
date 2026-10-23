@@ -180,6 +180,8 @@ console.log(`Rendered ${pageCount} pages. Warnings:`, warnings ?? 'none')
 | `branded` | Organization branding applied (`organizationId`) | Shows `{{Field Label}}` tokens      | Brand selection step           |
 | `filled`  | Organization branding applied                    | User variables merged over defaults | Form completion / final review |
 
+**Organization.** `organizationId` selects a built-in preset with all of its fields. An `organization` object is used exactly as sent and is never merged over a preset: fields you leave out stay empty and their lines are not printed. Only the brand colours and font fall back to defaults. `name` and `contactEmail` are required (a missing one is a 400 on create and a warning in previews). Previews also return `warnings` with code `missing_recommended` for fields a template prints that are empty (`address`, and `accountDetails` for invoices and quotations).
+
 ---
 
 ### 3. Creating & Persisting a Document

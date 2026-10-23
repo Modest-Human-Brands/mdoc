@@ -31,6 +31,7 @@ export interface TemplateDefinition {
   description: string
 
   fonts?: TemplateFont[]
+  organizationFields?: ('address' | 'accountDetails')[]
   component: Component
   schema: z.ZodObject<any, any>
   placeholders: Record<string, any>

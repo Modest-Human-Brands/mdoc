@@ -6,13 +6,13 @@ import { dateText, isToken, money, organizationRelationshipLabel } from '../_sha
 
 const props = defineProps<{
   organizationName: string
-  organizationLegalName: string
-  organizationEntityType: string
-  organizationTradeRelationship: string
+  organizationLegalName?: string
+  organizationEntityType?: string
+  organizationTradeRelationship?: string
   organizationGstin?: string
   organizationPan?: string
-  organizationAddress: string
-  organizationLogo: string
+  organizationAddress?: string
+  organizationLogo?: string
   organizationFont: string
   organizationColorPrimary: string
   organizationColorAccent: string
@@ -115,10 +115,10 @@ const styles = {
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{ organizationRelationshipLabel(organizationTradeRelationship, organizationLegalName) }}
+            {{ organizationRelationshipLabel(organizationTradeRelationship ?? '', organizationLegalName ?? '') }}
           </Text>
 
-          <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+          <Text v-if="organizationAddress" :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
           <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }"> GSTIN: {{ organizationGstin }} </Text>
           <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }"> PAN: {{ organizationPan }} </Text>
         </View>

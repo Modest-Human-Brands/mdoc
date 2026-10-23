@@ -83,6 +83,7 @@ registerTemplate({
   label: 'Billing Invoice',
   shortLabel: 'Invoice',
   category: 'Billing',
+  organizationFields: ['address', 'accountDetails'],
   description: 'The official document outlining the charges, payment terms, and amount due.',
   fonts: [
     { name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' },
@@ -93,11 +94,11 @@ registerTemplate({
   placeholders,
   transformPayload: async (rawData: InvoicePayload) => {
     const p = placeholders
-    const org = rawData.organization || p.organization
-    const orgBranding = org?.branding || p.organization!.branding
-    const financials = rawData.financials || p.financials
+    const org = rawData.organization
+    const orgBranding = org.branding
+    const financials = rawData.financials
 
-    let safeLogoUrl = orgBranding?.logo ?? p.organization.branding.logo
+    let safeLogoUrl = orgBranding.logo ?? ''
     if (safeLogoUrl.endsWith('.svg')) {
       safeLogoUrl = safeLogoUrl.replace('.svg', '.png')
     }
@@ -105,17 +106,17 @@ registerTemplate({
     return {
       pricingModel: rawData.pricingModel || p.pricingModel,
 
-      organizationName: org?.name || p.organization!.name,
-      organizationLegalName: org?.legalName || p.organization!.legalName,
-      organizationEntityType: org?.entityType || p.organization!.entityType,
-      organizationTradeRelationship: org?.tradeRelationship || p.organization!.tradeRelationship,
-      organizationGstin: org?.gstin || p.organization!.gstin,
-      organizationPan: org?.pan || p.organization!.pan,
-      organizationAddress: org?.address || p.organization!.address,
+      organizationName: org.name,
+      organizationLegalName: org.legalName,
+      organizationEntityType: org.entityType,
+      organizationTradeRelationship: org.tradeRelationship,
+      organizationGstin: org.gstin,
+      organizationPan: org.pan,
+      organizationAddress: org.address,
       organizationLogo: safeLogoUrl,
-      organizationFont: orgBranding?.font || p.organization!.branding!.font,
-      organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
-      organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
+      organizationFont: orgBranding.font,
+      organizationColorPrimary: orgBranding.color.primary,
+      organizationColorAccent: orgBranding.color.accent,
 
       clientName: rawData.recipient?.name || p.recipient.name,
       clientAddress: rawData.recipient?.address || p.recipient.address,
@@ -142,10 +143,10 @@ registerTemplate({
       taxRate: financials?.taxRate || 0,
       amountPaid: financials?.amountPaid || 0,
 
-      accountName: org?.accountDetails?.accountName || p.organization!.accountDetails.accountName,
-      accountNumber: org?.accountDetails?.accountNumber || p.organization!.accountDetails.accountNumber,
-      bankName: org?.accountDetails?.bankName || p.organization!.accountDetails.bankName,
-      ifscCode: org?.accountDetails?.ifscCode || p.organization!.accountDetails.ifscCode,
+      accountName: org.accountDetails?.accountName,
+      accountNumber: org.accountDetails?.accountNumber,
+      bankName: org.accountDetails?.bankName,
+      ifscCode: org.accountDetails?.ifscCode,
     }
   },
   signerFields: [],

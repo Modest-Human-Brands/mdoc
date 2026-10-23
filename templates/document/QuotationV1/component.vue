@@ -8,13 +8,13 @@ import { dateText, money, optionalNumber, organizationRelationshipLabel } from '
 const props = defineProps<{
   pricingModel: 'project' | 'day'
   organizationName: string
-  organizationLegalName: string
-  organizationEntityType: string
-  organizationTradeRelationship: string
+  organizationLegalName?: string
+  organizationEntityType?: string
+  organizationTradeRelationship?: string
   organizationGstin?: string
   organizationPan?: string
-  organizationAddress: string
-  organizationLogo: string
+  organizationAddress?: string
+  organizationLogo?: string
   organizationFont: string
   organizationColorPrimary: string
   organizationColorAccent: string
@@ -33,10 +33,10 @@ const props = defineProps<{
   isDiscountPercentage: boolean
   taxLabel: string
   taxRate: number | string
-  accountName: string
-  accountNumber: number | string
-  bankName: string
-  ifscCode: string
+  accountName?: string
+  accountNumber?: number | string
+  bankName?: string
+  ifscCode?: string
   parsedTerms: {
     type: string
     text?: string
@@ -113,10 +113,10 @@ const styles = {
           <Text :style="{ fontWeight: 'bold', fontSize: 16 }">{{ organizationName }}</Text>
 
           <Text v-if="organizationLegalName && organizationName !== organizationLegalName" :style="{ fontSize: 10, color: '#555555', marginTop: 4 }">
-            {{ organizationRelationshipLabel(organizationTradeRelationship, organizationLegalName) }}
+            {{ organizationRelationshipLabel(organizationTradeRelationship ?? '', organizationLegalName ?? '') }}
           </Text>
 
-          <Text :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
+          <Text v-if="organizationAddress" :style="{ color: '#555555', marginTop: 4, fontSize: 12 }">{{ organizationAddress }}</Text>
 
           <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }">GSTIN: {{ organizationGstin }}</Text>
           <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
@@ -220,33 +220,26 @@ const styles = {
         </Text>
       </View>
 
-      <View :style="styles.accountBox" :wrap="false">
-        <View :style="{ ...styles.accountCol, flex: 6 }">
+      <View v-if="accountName || accountNumber || bankName || ifscCode" :style="styles.accountBox" :wrap="false">
+        <View v-if="accountName" :style="{ ...styles.accountCol, flex: 6 }">
           <Text :style="styles.accountLabel">Account Name</Text>
           <Text :style="styles.accountValue">{{ accountName }}</Text>
         </View>
-        <View :style="{ ...styles.accountCol, flex: 4 }">
+        <View v-if="accountNumber" :style="{ ...styles.accountCol, flex: 4 }">
           <Text :style="styles.accountLabel">Account Number</Text>
           <Text :style="styles.accountValue">{{ accountNumber }}</Text>
         </View>
-        <View :style="{ ...styles.accountCol, flex: 3 }">
+        <View v-if="bankName" :style="{ ...styles.accountCol, flex: 3 }">
           <Text :style="styles.accountLabel">Bank Name</Text>
           <Text :style="styles.accountValue">{{ bankName }}</Text>
         </View>
-        <View :style="{ ...styles.accountCol, flex: 3 }">
+        <View v-if="ifscCode" :style="{ ...styles.accountCol, flex: 3 }">
           <Text :style="styles.accountLabel">IFSC Code</Text>
           <Text :style="styles.accountValue">{{ ifscCode }}</Text>
         </View>
       </View>
-    </Page>
 
-    <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
-      <View fixed :style="styles.pageFooter">
-        <LogoWatermark :src="organizationLogo" />
-        <Text :style="styles.pageFooterText">Signature: ______________________</Text>
-      </View>
-
-      <Text :style="{ ...styles.sectionTitle, marginBottom: 24 }">TERMS & CONDITIONS</Text>
+      <Text :style="{ ...styles.sectionTitle, marginTop: 32, marginBottom: 24 }">TERMS & CONDITIONS</Text>
       <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
         <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
         <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>

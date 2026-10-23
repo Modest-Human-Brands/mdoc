@@ -7,14 +7,23 @@ import { neutralOrganization, organizationFrom } from '~/server/utils/organizati
 import { deepMerge, getTokenPayload } from '~/server/utils/token-payload'
 import { ensureFonts, resolveBrandFont } from '~/server/utils/fonts'
 import type { ApiValidationErrorDetail } from '~/server/types'
+import { organizationSchema } from '~/templates/document/_shared/organization'
 
 const RENDER_TIMEOUT_MS = 20_000
 
-export const mergeTemplateVariables = (templateDef: TemplateDefinition, variables: Record<string, any> = {}) => ({
-  ...templateDef.placeholders,
-  ...variables,
-  organization: organizationFrom(variables, templateDef.placeholders.organization),
-})
+export function mergeTemplateVariables(templateDef: TemplateDefinition, variables: Record<string, any> = {}) {
+  const merged: Record<string, any> = {
+    ...templateDef.placeholders,
+    ...variables,
+    organization: organizationFrom(variables, templateDef.placeholders.organization),
+  }
+
+  for (const [key, field] of Object.entries(templateDef.schema.shape)) {
+    if (variables[key] === undefined && (field as { isOptional(): boolean }).isOptional()) delete merged[key]
+  }
+
+  return merged
+}
 
 function setPath(target: any, path: PropertyKey[], value: any) {
   let cursor = target
@@ -27,9 +36,26 @@ function setPath(target: any, path: PropertyKey[], value: any) {
 
 export type PreviewVariant = 'sample' | 'branded' | 'filled'
 
+function organizationWarnings(templateDef: TemplateDefinition, organization: Record<string, any>, includeSchemaIssues: boolean) {
+  const warnings: ApiValidationErrorDetail[] = []
+
+  if (includeSchemaIssues) {
+    const result = organizationSchema.safeParse(organization)
+    if (!result.success) warnings.push(...result.error.issues.map(({ path, message, code }) => ({ field: ['organization', ...path].join('.'), message, code })))
+  }
+
+  for (const key of templateDef.organizationFields ?? []) {
+    const value = organization[key]
+    const empty = key === 'accountDetails' ? !value || !Object.values(value).some(Boolean) : !value
+    if (empty) warnings.push({ field: `organization.${key}`, message: `${key} is empty, so it will not appear on the document.`, code: 'missing_recommended' })
+  }
+
+  return warnings
+}
+
 export function buildVariantVariables(templateDef: TemplateDefinition, variant: PreviewVariant, variables: Record<string, any> = {}) {
   const warnings: ApiValidationErrorDetail[] = []
-  const tokens = getTokenPayload(templateDef)
+  const tokens = getTokenPayload(templateDef, { requiredOnly: variant === 'filled' })
 
   if (variant === 'sample') {
     return { variables: { ...tokens, organization: neutralOrganization }, warnings }
@@ -37,7 +63,7 @@ export function buildVariantVariables(templateDef: TemplateDefinition, variant: 
 
   const organization = organizationFrom(variables, templateDef.placeholders.organization)
   if (variant === 'branded') {
-    return { variables: { ...tokens, organization }, warnings }
+    return { variables: { ...tokens, organization }, warnings: organizationWarnings(templateDef, organization, true) }
   }
 
   const userData = { ...variables }
@@ -51,6 +77,8 @@ export function buildVariantVariables(templateDef: TemplateDefinition, variant: 
       for (const issue of result.error.issues) setPath(cleaned, issue.path, undefined)
     }
   }
+
+  warnings.push(...organizationWarnings(templateDef, organization, false))
 
   return { variables: { ...deepMerge(tokens, cleaned), organization }, warnings }
 }

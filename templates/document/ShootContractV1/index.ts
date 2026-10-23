@@ -68,6 +68,7 @@ registerTemplate({
   label: 'Shoot Contract',
   shortLabel: 'Shoot contract',
   category: 'Contracts',
+  organizationFields: ['address'],
   description: 'The formal agreement or legal document outlining scope, terms, and obligations between parties.',
   fonts: [
     { name: 'Exo2', family: 'Exo 2', weights: [400], path: './asset/Exo2-Regular.ttf' },
@@ -78,22 +79,22 @@ registerTemplate({
   component: Component,
   transformPayload: async (rawData: ShootContractPayload) => {
     const p = placeholders
-    const org = rawData.organization || p.organization
-    const orgBranding = org?.branding || p.organization!.branding
+    const org = rawData.organization
+    const orgBranding = org.branding
     const rawTerms = rawData.terms?.content || p.terms.content
 
     const transformedVariables = {
-      organizationName: org?.name || p.organization!.name,
-      organizationLegalName: org?.legalName || p.organization!.legalName,
-      organizationEntityType: org?.entityType || p.organization!.entityType,
-      organizationTradeRelationship: org?.tradeRelationship || p.organization!.tradeRelationship,
-      organizationGstin: org?.gstin || p.organization!.gstin,
-      organizationPan: org?.pan || p.organization!.pan,
-      organizationAddress: org?.address || p.organization!.address,
-      organizationLogo: orgBranding?.logo ?? p.organization.branding.logo,
-      organizationFont: orgBranding?.font || p.organization!.branding!.font,
-      organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
-      organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
+      organizationName: org.name,
+      organizationLegalName: org.legalName,
+      organizationEntityType: org.entityType,
+      organizationTradeRelationship: org.tradeRelationship,
+      organizationGstin: org.gstin,
+      organizationPan: org.pan,
+      organizationAddress: org.address,
+      organizationLogo: orgBranding.logo ?? '',
+      organizationFont: orgBranding.font,
+      organizationColorPrimary: orgBranding.color.primary,
+      organizationColorAccent: orgBranding.color.accent,
       agreementDate: rawData.agreementDate || p.agreementDate,
 
       contractorName: rawData.recipient?.name || p.recipient.name,

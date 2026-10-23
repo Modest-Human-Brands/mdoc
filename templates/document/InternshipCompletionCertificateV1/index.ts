@@ -79,18 +79,18 @@ registerTemplate({
   component: Component,
   transformPayload: async (rawData: InternshipCompletionCertificatePayload) => {
     const p = placeholders
-    const org = rawData.organization || p.organization
-    const orgBranding = org?.branding || p.organization!.branding
+    const org = rawData.organization
+    const orgBranding = org.branding
 
     return {
       recipientName: rawData?.recipient?.name || p.recipient.name,
-      bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${rawData.recipient.role || p.recipient.role} towards ${rawData.scopeOfWork || p.scopeOfWork} during ${rawData.startDate || p.startDate} - ${rawData.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${rawData.organization?.name || p.organization.name}.`,
-      organizationName: rawData?.organization?.name || p.organization.name,
-      organizationLogo: orgBranding?.logo ?? p.organization.branding.logo,
-      organizationFont: orgBranding?.font || p.organization!.branding!.font,
-      organizationColorPrimary: orgBranding?.color?.primary || p.organization!.branding!.color!.primary,
-      organizationColorAccent: orgBranding?.color?.accent || p.organization!.branding!.color!.accent,
-      basePdfBackground: await getTintedBackground('./asset/internship-completion-certificate-v1_0001.svg', orgBranding?.color?.accent || p.organization!.branding!.color!.accent),
+      bodyContent: `This certificate acknowledges your outstanding contribution and dedication as a ${rawData.recipient.role || p.recipient.role} towards ${rawData.scopeOfWork || p.scopeOfWork} during ${rawData.startDate || p.startDate} - ${rawData.endDate || p.endDate}, showcasing your commitment to excellence and teamwork at ${org.name}.`,
+      organizationName: org.name,
+      organizationLogo: orgBranding.logo ?? '',
+      organizationFont: orgBranding.font,
+      organizationColorPrimary: orgBranding.color.primary,
+      organizationColorAccent: orgBranding.color.accent,
+      basePdfBackground: await getTintedBackground('./asset/internship-completion-certificate-v1_0001.svg', orgBranding.color.accent),
     }
   },
   signerFields: [

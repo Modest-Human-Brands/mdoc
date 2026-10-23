@@ -31,20 +31,21 @@ function collectTitles(node: any, parents: any[], counts: Map<string, number>) {
   }
 }
 
-function build(node: any, placeholder: any, parents: any[], counts: Map<string, number>): any {
+function build(node: any, placeholder: any, parents: any[], counts: Map<string, number>, requiredOnly: boolean): any {
   if (!node || typeof node !== 'object') return undefined
 
   if (node.type === 'object' && node.properties) {
     const result: Record<string, any> = {}
     for (const [key, child] of Object.entries<any>(node.properties)) {
-      const value = build(child, placeholder?.[key], parentsFor(parents, node), counts)
+      if (requiredOnly && !(node.required ?? []).includes(key)) continue
+      const value = build(child, placeholder?.[key], parentsFor(parents, node), counts, requiredOnly)
       if (value !== undefined) result[key] = value
     }
     return result
   }
 
   if (node.type === 'array') {
-    const item = build(node.items, Array.isArray(placeholder) ? placeholder[0] : undefined, [...parents, node], counts)
+    const item = build(node.items, Array.isArray(placeholder) ? placeholder[0] : undefined, [...parents, node], counts, requiredOnly)
     return item === undefined ? [] : [item]
   }
 
@@ -66,8 +67,9 @@ function build(node: any, placeholder: any, parents: any[], counts: Map<string, 
   return undefined
 }
 
-export function getTokenPayload(templateDef: TemplateDefinition): Record<string, any> {
-  const hit = cache.get(templateDef.id)
+export function getTokenPayload(templateDef: TemplateDefinition, { requiredOnly = false } = {}): Record<string, any> {
+  const cacheKey = `${templateDef.id}:${requiredOnly}`
+  const hit = cache.get(cacheKey)
   if (hit) return structuredClone(hit)
 
   let payload: Record<string, any> = {}
@@ -75,10 +77,10 @@ export function getTokenPayload(templateDef: TemplateDefinition): Record<string,
     const jsonSchema = { ...parseSchemaToJsonSchema(templateDef.schema, templateDef.placeholders), 'x-root': true }
     const counts = new Map<string, number>()
     collectTitles(jsonSchema, [], counts)
-    payload = build(jsonSchema, templateDef.placeholders, [], counts)
+    payload = build(jsonSchema, templateDef.placeholders, [], counts, requiredOnly)
   }
 
-  cache.set(templateDef.id, payload)
+  cache.set(cacheKey, payload)
   return structuredClone(payload)
 }
 
