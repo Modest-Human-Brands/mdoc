@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.3.16
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.15...v0.3.16)
+
+### 🚀 Enhancements
+
+- Enhance document handling by adding x-org-id header support and updating API descriptions ([ac8bb55](https://github.com/Modest-Human-Brands/mdoc/commit/ac8bb55))
+- Add api key support for authentication in requests and update documentation ([4750941](https://github.com/Modest-Human-Brands/mdoc/commit/4750941))
+
+### 💅 Refactors
+
+- Api responses and update documentation ([7a5f5f7](https://github.com/Modest-Human-Brands/mdoc/commit/7a5f5f7))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.15
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.14...v0.3.15)
