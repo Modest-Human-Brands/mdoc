@@ -1,13 +1,14 @@
 $kind: http-request
-description: Peeks the next document number, e.g. MHB-I-26-014 (org code, type letter I/Q/R/S/C, 2-digit year, 3-digit sequence). Nothing is reserved. Prefill fields marked x-auto in the template schema. Organisation comes from orgId/organizationId (preset) or organizationName.
+description: Peeks the next document number, e.g. MHB-I-26-014 (org code, type letter I/Q/R/S/C, 2-digit year, 3-digit sequence). Nothing is reserved. Prefill fields marked x-auto in the template schema. Organisation comes from the organizationId query or the x-org-id header (preset), or organizationName.
 url: '{{base_url}}/api/document/numbering/next?templateId=invoice'
 method: GET
+headers:
+  - key: x-org-id
+    value: modest-human-brands
+    disabled: true
 queryParams:
   - key: templateId
     value: invoice
-  - key: orgId
-    value: modest-human-brands
-    disabled: true
   - key: organizationName
     value: Modest Human Brands
     disabled: true

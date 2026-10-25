@@ -91,5 +91,4 @@ export function resolveOrganization(orgInput?: string | Record<string, any>, fal
   return preset ?? (fallbackPreset as OrganizationProfile | undefined) ?? organizationPresets['modest-human-brands']!
 }
 
-export const organizationFrom = (variables: Record<string, any>, fallbackPreset?: Record<string, any>) =>
-  resolveOrganization(variables.organization || variables.organizationId || variables.orgId, fallbackPreset)
+export const organizationFrom = (variables: Record<string, any>, fallbackPreset?: Record<string, any>) => resolveOrganization(variables.organization || variables.organizationId, fallbackPreset)

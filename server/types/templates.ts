@@ -1,6 +1,5 @@
 export type RequestBody = {
   name: string
-  orgId: string
   template: string
   data: Record<string, any>
 }

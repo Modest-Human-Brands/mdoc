@@ -67,7 +67,7 @@ export function buildVariantVariables(templateDef: TemplateDefinition, variant: 
   }
 
   const userData = { ...variables }
-  for (const key of ['organizationId', 'orgId', 'organization']) delete userData[key]
+  for (const key of ['organizationId', 'organization']) delete userData[key]
 
   const cleaned = structuredClone(userData)
   if (templateDef.schema) {

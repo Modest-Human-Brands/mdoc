@@ -1,4 +1,4 @@
-import { defineEventHandler, HTTPError, readBody } from 'nitro/h3'
+import { defineEventHandler, getHeader, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z, ZodError } from 'zod'
 
@@ -22,7 +22,6 @@ const createDocSchema = z
     templateId: z.string().min(1).optional(),
     contactId: notionId,
     userId: notionId,
-    orgId: notionId.optional(),
     organizationId: z.string().optional(),
     projectId: notionId.optional(),
     data: z.record(z.string(), z.any()).default({}),
@@ -51,10 +50,11 @@ export default defineEventHandler(async (event) => {
       throw new HTTPError({ statusCode: 400, statusMessage: `Template target identifier "${templateId}" is unrecognized.` })
     }
 
-    const organizationRelationId = body.orgId ?? (body.organizationId && NOTION_ID.test(body.organizationId) ? body.organizationId : undefined)
+    const organizationSlug = getHeader(event, 'x-org-id')?.trim() || body.organizationId
+    const organizationRelationId = body.organizationId && NOTION_ID.test(body.organizationId) ? body.organizationId : undefined
     const enrichedData = {
       ...mergeTemplateVariables(templateDef, rawData),
-      organization: organizationFrom({ ...rawData, organizationId: body.organizationId }, templateDef.placeholders.organization),
+      organization: organizationFrom({ ...rawData, organizationId: organizationSlug }, templateDef.placeholders.organization),
     }
 
     const validation = templateDef.schema.safeParse(enrichedData)
@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
         children: toJsonBlocks(enrichedData),
       })
       .catch((error: unknown) => {
-        throw toRelationFieldError(error, { contactId, userId, orgId: organizationRelationId, projectId })
+        throw toRelationFieldError(error, { contactId, userId, organizationId: organizationRelationId, projectId })
       })
 
     return { id: record.id, templateId, name: fileName, sizeBytes: pdf.byteLength }

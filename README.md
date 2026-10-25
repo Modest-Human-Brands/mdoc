@@ -74,34 +74,34 @@ All API routes are exposed under `/api/**` with CORS enabled.
 
 ### Endpoints Overview
 
-| Method      | Endpoint                                      | Description                                                             | Auth / Key Params                                           |
-| :---------- | :-------------------------------------------- | :---------------------------------------------------------------------- | :---------------------------------------------------------- |
-| `GET`       | `/api/health`                                 | Node status, app version, and build timestamp.                          | Public                                                      |
-| `GET`       | `/api/document/template`                      | List registered templates with category, description, and sample URLs.  | Public                                                      |
-| `GET`       | `/api/document/template/:id`                  | Template JSON Schema, field hints, and signer requirements.             | `:id` (Template ID)                                         |
-| `GET`       | `/api/document/template/:id/sample.pdf`       | Sample PDF stream with placeholder tokens (`?variant=sample\|branded`). | `:id`, `variant` (default: `sample`)                        |
-| `GET`       | `/api/document/template/:id/sample/:page.png` | Pre-rendered template page PNG for preview galleries.                   | `:id`, `:page`, `v` (cache hash)                            |
-| `POST`      | `/api/document/template/preview`              | Live PDF rendering (`{ pdfBase64, pageCount, warnings }`).              | `?draft=true`, body: `{ templateId, variant, variables }`   |
-| `POST`      | `/api/document/template`                      | Generate PDF, create thumbnail, and persist draft record in Notion.     | Body: `{ name, templateId, contactId, userId, data }`       |
-| `GET`       | `/api/document/numbering/next`                | Peek next document serial number (`{OrgCode}-{Type}-{YY}-{Seq}`).       | `templateId` (req), `organizationId`, `organizationName`    |
-| `GET`       | `/api/document`                               | Filtered, paginated list of documents.                                  | Query: `limit`, `offset`, `templateId`, `status`            |
-| `GET`       | `/api/document/:id`                           | Fetch document record, status, relations, and stored `rawData`.         | `:id` (Notion Page ID)                                      |
-| `PATCH`     | `/api/document/:id`                           | Update document metadata (`name`, `status`).                            | `:id`, body: `{ name?, status? }`                           |
-| `GET`       | `/api/document/:id/content`                   | Serve PDF file or thumbnail PNG (`?type=image`, `?download`).           | `:id`, query: `type`, `download`                            |
-| `POST`      | `/api/document/:id/envelope`                  | Configure signer queue and initiate envelope (`Sent` status).           | `:id`, body: `{ routingType, signers }`                     |
-| `POST`      | `/api/document/:id/session`                   | Generate JWT signer session token for magic-link signing.               | `:id`, body: `{ signerEmail, expiresIn? }`                  |
-| `POST`      | `/api/document/:id/session/verify`            | Verify active signer session token.                                     | `:id`, body: `{ sessionToken }`                             |
-| `POST`      | `/api/document/:id/sign/prepare`              | Apply visual stamps and inject `/ByteRange` placeholder for signing.    | `:id`, body: `{ sessionToken, fields, certificateDerHex? }` |
-| `POST`      | `/api/document/:id/sign/client`               | Inject hardware DSC signature (USB token / SmartCard / WebCrypto).      | Body: `{ sessionId, signatureHex }`                         |
-| `POST`      | `/api/document/:id/sign/server`               | Apply automated server-side digital signature (`certificate.p12`).      | Body: `{ sessionId }`                                       |
-| `POST`      | `/api/document/:id/sign/verify`               | Cryptographically verify digital signature integrity via PKCS#7 / CMS.  | `multipart/form-data` with `pdf` file                       |
-| `POST`      | `/api/document/:id/void`                      | Invalidate document with a diagonal VOID watermark across all pages.    | `:id`, body: `{ reason }` (&ge; 5 characters)               |
-| `GET`       | `/api/decor`                                  | List built-in SVG/raster decor assets (`?slot=`).                       | Query: `slot` (e.g. `panel-corner`)                         |
-| `GET`       | `/api/decor/builtin/:file.png`                | Serve built-in decor thumbnail.                                         | `:file` (e.g. `leaf.png`)                                   |
-| `POST`      | `/api/decor/upload`                           | Upload custom decor asset (PNG, JPG, WebP, SVG &le; 2 MB).              | `multipart/form-data` with `file`                           |
-| `GET`       | `/api/decor/upload/:file.png`                 | Serve uploaded content-addressed decor asset.                           | `:file` (e.g. `<sha1>.png`)                                 |
-| `GET`       | `/api/fonts`                                  | Search Google Fonts catalog available for on-demand resolution.         | Query: `q`, `limit` (max 50, default 20)                    |
-| `GET\|POST` | `/mcp`                                        | Model Context Protocol endpoint for autonomous agent tooling.           | MCP Protocol                                                |
+| Method      | Endpoint                                      | Description                                                             | Auth / Key Params                                                                                    |
+| :---------- | :-------------------------------------------- | :---------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| `GET`       | `/api/health`                                 | Node status, app version, and build timestamp.                          | Public                                                                                               |
+| `GET`       | `/api/document/template`                      | List registered templates with category, description, and sample URLs.  | Public                                                                                               |
+| `GET`       | `/api/document/template/:id`                  | Template JSON Schema, field hints, and signer requirements.             | `:id` (Template ID)                                                                                  |
+| `GET`       | `/api/document/template/:id/sample.pdf`       | Sample PDF stream with placeholder tokens (`?variant=sample\|branded`). | `:id`, `variant` (default: `sample`)                                                                 |
+| `GET`       | `/api/document/template/:id/sample/:page.png` | Pre-rendered template page PNG for preview galleries.                   | `:id`, `:page`, `v` (cache hash)                                                                     |
+| `POST`      | `/api/document/template/preview`              | Live PDF rendering (`{ pdfBase64, pageCount, warnings }`).              | `?draft=true`, body: `{ templateId, variant, variables }`                                            |
+| `POST`      | `/api/document/template`                      | Generate PDF, create thumbnail, and persist draft record in Notion.     | Body: `{ name, templateId, contactId, userId, data }`; header `x-org-id` (org preset slug, optional) |
+| `GET`       | `/api/document/numbering/next`                | Peek next document serial number (`{OrgCode}-{Type}-{YY}-{Seq}`).       | `templateId` (req), `organizationId`, `organizationName`; header `x-org-id` (preset)                 |
+| `GET`       | `/api/document`                               | Filtered, paginated list of documents.                                  | Query: `limit`, `offset`, `templateId`, `status`                                                     |
+| `GET`       | `/api/document/:id`                           | Fetch document record, status, relations, and stored `rawData`.         | `:id` (Notion Page ID)                                                                               |
+| `PATCH`     | `/api/document/:id`                           | Update document metadata (`name`, `status`).                            | `:id`, body: `{ name?, status? }`                                                                    |
+| `GET`       | `/api/document/:id/content`                   | Serve PDF file or thumbnail PNG (`?type=image`, `?download`).           | `:id`, query: `type`, `download`                                                                     |
+| `POST`      | `/api/document/:id/envelope`                  | Configure signer queue and initiate envelope (`Sent` status).           | `:id`, body: `{ routingType, signers }`                                                              |
+| `POST`      | `/api/document/:id/session`                   | Generate JWT signer session token for magic-link signing.               | `:id`, body: `{ signerEmail, expiresIn? }`                                                           |
+| `POST`      | `/api/document/:id/session/verify`            | Verify active signer session token.                                     | `:id`, body: `{ sessionToken }`                                                                      |
+| `POST`      | `/api/document/:id/sign/prepare`              | Apply visual stamps and inject `/ByteRange` placeholder for signing.    | `:id`, body: `{ sessionToken, fields, certificateDerHex? }`                                          |
+| `POST`      | `/api/document/:id/sign/client`               | Inject hardware DSC signature (USB token / SmartCard / WebCrypto).      | Body: `{ sessionId, signatureHex }`                                                                  |
+| `POST`      | `/api/document/:id/sign/server`               | Apply automated server-side digital signature (`certificate.p12`).      | Body: `{ sessionId }`                                                                                |
+| `POST`      | `/api/document/:id/sign/verify`               | Cryptographically verify digital signature integrity via PKCS#7 / CMS.  | `multipart/form-data` with `pdf` file                                                                |
+| `POST`      | `/api/document/:id/void`                      | Invalidate document with a diagonal VOID watermark across all pages.    | `:id`, body: `{ reason }` (&ge; 5 characters)                                                        |
+| `GET`       | `/api/decor`                                  | List built-in SVG/raster decor assets (`?slot=`).                       | Query: `slot` (e.g. `panel-corner`)                                                                  |
+| `GET`       | `/api/decor/builtin/:file.png`                | Serve built-in decor thumbnail.                                         | `:file` (e.g. `leaf.png`)                                                                            |
+| `POST`      | `/api/decor/upload`                           | Upload custom decor asset (PNG, JPG, WebP, SVG &le; 2 MB).              | `multipart/form-data` with `file`                                                                    |
+| `GET`       | `/api/decor/upload/:file.png`                 | Serve uploaded content-addressed decor asset.                           | `:file` (e.g. `<sha1>.png`)                                                                          |
+| `GET`       | `/api/fonts`                                  | Search Google Fonts catalog available for on-demand resolution.         | Query: `q`, `limit` (max 50, default 20)                                                             |
+| `GET\|POST` | `/mcp`                                        | Model Context Protocol endpoint for autonomous agent tooling.           | MCP Protocol                                                                                         |
 
 ---
 
