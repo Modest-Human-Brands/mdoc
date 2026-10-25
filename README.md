@@ -426,6 +426,12 @@ docker run -d \
   -e NITRO_PUBLIC_DOC_URL=https://doc.example.com \
   -e NITRO_PRIVATE_JWT_SECRET="your-jwt-secret" \
   -e NITRO_PRIVATE_CERTIFICATE_SECRET="your-p12-secret" \
+  -e NITRO_PRIVATE_API_KEY="your-api-key" \
+  -e NITRO_PRIVATE_DOCUMENT_BUCKET="mdoc-documents" \
+  -e NITRO_PRIVATE_DOCUMENT_ENDPOINT="https://<account>.r2.cloudflarestorage.com" \
+  -e NITRO_PRIVATE_DOCUMENT_REGION="auto" \
+  -e NITRO_PRIVATE_DOCUMENT_ACCESS_KEY_ID="..." \
+  -e NITRO_PRIVATE_DOCUMENT_SECRET_ACCESS_KEY="..." \
   -e NOTION_API_KEY="secret_..." \
   -e NITRO_PRIVATE_NOTION_DB_ID='{"document":"your-notion-db-id"}' \
   -v $(pwd)/static:/app/static \
