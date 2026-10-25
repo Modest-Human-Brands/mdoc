@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.17
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.16...v0.3.17)
+
+### 🚀 Enhancements
+
+- Update environment configuration and README with new API key and document storage settings ([017017f](https://github.com/Modest-Human-Brands/mdoc/commit/017017f))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.16
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.15...v0.3.16)
