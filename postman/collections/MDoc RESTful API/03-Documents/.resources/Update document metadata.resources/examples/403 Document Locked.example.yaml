@@ -20,7 +20,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 403,
-        "statusMessage": "Document is locked. Cannot modify a document with status: Sent"
+        "error": true,
+        "status": 403,
+        "statusText": "Document is locked. Cannot modify a document with status: Sent",
+        "message": "Document is locked. Cannot modify a document with status: Sent"
       }
 order: 2000

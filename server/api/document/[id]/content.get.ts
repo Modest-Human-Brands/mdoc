@@ -9,7 +9,7 @@ import { readDocument } from '~/server/utils/documents'
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
-    const toDownload = getQuery(event).download
+    const toDownload = ['true', '1'].includes(String(getQuery(event).download))
     const requestType = getQuery(event).type
 
     if (!id) {
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const disposition = toDownload === undefined ? 'inline' : 'attachment'
+    const disposition = toDownload ? 'attachment' : 'inline'
 
     event.res.headers.set('Content-Type', properties['Mime Type'].select.name)
     event.res.headers.set('Content-Disposition', `${disposition}; filename="${targetFileName}"`)

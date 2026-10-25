@@ -11,7 +11,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 404,
-        "statusMessage": "Template not found"
+        "error": true,
+        "status": 404,
+        "statusText": "Template not found",
+        "message": "Template not found"
       }
 order: 2000

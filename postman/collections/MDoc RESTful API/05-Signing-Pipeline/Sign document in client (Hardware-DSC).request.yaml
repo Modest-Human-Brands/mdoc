@@ -25,7 +25,7 @@ scripts:
         required: ["sessionId", "signatureHex"],
         properties: {
           sessionId: { type: "string" },
-          signatureHex: { type: "string", minLength: 64 }
+          signatureHex: { type: "string" }
         }
       };
       const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));

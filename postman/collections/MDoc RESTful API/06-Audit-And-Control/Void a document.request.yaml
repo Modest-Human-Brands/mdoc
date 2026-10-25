@@ -36,7 +36,7 @@ scripts:
           type: "object",
           required: ["documentStatus", "fileName"],
           properties: {
-            documentStatus: { type: "string", enum: ["Voided"] },
+            documentStatus: { type: "string", enum: ["Void"] },
             fileName: { type: "string" }
           }
         };

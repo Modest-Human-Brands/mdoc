@@ -20,7 +20,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 403,
-        "statusMessage": "Cannot void a document that is already Completed."
+        "error": true,
+        "status": 403,
+        "statusText": "Cannot void a document that is already Completed.",
+        "message": "Cannot void a document that is already Completed."
       }
 order: 2000

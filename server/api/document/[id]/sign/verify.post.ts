@@ -12,13 +12,15 @@ pkijs.setEngine(
   }) as unknown as pkijs.ICryptoEngine
 )
 
+const badPdf = (message: string, code: string) => new HTTPError({ statusCode: 400, statusMessage: 'Bad Request', data: { errors: [{ field: 'pdf', message, code }] } })
+
 export default defineEventHandler(async (event) => {
   try {
     const formData = await event.req.formData()
-    if (!formData) throw new Error('No form data received.')
+    if (!formData) throw badPdf('Multipart form data is required.', 'invalid_type')
 
     const pdfFile = formData.get('pdf') as File
-    if (!pdfFile) throw new Error("No 'pdf' file uploaded.")
+    if (!pdfFile) throw badPdf("No 'pdf' file uploaded.", 'invalid_type')
 
     const arrayBuffer = await pdfFile.arrayBuffer()
     const pdfBuffer = Buffer.from(arrayBuffer)
@@ -26,7 +28,7 @@ export default defineEventHandler(async (event) => {
     const byteRangeRegex = /\/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]/
     const match = pdfBuffer.toString('binary').match(byteRangeRegex)
 
-    if (!match) throw new Error('No digital signature (ByteRange) found in PDF.')
+    if (!match) throw badPdf('No digital signature (ByteRange) found in PDF.', 'invalid_value')
 
     const byteRange = [Number.parseInt(match[1], 10), Number.parseInt(match[2], 10), Number.parseInt(match[3], 10), Number.parseInt(match[4], 10)]
 
@@ -43,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
     const asn1 = asn1js.fromBER(new Uint8Array(signatureBuffer).buffer)
 
-    if (asn1.offset === -1) throw new Error('Invalid ASN.1 signature structure.')
+    if (asn1.offset === -1) throw badPdf('Invalid ASN.1 signature structure.', 'invalid_value')
 
     const contentInfo = new pkijs.ContentInfo({ schema: asn1.result })
     const signedData = new pkijs.SignedData({ schema: contentInfo.content })

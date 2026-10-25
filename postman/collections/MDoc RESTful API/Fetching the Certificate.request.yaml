@@ -1,5 +1,0 @@
-$kind: http-request
-url: http://localhost:8080/cert
-method: GET
-settings: {}
-order: 17000

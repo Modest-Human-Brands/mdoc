@@ -1,0 +1,65 @@
+$kind: http-request
+description: Creates the signing envelope and moves the document to Sent. The signers must match the template's signature fields exactly (same count and signerOrder values); templates without signature fields cannot be sent. Violations return 400 with data.errors[] codes too_many_signers, too_few_signers, invalid_signer_order, duplicate_signer_order or no_signers_allowed.
+url: '{{base_url}}/api/document/:id/envelope'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "routingType": "SEQUENTIAL",
+      "signers": [
+        { "order": 1, "name": "Alex Mercer", "email": "alex.mercer@example.com", "role": "Recipient" }
+      ]
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const Ajv = require("ajv");
+      const ajv = new Ajv();
+      const inputSchema = {
+        type: "object",
+        required: ["signers"],
+        properties: {
+          routingType: { type: "string", enum: ["SEQUENTIAL", "PARALLEL"] },
+          signers: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              required: ["order", "name", "email"],
+              properties: {
+                order: { type: "number" },
+                name: { type: "string" },
+                email: { type: "string", format: "email" },
+                role: { type: "string" },
+                status: { type: "string", enum: ["PENDING", "SIGNED", "DECLINED"] }
+              }
+            }
+          }
+        }
+      };
+      const valid = ajv.validate(inputSchema, JSON.parse(pm.request.body.raw));
+      pm.test("Envelope request schema valid", () => pm.expect(valid).to.be.true);
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 200) {
+        const outputSchema = {
+          type: "object",
+          required: ["status", "nextSigner", "queueSize"],
+          properties: {
+            status: { type: "string", enum: ["Sent"] },
+            nextSigner: { type: "string" },
+            queueSize: { type: "number", minimum: 1 }
+          }
+        };
+        pm.test("Envelope output schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+      }
+examples: .resources/Send document for signing.resources/examples
+order: 9500

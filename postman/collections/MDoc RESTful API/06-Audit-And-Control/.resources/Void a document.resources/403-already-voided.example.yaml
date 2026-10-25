@@ -1,5 +1,5 @@
 $kind: http-example
-name: 403 Already Completed or Voided
+name: 403 Already Completed or Void
 request:
   url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/void'
   method: POST
@@ -20,7 +20,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 403,
-        "statusMessage": "Cannot void a document that is already Voided."
+        "error": true,
+        "status": 403,
+        "statusText": "Cannot void a document that is already Void.",
+        "message": "Cannot void a document that is already Void."
       }
 order: 3000

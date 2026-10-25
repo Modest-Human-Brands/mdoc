@@ -30,8 +30,8 @@ response:
         "message": "Bad Request",
         "data": {
           "errors": [
-            { "field": "contactId", "message": "contactId is required", "code": "too_small" },
-            { "field": "userId", "message": "userId is required", "code": "too_small" }
+            { "field": "contactId", "message": "must be a Notion page ID", "code": "invalid_format" },
+            { "field": "userId", "message": "must be a Notion page ID", "code": "invalid_format" }
           ]
         }
       }

@@ -26,6 +26,8 @@ scripts:
           }
         };
         pm.test("Signature verification output schema valid", () => pm.response.to.have.jsonSchema(outputSchema));
+      } else {
+        pm.test("Rejected with a pdf field error", () => pm.expect(pm.response.json().data.errors[0].field).to.eql("pdf"));
       }
 examples: .resources/Verify PDF signature.resources/examples
 order: 15000

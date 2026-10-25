@@ -1,5 +1,5 @@
 $kind: http-request
-description: Download or view raw PDF or rendered PNG thumbnail.
+description: Download or view raw PDF or rendered PNG thumbnail. download=true (or 1) returns an attachment; any other value is inline. type=image returns the PNG thumbnail.
 url: '{{base_url}}/api/document/:id/content'
 method: GET
 queryParams:

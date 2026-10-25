@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/decor/upload'
+  method: POST
+  body:
+    type: formdata
+    content:
+      - key: file
+        type: file
+        src: ''
+response:
+  statusCode: 413
+  statusText: Payload Too Large
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": true,
+        "status": 413,
+        "statusText": "Payload Too Large",
+        "message": "Payload Too Large",
+        "data": {
+          "errors": [
+            { "field": "file", "message": "Image is larger than 2 MB", "code": "too_big" }
+          ]
+        }
+      }
+order: 1000

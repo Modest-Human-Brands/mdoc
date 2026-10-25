@@ -20,7 +20,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 401,
-        "statusMessage": "Session expired or invalid."
+        "error": true,
+        "status": 401,
+        "statusText": "Session expired or invalid.",
+        "message": "Session expired or invalid."
       }
 order: 2000

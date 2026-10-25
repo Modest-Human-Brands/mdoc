@@ -1,5 +1,5 @@
 $kind: http-request
-description: Upload an image (PNG, JPG, WebP or SVG, max 2 MB). It is validated and normalised to PNG; the returned id can be used as a decor or image reference in a template payload.
+description: Upload an image (PNG, JPG, WebP or SVG, max 2 MB; larger files return 413). It is validated and normalised to PNG; the returned id can be used as a decor or image reference in a template payload.
 url: '{{base_url}}/api/decor/upload'
 method: POST
 body:
@@ -18,4 +18,5 @@ scripts:
       } else {
         pm.test("Rejected with field errors", () => pm.expect(pm.response.json().data.errors[0].field).to.eql("file"));
       }
+examples: .resources/Upload decor.resources/examples
 order: 2000

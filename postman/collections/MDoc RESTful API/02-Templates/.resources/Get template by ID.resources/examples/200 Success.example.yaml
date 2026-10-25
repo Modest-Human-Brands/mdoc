@@ -39,7 +39,6 @@ response:
           },
           "required": ["recipient", "project", "dueDate"]
         },
-        "variables": {},
         "signerFields": []
       }
 order: 1000

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
     const currentStatus = document.properties.Status.status.name
 
-    if (['Completed', 'Voided'].includes(currentStatus)) {
+    if (['Completed', 'Void'].includes(currentStatus)) {
       throw new HTTPError({
         statusCode: 403,
         statusMessage: `Cannot void a document that is already ${currentStatus}.`,
@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
     })
 
     return {
-      documentStatus: 'Voided',
+      documentStatus: 'Void',
       fileName: voidedFileName,
     }
   } catch (error: unknown) {

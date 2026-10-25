@@ -20,7 +20,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 403,
-        "statusMessage": "It is not out-of-order@example.com's turn to sign yet."
+        "error": true,
+        "status": 403,
+        "statusText": "It is not out-of-order@example.com's turn to sign yet.",
+        "message": "It is not out-of-order@example.com's turn to sign yet."
       }
 order: 2000

@@ -1,5 +1,5 @@
 $kind: http-request
-description: Update document title or status. Cannot modify if status is not Draft.
+description: Update document title or status. A name change is allowed only while the status is Draft; a status change is allowed while it is Plan, Draft or Ready. Any other state returns 403 "Document is locked".
 url: '{{base_url}}/api/document/:id'
 method: PATCH
 headers:

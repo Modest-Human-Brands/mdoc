@@ -11,7 +11,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 404,
-        "statusMessage": "PDF file missing for document ID \"invalid-id\""
+        "error": true,
+        "status": 404,
+        "statusText": "PDF file missing for document ID \"invalid-id\"",
+        "message": "PDF file missing for document ID \"invalid-id\""
       }
 order: 2000

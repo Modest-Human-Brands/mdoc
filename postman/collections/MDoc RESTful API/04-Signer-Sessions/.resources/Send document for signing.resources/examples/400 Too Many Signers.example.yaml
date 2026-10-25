@@ -1,0 +1,37 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/envelope'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "signers": [
+          { "order": 1, "name": "Alex Mercer", "email": "alex.mercer@example.com" },
+          { "order": 2, "name": "Second Signer", "email": "second@example.com" }
+        ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": true,
+        "status": 400,
+        "statusText": "Bad Request",
+        "message": "Bad Request",
+        "data": {
+          "errors": [
+            { "field": "signers", "message": "\"Internship Completion Certificate\" requires exactly 1 signer (order 1), received 2.", "code": "too_many_signers" },
+            { "field": "signers.1.order", "message": "Order 2 has no signature fields in \"Internship Completion Certificate\". Allowed: 1.", "code": "invalid_signer_order" }
+          ]
+        }
+      }
+order: 2000

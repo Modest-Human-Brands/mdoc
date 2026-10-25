@@ -1,6 +1,6 @@
 $kind: http-request
 description: >-
-  Compiles template variables and renders a Base64 PDF with its pageCount. Strict mode - invalid fields return 400 with data.errors[{field,message,code}]. Missing fields are filled from template placeholders. Use ?draft=true for live typing (see "Live preview (draft)"). The optional variant selects what is shown for unfilled fields: filled (default, user data), branded (organisation only, every field is a {{Field Label}} token) or sample (neutral organisation, tokens). branded and sample never return 400.
+  variables is required (send {} for none). Compiles template variables and renders a Base64 PDF with its pageCount. Strict mode - invalid fields return 400 with data.errors[{field,message,code}]. Missing fields are filled from template placeholders. Use ?draft=true for live typing (see "Live preview (draft)"). The optional variant selects what is shown for unfilled fields: filled (default, user data), branded (organisation only, every field is a {{Field Label}} token) or sample (neutral organisation, tokens). branded and sample never return 400.
 url: '{{base_url}}/api/document/template/preview'
 method: POST
 headers:

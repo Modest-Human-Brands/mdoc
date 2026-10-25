@@ -2,7 +2,8 @@ import { defineEventHandler, HTTPError } from 'nitro/h3'
 
 import { MAX_DECOR_BYTES, storeUpload } from '~/server/utils/decor'
 
-const fieldError = (field: string, message: string, code: string, statusCode = 400) => new HTTPError({ statusCode, statusMessage: 'Bad Request', data: { errors: [{ field, message, code }] } })
+const fieldError = (field: string, message: string, code: string, statusCode = 400) =>
+  new HTTPError({ statusCode, statusMessage: statusCode === 413 ? 'Payload Too Large' : 'Bad Request', data: { errors: [{ field, message, code }] } })
 
 export default defineEventHandler(async (event) => {
   try {

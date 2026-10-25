@@ -33,7 +33,6 @@ export default defineEventHandler((event) => {
       category: template.category ?? null,
       description: template.description,
       schema: jsonSchema,
-      variables: jsonSchema,
       signerFields: template.signerFields,
     }
   } catch (error: unknown) {

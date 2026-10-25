@@ -1,5 +1,5 @@
 $kind: http-request
-description: Stamps visual signature images onto the PDF and prepares ByteRange placeholders.
+description: Stamps visual signature images onto the PDF and prepares ByteRange placeholders. fields values are strings (image data URLs or text) or booleans. A missing required image returns 400 with a statusMessage; malformed bodies return 400 with data.errors[].
 url: '{{base_url}}/api/document/:id/sign/prepare'
 method: POST
 headers:
@@ -34,7 +34,7 @@ scripts:
         required: ["sessionToken"],
         properties: {
           sessionToken: { type: "string" },
-          fields: { type: "object" },
+          fields: { type: "object", additionalProperties: { type: ["string", "boolean"] } },
           certificateDerHex: { type: "string" },
           certificateChainDerHex: { type: "array", items: { type: "string" } },
           telemetry: {

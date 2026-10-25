@@ -21,7 +21,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 400,
-        "statusMessage": "Image is required for field: signer-signature"
+        "error": true,
+        "status": 400,
+        "statusText": "Image is required for field: signer-signature",
+        "message": "Image is required for field: signer-signature"
       }
 order: 2000

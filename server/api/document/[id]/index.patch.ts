@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
     const document = (await notion.pages.retrieve({ page_id: id })) as any
     const currentStatus = document.properties.Status?.status?.name
 
-    if (currentStatus !== 'DRAFT' && !parsedBody.status) {
+    const editable = parsedBody.name ? currentStatus === 'Draft' : ['Plan', 'Draft', 'Ready'].includes(currentStatus)
+    if (!editable) {
       throw new HTTPError({
         statusCode: 403,
         statusMessage: `Document is locked. Cannot modify a document with status: ${currentStatus}`,

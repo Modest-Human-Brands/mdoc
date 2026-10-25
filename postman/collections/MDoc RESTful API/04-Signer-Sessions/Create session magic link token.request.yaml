@@ -1,5 +1,5 @@
 $kind: http-request
-description: Generate a time-boxed JWT for an external signer in the queue.
+description: Generate a time-boxed JWT for an external signer in the queue. signerEmail must be a valid email in the routing queue. Returns 400 if expiresIn is invalid or in the past, 403 if the document is not Sent / Partially Signed or it is not the signer's turn, 409 if already signed.
 url: '{{base_url}}/api/document/:id/session'
 method: POST
 headers:
@@ -24,7 +24,7 @@ scripts:
         type: "object",
         required: ["signerEmail"],
         properties: {
-          signerEmail: { type: "string" },
+          signerEmail: { type: "string", format: "email" },
           expiresIn: { type: "string" }
         }
       };

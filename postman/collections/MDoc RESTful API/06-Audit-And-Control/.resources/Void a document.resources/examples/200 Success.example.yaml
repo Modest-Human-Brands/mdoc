@@ -20,7 +20,7 @@ response:
     type: json
     content: |-
       {
-        "documentStatus": "Voided",
+        "documentStatus": "Void",
         "fileName": "RCP-CERT-2026-001-voided.pdf"
       }
 order: 1000

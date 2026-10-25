@@ -1,0 +1,24 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/sign/verify'
+  method: POST
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": true,
+        "status": 400,
+        "statusText": "Bad Request",
+        "message": "Bad Request",
+        "data": {
+          "errors": [
+            { "field": "pdf", "message": "No digital signature (ByteRange) found in PDF.", "code": "invalid_value" }
+          ]
+        }
+      }
+order: 2000

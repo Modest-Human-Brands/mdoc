@@ -9,7 +9,7 @@ import '~/templates/document'
 const previewRequestSchema = z.object({
   templateId: z.string().min(1, 'templateId is required'),
   variant: z.enum(['sample', 'branded', 'filled']).default('filled'),
-  variables: z.record(z.string(), z.any()).default({}),
+  variables: z.record(z.string(), z.any()),
 })
 
 export default defineEventHandler(async (event) => {

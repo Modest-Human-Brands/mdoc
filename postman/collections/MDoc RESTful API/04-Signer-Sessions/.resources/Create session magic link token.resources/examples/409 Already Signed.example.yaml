@@ -20,7 +20,9 @@ response:
     type: json
     content: |-
       {
-        "statusCode": 409,
-        "statusMessage": "This user has already signed the document."
+        "error": true,
+        "status": 409,
+        "statusText": "This user has already signed the document.",
+        "message": "This user has already signed the document."
       }
 order: 3000

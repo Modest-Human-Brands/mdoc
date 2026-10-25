@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document/398ee3b0-289a-8197-a050-d3b993fdb642/envelope'
+  method: POST
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "routingType": "SEQUENTIAL",
+        "signers": [
+          { "order": 1, "name": "Alex Mercer", "email": "alex.mercer@example.com", "role": "Recipient" }
+        ]
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "status": "Sent",
+        "nextSigner": "alex.mercer@example.com",
+        "queueSize": 1
+      }
+order: 1000
