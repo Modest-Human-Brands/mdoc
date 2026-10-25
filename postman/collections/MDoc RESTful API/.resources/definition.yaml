@@ -1,9 +1,19 @@
 $kind: collection
 description: |-
   Complete operational API collection for MDoc (Structured Document Engine & Signing Pipeline).
-  Reflects the actual Nitro/H3 server endpoints, input validation rules, and crypto handlers.
+  Every request sends the x-api-key header from the api_key variable (health and the static image GETs are public). Reflects the actual Nitro/H3 server endpoints, input validation rules, and crypto handlers.
+auth:
+  type: apikey
+  credentials:
+    - key: key
+      value: x-api-key
+    - key: value
+      value: '{{api_key}}'
+    - key: in
+      value: header
 variables:
   base_url: http://localhost:3002
+  api_key: change-me
   document_id: 398ee3b0-289a-8197-a050-d3b993fdb642
   template_id: internship-completion-certificate
   session_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...

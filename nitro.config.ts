@@ -35,6 +35,7 @@ export default defineConfig({
     private: {
       notionDbId: '',
       jwtSecret: '',
+      apiKey: '',
       certificateSecret: '',
       documentBucket: '',
       documentEndpoint: '',

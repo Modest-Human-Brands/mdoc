@@ -1,27 +1,26 @@
 #!/usr/bin/env sh
 set -e
 
-# 1. Secret Scanning with Gitleaks (handles filenames with spaces)
+# Get the list of staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+
+# Postman collections live in paths with spaces and are validated by `postman collection lint`, not eslint/prettier
+LINT_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -v '^postman/' | sed 's| |\\ |g' || true)
+
+# If gitleaks is available, scan each staged file
 if command -v gitleaks >/dev/null 2>&1; then
-  git diff --cached --name-only --diff-filter=ACMR -z | while IFS= read -r -d '' file; do
-    if [ -f "$file" ]; then
-      gitleaks detect --source="$file" --no-git --no-banner --verbose
-    fi
+  for file in $STAGED_FILES; do
+    [ -f "$file" ] && gitleaks detect --source="$file" --no-git --no-banner --verbose
   done
 else
   echo "⚠️ gitleaks not found; skipping secret scan"
 fi
 
-# 2. Extract staged JS/TS/Vue files for ESLint
-LINT_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|ts|mjs|cjs|vue)$' || true)
+# Lint the staged files
+[ -z "$LINT_FILES" ] || bun lint $LINT_FILES
 
-if [ -n "$LINT_FILES" ]; then
-  # Pass filtered files safely quoted via xargs
-  echo "$LINT_FILES" | tr '\n' '\0' | xargs -0 bun x eslint --fix --no-error-on-unmatched-pattern
-fi
+# Format the staged files, ignoring unknown files
+[ -z "$LINT_FILES" ] || bun format $LINT_FILES --ignore-unknown
 
-# 3. Format all staged files with Prettier (safely handles spaces and ignores non-formattable files)
-git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r bun x prettier --write --ignore-unknown
-
-# 4. Stage any formatting changes made by Prettier/ESLint
-git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r git add
+# Update the index to mark the changes in the staged files
+git update-index --again

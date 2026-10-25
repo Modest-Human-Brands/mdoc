@@ -128,6 +128,8 @@ Validation errors return HTTP `400 Bad Request` with an exact path to the offend
 ```
 
 > [!NOTE]
+> **Authentication.** Every `/api/**` request must send `x-api-key: <NITRO_PRIVATE_API_KEY>`; a missing or wrong key returns 401. Public exceptions: `GET /api/health`, template sample images (`/sample/:page.png`) and decor images (`/api/decor/builtin|upload/:file`), so they work in `<img>` tags. If the key is unset, production returns 500 and development skips the check.
+>
 > Stack traces and local file system paths are completely stripped from error payloads across both development and production environments.
 
 ### 2. Live Preview with Draft Tolerances
@@ -376,6 +378,7 @@ Calling `GET /api/document/template/:id` generates standard JSON Schema enriched
 | `NITRO_PUBLIC_DOC_URL`                     | `string` | `http://localhost:3000`      | Base public URL of the service used when constructing preview URLs.                                                           |
 | `NITRO_PRIVATE_NOTION_DB_ID`               | `string` | `{"document":"mock-doc-db"}` | JSON string containing Notion Database IDs: `{"document":"<db-id>"}`.                                                         |
 | `NITRO_PRIVATE_JWT_SECRET`                 | `string` | (required)                   | Secret key for signing and verifying magic-link session tokens.                                                               |
+| `NITRO_PRIVATE_API_KEY`                    | `string` | (required in production)     | Shared secret every `/api` request must send in the `x-api-key` header. Unset in development disables the check.              |
 | `NITRO_PRIVATE_CERTIFICATE_SECRET`         | `string` | (required for .p12)          | Passphrase for unlocking `static/certificate.p12`.                                                                            |
 | `NITRO_PRIVATE_DOCUMENT_BUCKET`            | `string` | (required in production)     | Bucket for generated documents (Cloudflare R2 or any S3-compatible service).                                                  |
 | `NITRO_PRIVATE_DOCUMENT_ENDPOINT`          | `string` | (required with bucket)       | S3 endpoint, e.g. `https://<account>.r2.cloudflarestorage.com` or `https://s3.<region>.amazonaws.com`.                        |
