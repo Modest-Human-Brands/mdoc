@@ -55,7 +55,7 @@
     "nitro-mcp-toolkit": "^0.4.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.4.299",
-    "pkijs": "^3.4.2",
+    "pkijs": "^4.0.0",
     "sharp": "^0.35.5",
     "unifont": "^1.0.3",
     "unplugin-vue": "^8.0.0",
