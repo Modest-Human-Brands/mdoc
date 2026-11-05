@@ -1,4 +1,5 @@
 import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
+import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
 import { finalizeSignedData, buildMinimalChain } from '~/server/utils/cms-signer'
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'

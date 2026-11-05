@@ -1,5 +1,6 @@
 import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
+import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
 import crypto from 'node:crypto'
 import { plainAddPlaceholder } from '@signpdf/placeholder-plain'
