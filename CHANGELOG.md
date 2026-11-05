@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.17
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.16...v0.3.17)
+
+### 🚀 Enhancements
+
+- Update environment configuration and README with new API key and document storage settings ([017017f](https://github.com/Modest-Human-Brands/mdoc/commit/017017f))
+- Add receiptv1 template with schema validation and component integration ([0332ef4](https://github.com/Modest-Human-Brands/mdoc/commit/0332ef4))
+- Add useStorage import to client and prepare post handlers ([0d12243](https://github.com/Modest-Human-Brands/mdoc/commit/0d12243))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.16
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.15...v0.3.16)
