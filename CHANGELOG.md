@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.18
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.17...v0.3.18)
+
+### 🚀 Enhancements
+
+- Update environment variables and configuration for document storage and Notion integration ([59f86f5](https://github.com/Modest-Human-Brands/mdoc/commit/59f86f5))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.17
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.16...v0.3.17)
