@@ -12,6 +12,7 @@ import { buildPreparedSignerInfo } from '~/server/utils/cms-signer'
 import { type SignSession, resolveSigningContext, applyFieldStamps } from '~/server/utils/document-signing'
 import { patchByteRange, extractSigningContent } from '~/server/utils/pdf-byte-range'
 import { readDocument } from '~/server/utils/documents'
+import { assertDocumentOrganization } from '~/server/utils/document-access'
 
 const prepareSchema = z.object({
   sessionToken: z.string(),
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
     const { sessionToken, fields: inputFields, certificateDerHex, certificateChainDerHex, telemetry } = prepareSchema.parse(body)
 
     const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret)
+    assertDocumentOrganization(event, ctx.document)
 
     const pdfBuffer = await readDocument(ctx.fileName)
     if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: `PDF file missing for document "${ctx.fileName}"` })

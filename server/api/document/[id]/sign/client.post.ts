@@ -1,9 +1,10 @@
-import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
 import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
 import { finalizeSignedData, buildMinimalChain } from '~/server/utils/cms-signer'
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
 import { embedSignature } from '~/server/utils/pdf-byte-range'
+import { assertSigningSession } from '~/server/utils/document-access'
 
 const clientSignSchema = z.object({
   sessionId: z.string(),
@@ -19,6 +20,7 @@ export default defineEventHandler(async (event) => {
 
     const session = await signStorage.getItem(`session:${sessionId}`)
     if (!session) throw new HTTPError({ statusCode: 400, statusMessage: 'Signing session expired or invalid. Please refresh and try again.' })
+    assertSigningSession(event, getRouterParam(event, 'id'), session)
 
     const patchedBytes = Buffer.from(session.patchedPdfHex, 'hex')
     const signerInfoDer = Buffer.from(session.signerInfoDerHex!, 'hex')

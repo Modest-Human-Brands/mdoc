@@ -3,6 +3,7 @@ import { z } from 'zod'
 import notion from '~/server/utils/notion'
 import { getTemplateOrThrow, validateEnvelopeSigners } from '~/server/utils/signer-requirements'
 import type { NotionDocument } from '~/server/types'
+import { assertDocumentAccess } from '~/server/utils/document-access'
 
 const envelopeSchema = z.object({
   routingType: z.enum(['SEQUENTIAL', 'PARALLEL']).default('SEQUENTIAL'),
@@ -27,6 +28,8 @@ export default defineEventHandler(async (event) => {
     const { signers, routingType } = await readValidatedBody(event, envelopeSchema)
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+
+    assertDocumentAccess(event, document)
     const templateDef = getTemplateOrThrow(document.properties['Template ID']?.select?.name)
     const signerErrors = validateEnvelopeSigners(templateDef, signers)
     if (signerErrors.length > 0) {

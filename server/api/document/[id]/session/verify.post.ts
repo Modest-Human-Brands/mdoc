@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import { assertDocumentOrganization } from '~/server/utils/document-access'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -30,6 +31,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    assertDocumentOrganization(event, document)
     const queueData = notionTextStringify(document.properties['Routing Queue']?.rich_text)
 
     if (!queueData) {

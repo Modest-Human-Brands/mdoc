@@ -2,6 +2,8 @@ import { defineEventHandler, getHeader, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z, ZodError } from 'zod'
 
+import normalizeId from '~/server/utils/notion-normalize-id'
+import type { AuthContext } from '~/server/utils/document-access'
 import notion from '~/server/utils/notion'
 import { templateRegistry } from '~/server/utils/template-registry'
 import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
@@ -42,6 +44,9 @@ export default defineEventHandler(async (event) => {
   try {
     const body = createDocSchema.parse(await readBody(event))
     const { name: fileName, contactId, userId, projectId } = body
+    if (normalizeId(userId).toLowerCase() !== normalizeId((event.context.auth as AuthContext).userId).toLowerCase()) {
+      throw new HTTPError({ statusCode: 403, statusMessage: 'Forbidden', data: { errors: [{ field: 'userId', message: 'userId must match the x-user-id header.', code: 'forbidden' }] } })
+    }
     const templateId = (body.template || body.templateId)!
     const rawData = { ...body.data, ...body.variables }
 

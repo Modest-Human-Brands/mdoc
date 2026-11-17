@@ -7,6 +7,7 @@ import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { readDocument, removeDocument, writeDocument } from '~/server/utils/documents'
+import { assertDocumentAccess } from '~/server/utils/document-access'
 
 const voidSchema = z.object({
   reason: z.string().min(5, 'A reason must be provided to void the document.'),
@@ -20,6 +21,8 @@ export default defineEventHandler(async (event) => {
     const { reason } = await readValidatedBody(event, voidSchema)
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+
+    assertDocumentAccess(event, document)
     const currentStatus = document.properties.Status.status.name
 
     if (['Completed', 'Void'].includes(currentStatus)) {

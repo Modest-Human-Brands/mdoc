@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import { assertDocumentAccess } from '~/server/utils/document-access'
 
 const sessionSchema = z.object({
   signerEmail: z.email(),
@@ -31,6 +32,8 @@ export default defineEventHandler(async (event) => {
     const { signerEmail, expiresIn } = await readValidatedBody(event, sessionSchema)
 
     const document = (await notion.pages.retrieve({ page_id: envelopeId })) as unknown as NotionDocument
+
+    assertDocumentAccess(event, document)
     const currentStatus = document.properties.Status.status.name
     const queueData = notionTextStringify(document.properties['Routing Queue'].rich_text)
 

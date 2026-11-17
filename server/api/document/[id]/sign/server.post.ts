@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
 import { z, ZodError } from 'zod'
@@ -6,6 +6,7 @@ import { SignPdf } from '@signpdf/signpdf'
 import { P12Signer } from '@signpdf/signer-p12'
 
 import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
+import { assertSigningSession } from '~/server/utils/document-access'
 
 const serverSignSchema = z.object({
   sessionId: z.string(),
@@ -23,6 +24,7 @@ export default defineEventHandler(async (event) => {
     if (!session) {
       throw new HTTPError({ statusCode: 400, statusMessage: 'Signing session expired or invalid.' })
     }
+    assertSigningSession(event, getRouterParam(event, 'id'), session)
 
     const pdfWithPlaceholder = Buffer.from(session.patchedPdfHex, 'hex')
 

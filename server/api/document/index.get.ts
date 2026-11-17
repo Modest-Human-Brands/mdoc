@@ -2,6 +2,7 @@ import { defineEventHandler, getValidatedQuery, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
 
+import { canAccessDocument } from '~/server/utils/document-access'
 import notion from '~/server/utils/notion'
 import notionQueryDb from '~/server/utils/notion-query-db.ts'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
@@ -27,7 +28,10 @@ export default defineEventHandler(async (event) => {
     const documents = await notionQueryDb<NotionDocument>(notion, notionDbId.document)
 
     const filtered = documents.filter(
-      ({ properties }) => (!query.templateId || properties['Template ID']?.select?.name === query.templateId) && (!query.status || properties.Status?.status?.name === query.status)
+      (document) =>
+        canAccessDocument(event, document) &&
+        (!query.templateId || document.properties['Template ID']?.select?.name === query.templateId) &&
+        (!query.status || document.properties.Status?.status?.name === query.status)
     )
 
     const total = filtered.length

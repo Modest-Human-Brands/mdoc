@@ -1,6 +1,7 @@
 import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
 import { z, ZodError } from 'zod'
 import notion from '~/server/utils/notion'
+import { assertDocumentAccess } from '~/server/utils/document-access'
 
 const updateSchema = z.object({
   name: z.string().optional(),
@@ -18,6 +19,8 @@ export default defineEventHandler(async (event) => {
     const parsedBody = updateSchema.parse(body)
 
     const document = (await notion.pages.retrieve({ page_id: id })) as any
+
+    assertDocumentAccess(event, document)
     const currentStatus = document.properties.Status?.status?.name
 
     const editable = parsedBody.name ? currentStatus === 'Draft' : ['Plan', 'Draft', 'Ready'].includes(currentStatus)

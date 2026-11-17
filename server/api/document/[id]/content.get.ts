@@ -5,6 +5,7 @@ import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { readDocument } from '~/server/utils/documents'
+import { assertDocumentAccess } from '~/server/utils/document-access'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,6 +21,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+
+    assertDocumentAccess(event, document)
     const { properties, created_time, last_edited_time } = document
 
     const baseTitle = notionTextStringify(properties.Name.title)

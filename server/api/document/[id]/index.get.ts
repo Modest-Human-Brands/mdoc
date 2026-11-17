@@ -1,6 +1,7 @@
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 
+import { assertDocumentAccess } from '~/server/utils/document-access'
 import notion from '~/server/utils/notion'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionDocument, NotionProject, NotionContact, NotionUser } from '~/server/types'
@@ -17,7 +18,9 @@ export default defineEventHandler(async (event) => {
     }
     const config = useRuntimeConfig()
 
-    const { id: docId, properties, created_time, last_edited_time } = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    const page = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    assertDocumentAccess(event, page)
+    const { id: docId, properties, created_time, last_edited_time } = page
 
     const name = notionTextStringify(properties.Name.title)
     const projectId = properties.Project?.relation?.[0]?.id || null
