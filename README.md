@@ -128,7 +128,7 @@ Validation errors return HTTP `400 Bad Request` with an exact path to the offend
 ```
 
 > [!NOTE]
-> **Authentication.** Every `/api/**` request must send `x-api-key: <NITRO_PRIVATE_API_KEY>`; a missing or wrong key returns 401. Public exceptions: `GET /api/health`, template sample images (`/sample/:page.png`) and decor images (`/api/decor/builtin|upload/:file`), so they work in `<img>` tags. If the key is unset, production returns 500 and development skips the check.
+> **Authentication.** Every `/api/**` request must send `x-api-key: <NITRO_PRIVATE_API_KEY>`; a missing or wrong key returns 401. Public exceptions: `GET /api/health`, template sample images (`/sample/:page.png`) and decor images (`/api/decor/builtin|upload/:file`), so they work in `<img>` tags. If the key is unset, production returns 500 and development skips the check. Error responses, including 401, carry the same CORS headers as successes so a browser on another origin can read them. The web app's Setup screen verifies the API key with `GET /api/document?limit=1`.
 >
 > Stack traces and local file system paths are completely stripped from error payloads across both development and production environments.
 

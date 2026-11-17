@@ -2,10 +2,13 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'nitro'
 import vue from 'unplugin-vue/rollup'
 import mcp from 'nitro-mcp-toolkit/module'
+import errorHandler from './server/error-handler'
 
 export default defineConfig({
   modules: [mcp()],
   serverDir: './server',
+  errorHandler: './server/error-handler.ts',
+  devErrorHandler: errorHandler,
 
   alias: { '~': fileURLToPath(new URL('.', import.meta.url)) },
   rollupConfig: {

@@ -1,0 +1,23 @@
+# TODO
+
+- [x] Nitro server application setup
+- [x] Service health diagnostics endpoint (`GET /api/health`)
+- [x] Template registry discovery and schema inspection (`GET /api/document/template/*`)
+- [x] Dynamic PDF rendering engine via Puppeteer
+- [x] Live PDF preview generation (`POST /api/document/template/preview`)
+- [x] Document drafting and Notion database persistence (`POST /api/document/template`)
+- [x] Serial numbering sequence generator (`GET /api/document/numbering/next`)
+- [x] Document retrieval, filtering, and metadata update (`/api/document/*`)
+- [x] Generated PDF file and thumbnail image delivery (`GET /api/document/:id/content`)
+- [x] Signer queue and envelope configuration (`POST /api/document/:id/envelope`)
+- [x] Signer magic-link session token generation and verification (`/session/*`)
+- [x] Visual stamp staging and PDF ByteRange placeholder injection (`/sign/prepare`)
+- [x] Client hardware DSC signature injection (`POST /sign/client`)
+- [x] Automated server-side digital signing with PKCS#12 certificate (`POST /sign/server`)
+- [x] Cryptographic PKCS#7 / CMS signature verification (`POST /sign/verify`)
+- [x] Document voiding with diagonal VOID watermark (`POST /api/document/:id/void`)
+- [x] Built-in decor and asset upload endpoints (`/api/decor/*`)
+- [x] Google Fonts download and caching automation CLI task
+- [x] Template thumbnail pre-rendering automation CLI task
+- [ ] Direct hardware token signing driver within web environment
+- [ ] Offline SQLite persistent cache mode

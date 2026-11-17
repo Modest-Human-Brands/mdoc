@@ -1,0 +1,27 @@
+$kind: http-example
+request:
+  url: '{{base_url}}/api/document?limit=1'
+  method: GET
+  headers:
+    - key: x-api-key
+      value: wrong-key
+response:
+  statusCode: 401
+  statusText: Unauthorized
+  headers:
+    content-type: application/json; charset=utf-8
+  body:
+    type: json
+    content: |-
+      {
+        "error": true,
+        "status": 401,
+        "statusText": "Unauthorized",
+        "message": "Unauthorized",
+        "data": {
+          "errors": [
+            { "field": "x-api-key", "message": "A valid x-api-key header is required.", "code": "unauthorized" }
+          ]
+        }
+      }
+order: 3000
