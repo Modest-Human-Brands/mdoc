@@ -2,6 +2,7 @@ import Component from './component.vue'
 import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
+import { qrPayload } from '../_shared/qr'
 
 export const invoiceSchema = z.object({
   recipient: z.object({
@@ -142,6 +143,8 @@ registerTemplate({
       taxLabel: financials?.taxLabel || 'Tax',
       taxRate: financials?.taxRate || 0,
       amountPaid: financials?.amountPaid || 0,
+
+      ...qrPayload(org, rawData.project?.invoiceNumber || p.project.invoiceNumber),
 
       accountName: org.accountDetails?.accountName,
       accountNumber: org.accountDetails?.accountNumber,

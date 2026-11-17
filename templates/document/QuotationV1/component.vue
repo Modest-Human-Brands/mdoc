@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import QrCode from '../_shared/QrCode.vue'
+import type { QrStyle } from '~/server/utils/qr'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
@@ -43,6 +45,8 @@ const props = defineProps<{
     items?: { text: string; subitems?: { text: string }[] }[]
   }[]
   expiresIn: string | Date
+  qrStyle?: QrStyle
+  qrVerifyUrl?: string
 }>()
 
 const computedDeliverables = computed(() => props.deliverables.map((item) => ({ ...item, amount: item.rate * item.quantity })))
@@ -292,6 +296,17 @@ const styles = {
       </View>
 
       <Text :render="(ctx) => `N.B: This Letter consists of ${ctx.totalPages} pages including this one. Please sign on all pages.`" :style="styles.accNote"></Text>
+
+      <QrCode
+        v-if="qrVerifyUrl"
+        :text="qrVerifyUrl"
+        :qr-style="qrStyle"
+        :primary="organizationColorPrimary"
+        :accent="organizationColorAccent"
+        :logo="organizationLogo"
+        :size="72"
+        :caption="'Scan to verify\nthis agreement online'"
+        :style="{ marginTop: 24 }" />
     </Page>
   </Document>
 </template>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import QrCode from '../_shared/QrCode.vue'
+import { upiLink } from '../_shared/qr'
+import type { QrStyle } from '~/server/utils/qr'
 import { Document, Page, View, Text } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
 import { dateText, isToken, optionalNumber } from '../_shared/format'
@@ -39,6 +42,10 @@ const props = defineProps<{
   taxLabel: string
   currency: string
   amountPaid?: number | string
+  qrStyle?: QrStyle
+  qrUpiId?: string
+  qrUpiName?: string
+  qrVerifyUrl?: string
 }>()
 
 const fmt = (value: number | string) => (isToken(value) ? value : value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
@@ -66,6 +73,12 @@ const total = computed(() => totalExcl.value + totalTax.value)
 const paid = computed(() => (props.amountPaid === undefined || isToken(props.amountPaid) ? (props.amountPaid ?? total.value) : optionalNumber(props.amountPaid)))
 const amountDue = computed(() => (isToken(paid.value) ? 0 : Math.max(0, total.value - (paid.value as number))))
 
+const qrContent = computed(() => {
+  const payment = amountDue.value > 0 ? upiLink({ upiId: props.qrUpiId, name: props.qrUpiName, amount: amountDue.value, note: props.receiptNumber }) : undefined
+  if (payment) return { text: payment, caption: 'Scan to pay\nvia any UPI app' }
+  return props.qrVerifyUrl ? { text: props.qrVerifyUrl, caption: 'Scan to verify\nthis receipt' } : undefined
+})
+
 const period = (item: ReceiptItem) => {
   if (!item.periodStart && !item.periodEnd) return ''
   return `${dateText(item.periodStart)} – ${dateText(item.periodEnd)}`
@@ -90,7 +103,7 @@ const styles = {
   metaRow: { flexDirection: 'row' as const, marginTop: 3 },
   metaLabel: { fontSize: 10, color: '#6B6B73', marginRight: 4 },
   metaValue: { fontSize: 10, fontWeight: 'bold' as const },
-  billed: { marginBottom: 24 },
+  billed: { marginBottom: 24, position: 'relative' as const },
   billedLabel: { fontSize: 8, fontWeight: 'bold' as const, marginBottom: 4 },
   tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, paddingBottom: 6 },
   tableRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#EEEEEE', paddingVertical: 8 },
@@ -126,6 +139,18 @@ const styles = {
       </View>
 
       <View :style="styles.billed">
+        <QrCode
+          v-if="qrContent"
+          :text="qrContent.text"
+          :qr-style="qrStyle"
+          :primary="organizationColorPrimary"
+          :accent="organizationColorAccent"
+          :logo="organizationLogo"
+          :size="64"
+          :caption="qrContent.caption"
+          layout="column"
+          caption-align="right"
+          :style="{ position: 'absolute', top: 0, right: 0 }" />
         <Text :style="{ ...styles.billedLabel, color: organizationColorPrimary }">BILLED TO</Text>
         <Text :style="{ fontWeight: 'bold' }">{{ clientName }}</Text>
         <Text v-if="clientCompany" :style="styles.muted">{{ clientCompany }}</Text>

@@ -18,10 +18,22 @@ export const organizationSchema = z.object({
       accountNumber: z.union([z.number(), z.string()]).optional(),
       bankName: z.string().optional(),
       ifscCode: z.string().optional(),
+      upiId: z
+        .string()
+        .regex(/^[\w.-]{2,256}@[a-z][a-z0-9.-]{1,64}$/i, 'Invalid UPI ID')
+        .optional(),
     })
     .optional(),
   branding: z.object({
     logo: z.string().optional(),
+    qr: z
+      .object({
+        color: z.enum(['brand', 'monochrome']).optional(),
+        eyeShape: z.enum(['square', 'rounded', 'circle', 'leaf']).optional(),
+        eyeColor: z.enum(['brand', 'monochrome']).optional(),
+        logo: z.boolean().optional(),
+      })
+      .optional(),
     color: z.object({ primary: z.string(), accent: z.string() }),
     font: z.string(),
   }),

@@ -14,9 +14,11 @@ export interface OrganizationProfile {
     accountNumber?: number | string
     bankName?: string
     ifscCode?: string
+    upiId?: string
   }
   branding: {
     logo?: string
+    qr?: { color?: 'brand' | 'monochrome'; eyeShape?: 'square' | 'rounded' | 'circle' | 'leaf'; eyeColor?: 'brand' | 'monochrome'; logo?: boolean }
     color: { primary: string; accent: string }
     font: string
   }
@@ -44,6 +46,7 @@ export const organizationPresets: Record<string, OrganizationProfile> = {
       accountNumber: 1_234_567_890,
       bankName: 'HDFC Bank',
       ifscCode: 'HDFC0001234',
+      upiId: 'modesthumanbrands@hdfcbank',
     },
     website: 'https://modesthumanbrands.com',
     contactEmail: 'contact@modesthumanbrands.com',
@@ -68,8 +71,9 @@ export const neutralOrganization: OrganizationProfile = {
   tradeRelationship: 'Primary',
   pan: 'XXXXX0000X',
   address: 'Street, City, State, Country',
-  accountDetails: { accountName: '—', accountNumber: '—', bankName: '—', ifscCode: '—' },
-  branding: { logo: '', color: { primary: '#1A1A1A', accent: '#9CA3AF' }, font: 'Exo2' },
+  accountDetails: { accountName: '—', accountNumber: '—', bankName: '—', ifscCode: '—', upiId: 'yourname@bank' },
+  website: 'https://example.com',
+  branding: { logo: '', color: { primary: '#1A1A1A', accent: '#9CA3AF' }, font: 'Exo2', qr: { color: 'monochrome', eyeShape: 'rounded', eyeColor: 'monochrome', logo: false } },
   phone: '+00 00000 00000',
   contactEmail: 'email@example.com',
   billingEmail: 'billing@example.com',

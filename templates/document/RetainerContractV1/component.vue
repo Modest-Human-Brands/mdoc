@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
+import QrCode from '../_shared/QrCode.vue'
+import type { QrStyle } from '~/server/utils/qr'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { dateText, isToken, money, organizationRelationshipLabel } from '../_shared/format'
@@ -37,6 +39,8 @@ const props = defineProps<{
     text?: string
     items?: { text: string; subitems?: { text: string }[] }[]
   }[]
+  qrStyle?: QrStyle
+  qrVerifyUrl?: string
 }>()
 
 const formatCurrency = (val?: unknown) => money(val ?? 0, props.currency)
@@ -251,6 +255,17 @@ const styles = {
       </View>
 
       <Text :render="(ctx) => `N.B: This Agreement consists of ${ctx.totalPages} pages including this one. Please initial and sign where indicated.`" :style="styles.accNote"></Text>
+
+      <QrCode
+        v-if="qrVerifyUrl"
+        :text="qrVerifyUrl"
+        :qr-style="qrStyle"
+        :primary="organizationColorPrimary"
+        :accent="organizationColorAccent"
+        :logo="organizationLogo"
+        :size="72"
+        :caption="'Scan to verify\nthis agreement online'"
+        :style="{ marginTop: 24 }" />
     </Page>
   </Document>
 </template>

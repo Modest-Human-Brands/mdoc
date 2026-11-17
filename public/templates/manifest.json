@@ -3,7 +3,7 @@
     "pageCount": 4,
     "width": 1191,
     "height": 1684,
-    "hash": "ba21b0e7feed"
+    "hash": "c9ada1a04aa5"
   },
   "internship-completion-certificate": {
     "pageCount": 1,
@@ -15,18 +15,24 @@
     "pageCount": 1,
     "width": 1191,
     "height": 1684,
-    "hash": "0b1883e3ec1f"
+    "hash": "04162b9f6c73"
   },
   "quotation": {
     "pageCount": 6,
     "width": 1191,
     "height": 1684,
-    "hash": "81841172efe6"
+    "hash": "4cd5d3f0cf24"
+  },
+  "receipt": {
+    "pageCount": 1,
+    "width": 1191,
+    "height": 1684,
+    "hash": "9a0ecbed79e8"
   },
   "shoot-contract": {
     "pageCount": 3,
     "width": 1191,
     "height": 1684,
-    "hash": "4058dd33c193"
+    "hash": "deadba2cff10"
   }
 }

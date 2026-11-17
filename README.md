@@ -351,6 +351,31 @@ Calling `GET /api/document/template/:id` generates standard JSON Schema enriched
 - **`x-auto`**: Field is server-calculated (`invoiceNumber`, `quoteNumber`). Render as read-only and prefill via `/api/document/numbering/next`.
 - **`x-boilerplate`**: Long-form legal or Markdown terms content.
 
+### Dynamic QR Codes
+
+`invoice`, `receipt`, `quotation`, `retainer-contract` and `shoot-contract` render a QR code generated with [`uqr`](https://github.com/unjs/uqr), styled from the organisation's branding:
+
+| Template                                           | Encodes                                                                                          | Placement                            |
+| :------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :----------------------------------- |
+| `invoice`                                          | UPI payment link (`upi://pay?pa=…&am=<amount due>`). Hidden once fully paid or without a UPI ID. | Issuer column, below PAN             |
+| `receipt`                                          | UPI payment link when an amount is still due, otherwise the verify URL                           | Right of "Billed to"                 |
+| `quotation`, `retainer-contract`, `shoot-contract` | Verify URL `<base>/verify/<document number>`                                                     | Acceptance page, below the N.B. note |
+
+The verify base is `NITRO_MDOC_PUBLIC_VERIFY_URL`, falling back to the organisation `website`; without either, no verify QR is drawn.
+
+Customise it per organisation under `organization.branding.qr` (all optional) and set `organization.accountDetails.upiId` for payment QRs:
+
+```json
+{
+  "accountDetails": { "upiId": "name@bank" },
+  "branding": { "qr": { "color": "brand", "eyeShape": "rounded", "eyeColor": "brand", "logo": true } }
+}
+```
+
+- `color` / `eyeColor`: `brand` (accent colour) or `monochrome`. A brand colour with poor contrast on white falls back to near-black so the code stays scannable.
+- `eyeShape`: `square`, `rounded`, `circle` or `leaf`.
+- `logo`: place the brand logo in the centre (the code switches to high error correction).
+
 ---
 
 ## Local Development & Operations

@@ -2,6 +2,7 @@ import Component from './component.vue'
 import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
+import { qrPayload } from '../_shared/qr'
 
 export const receiptSchema = z.object({
   recipient: z.object({
@@ -135,6 +136,8 @@ registerTemplate({
       taxLabel: financials?.taxLabel || 'Tax',
       currency: financials?.currency || 'INR',
       amountPaid: financials?.amountPaid,
+
+      ...qrPayload(org, receipt?.receiptNumber || p.receipt.receiptNumber),
     }
   },
   signerFields: [],

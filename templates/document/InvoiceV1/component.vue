@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
+import QrCode from '../_shared/QrCode.vue'
+import { upiLink } from '../_shared/qr'
+import type { QrStyle } from '~/server/utils/qr'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
 import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
@@ -38,6 +41,9 @@ const props = defineProps<{
   accountNumber?: number | string
   bankName?: string
   ifscCode?: string
+  qrStyle?: QrStyle
+  qrUpiId?: string
+  qrUpiName?: string
 }>()
 
 const computedDeliverables = computed(() => props.deliverables.map((item) => ({ ...item, amount: item.rate * item.quantity })))
@@ -49,6 +55,11 @@ const grandTotal = computed(() => postDiscountTotal.value + taxAmount.value)
 const paid = computed(() => optionalNumber(props.amountPaid))
 const hasTotals = computed(() => Number.isFinite(grandTotal.value))
 const amountDue = computed(() => Math.max(0, grandTotal.value - paid.value))
+
+const paymentQr = computed(() => {
+  if (hasTotals.value && paid.value >= grandTotal.value) return undefined
+  return upiLink({ upiId: props.qrUpiId, name: props.qrUpiName, amount: hasTotals.value ? amountDue.value : undefined, note: props.projectInvoiceNumber })
+})
 
 const paymentStatus = computed(() => {
   if (paid.value >= grandTotal.value) return 'PAID'
@@ -125,6 +136,17 @@ const styles = {
 
           <Text v-if="organizationGstin" :style="{ color: '#888888', marginTop: 8, fontSize: 10 }">GSTIN: {{ organizationGstin }}</Text>
           <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
+
+          <QrCode
+            v-if="paymentQr"
+            :text="paymentQr"
+            :qr-style="qrStyle"
+            :primary="organizationColorPrimary"
+            :accent="organizationColorAccent"
+            :logo="organizationLogo"
+            :size="56"
+            :caption="'Scan to pay\nvia any UPI app'"
+            :style="{ marginTop: 12 }" />
         </View>
 
         <View :style="styles.metaSection">

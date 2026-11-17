@@ -2,6 +2,7 @@ import Component from './component.vue'
 import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
+import { qrPayload } from '../_shared/qr'
 import parseMarkdown from '~/server/utils/parse-markdown.ts'
 import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
 
@@ -125,6 +126,7 @@ registerTemplate({
       organizationFont: orgBranding.font,
       organizationColorPrimary: orgBranding.color.primary,
       organizationColorAccent: orgBranding.color.accent,
+      ...qrPayload(org, rawData.project?.quoteNumber || p.project.quoteNumber),
 
       clientName: rawData.recipient?.name || p.recipient.name,
       clientAddress: rawData.recipient?.address || p.recipient.address,
