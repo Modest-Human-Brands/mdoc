@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.3.19
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.18...v0.3.19)
+
+### 🚀 Enhancements
+
+- Enhance API error handling and update documentation examples ([09bacfd](https://github.com/Modest-Human-Brands/mdoc/commit/09bacfd))
+- Add customizable dynamic QR codes to invoice, receipt, quotation and contracts ([12ebcf0](https://github.com/Modest-Human-Brands/mdoc/commit/12ebcf0))
+- Implement document access control and organization validation for API endpoints ([796768b](https://github.com/Modest-Human-Brands/mdoc/commit/796768b))
+- Enhance document templates with terms handling and session report ([560c8b8](https://github.com/Modest-Human-Brands/mdoc/commit/560c8b8))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.18
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.17...v0.3.18)
