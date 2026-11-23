@@ -1,0 +1,9 @@
+$kind: collection
+description: |-
+  Contract for the Terms (term snippets) endpoints that the Modest Human Brands frontend exposes. They extend the existing `/api/compliance` Notion-backed library; MDoc only renders the resolved snippets (see the MDoc collection request "Preview document with terms").
+  Auth: the normal session cookie (`requireUserSession`). Set `base_url` to the frontend origin.
+  A term is a Compliance row: title, markdown body (stored as Tiptap JSON, converted to markdown on read), and metadata columns Type, Status (Plan/Draft/Release/Archive), Applies To, Default For, Required For, Version, Order.
+variables:
+  base_url: http://localhost:3000
+  term_slug: payment
+  template_id: quotation

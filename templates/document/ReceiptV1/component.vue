@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
-import { upiLink } from '../_shared/qr'
+import { upiLink, type QrTarget } from '../_shared/qr'
 import type { QrStyle } from '~/server/utils/qr'
 import { Document, Page, View, Text } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
@@ -45,7 +45,8 @@ const props = defineProps<{
   qrStyle?: QrStyle
   qrUpiId?: string
   qrUpiName?: string
-  qrVerifyUrl?: string
+  qrUrl?: string
+  qrTarget?: QrTarget
 }>()
 
 const fmt = (value: number | string) => (isToken(value) ? value : value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
@@ -74,9 +75,10 @@ const paid = computed(() => (props.amountPaid === undefined || isToken(props.amo
 const amountDue = computed(() => (isToken(paid.value) ? 0 : Math.max(0, total.value - (paid.value as number))))
 
 const qrContent = computed(() => {
-  const payment = amountDue.value > 0 ? upiLink({ upiId: props.qrUpiId, name: props.qrUpiName, amount: amountDue.value, note: props.receiptNumber }) : undefined
+  const payable = amountDue.value > 0 && props.qrTarget !== 'document' && props.qrTarget !== 'verify'
+  const payment = payable ? upiLink({ upiId: props.qrUpiId, name: props.qrUpiName, amount: amountDue.value, note: props.receiptNumber }) : undefined
   if (payment) return { text: payment, caption: 'Scan to pay\nvia any UPI app' }
-  return props.qrVerifyUrl ? { text: props.qrVerifyUrl, caption: 'Scan to verify\nthis receipt' } : undefined
+  return props.qrUrl ? { text: props.qrUrl, caption: 'Scan to view\nthis receipt' } : undefined
 })
 
 const period = (item: ReceiptItem) => {

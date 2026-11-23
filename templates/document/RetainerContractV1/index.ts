@@ -3,8 +3,7 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
 import { qrPayload } from '../_shared/qr'
-import parseMarkdown from '~/server/utils/parse-markdown.ts'
-import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
+import { resolveTerms, termsSchema } from '../_shared/terms'
 
 import { addMonths, subDays } from 'date-fns'
 
@@ -46,10 +45,7 @@ export const retainerContractSchema = z.object({
     }),
   agreementDate: z.coerce.date(),
   expiresIn: z.coerce.date(),
-  terms: z.object({
-    content: z.string().meta({ 'x-boilerplate': true }),
-    lastUpdated: z.coerce.date(),
-  }),
+  terms: termsSchema,
   organization: organizationSchema,
 })
 
@@ -173,8 +169,6 @@ registerTemplate({
     const p = placeholders
     const org = rawData.organization
     const orgBranding = org.branding
-    const rawTerms = rawData.terms?.content || p.terms.content
-
     const engagement = rawData.engagement || p.engagement
     const compensation = rawData.compensation || p.compensation
     const startDate = new Date(engagement.startDate)
@@ -197,7 +191,7 @@ registerTemplate({
       organizationFont: orgBranding.font,
       organizationColorPrimary: orgBranding.color.primary,
       organizationColorAccent: orgBranding.color.accent,
-      ...qrPayload(org, engagement.quoteNumber),
+      ...qrPayload(org, engagement.quoteNumber, rawData),
       agreementDate: rawData.agreementDate || p.agreementDate,
 
       contractorName: rawData.recipient?.name || p.recipient.name,
@@ -229,11 +223,9 @@ registerTemplate({
       return value !== undefined && value !== null && value !== '' && value !== false && value !== 0
     }
 
-    const resolvedTerms = rawTerms.replace(/\{\{#if\s+([^}]+?)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, condition: string, inner: string) => (isIfConditionTrue(condition) ? inner : ''))
+    const termSections = resolveTerms(rawData.terms, { fallback: p.terms.content, variables: transformedVariables, condition: isIfConditionTrue })
 
-    const parsedTerms: ParsedTerm[] = parseMarkdown(resolvedTerms, { ...transformedVariables })
-
-    return { ...transformedVariables, parsedTerms }
+    return { ...transformedVariables, termSections }
   },
   signerFields: [
     {

@@ -353,15 +353,17 @@ Calling `GET /api/document/template/:id` generates standard JSON Schema enriched
 
 ### Dynamic QR Codes
 
-`invoice`, `receipt`, `quotation`, `retainer-contract` and `shoot-contract` render a QR code generated with [`uqr`](https://github.com/unjs/uqr), styled from the organisation's branding:
+Every QR-bearing template (`quotation`, `invoice`, `receipt`, `session-report`, `appointment-confirmation`, `retainer-contract`, `shoot-contract`) renders a QR code generated with [`uqr`](https://github.com/unjs/uqr), styled from the organisation's branding. **By default, scanning it opens the created document's public link**, `<NITRO_MDOC_PUBLIC_DOC_URL>/api/document/<id>/view`, which serves the PDF read-only without authentication (the link is a capability URL: anyone holding the id can view that PDF). `POST /api/document/template` returns it as `shareUrl`; document list/detail responses include it too.
 
-| Template                                           | Encodes                                                                                          | Placement                            |
-| :------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :----------------------------------- |
-| `invoice`                                          | UPI payment link (`upi://pay?pa=…&am=<amount due>`). Hidden once fully paid or without a UPI ID. | Issuer column, below PAN             |
-| `receipt`                                          | UPI payment link when an amount is still due, otherwise the verify URL                           | Right of "Billed to"                 |
-| `quotation`, `retainer-contract`, `shoot-contract` | Verify URL `<base>/verify/<document number>`                                                     | Acceptance page, below the N.B. note |
+`invoice` and `receipt` are the exception: while an amount is still due they keep the UPI payment QR (`upi://pay?pa=…&am=<amount due>`, needs `accountDetails.upiId`) and switch to the document link once paid.
 
-The verify base is `NITRO_MDOC_PUBLIC_VERIFY_URL`, falling back to the organisation `website`; without either, no verify QR is drawn.
+The destination is configurable, most specific first:
+
+1. Per document, in the request variables: `{ "qr": { "url": "https://example.com/thanks" } }` (any `http(s)` URL) or `{ "qr": { "target": "document" | "verify" | "upi" } }`.
+2. Per organisation: `organization.branding.qr.target` (same values).
+3. Default: the document link.
+
+`verify` encodes `<base>/verify/<document number>`, where the base is `NITRO_MDOC_PUBLIC_VERIFY_URL`, falling back to the organisation `website`.
 
 Customise it per organisation under `organization.branding.qr` (all optional) and set `organization.accountDetails.upiId` for payment QRs:
 
@@ -375,6 +377,28 @@ Customise it per organisation under `organization.branding.qr` (all optional) an
 - `color` / `eyeColor`: `brand` (accent colour) or `monochrome`. A brand colour with poor contrast on white falls back to near-black so the code stays scannable.
 - `eyeShape`: `square`, `rounded`, `circle` or `leaf`.
 - `logo`: place the brand logo in the centre (the code switches to high error correction).
+
+### Terms (Term Snippets)
+
+`quotation`, `invoice`, `retainer-contract`, `shoot-contract` and `appointment-confirmation` accept a `terms` object. Terms are reusable markdown snippets that are **selected, never typed, when a document is created**. MDoc does not store the library: the caller (the frontend's Compliance library) resolves the chosen snippets and sends them in the request, in the order they should appear.
+
+```json
+{
+  "terms": {
+    "items": [
+      { "id": "…", "slug": "payment", "title": "Payment", "version": 3, "content": "- 50% advance on booking.\n- Balance on delivery." },
+      { "id": "…", "slug": "cancellation", "title": "Cancellation", "version": 1, "content": "Advance is non-refundable." }
+    ]
+  }
+}
+```
+
+- Each item renders as `N. <title>` followed by its markdown body. `N` is assigned by position, so snippets are written without numbers.
+- Supported markdown: headings (rendered as sub-headings), paragraphs and bullet/numbered lists with one nested level. Bold/italic markers are stripped (only regular-weight fonts are registered). `{{variable}}` placeholders resolve against the template's own variables; the retainer contract also supports `{{#if condition}}…{{/if}}`.
+- Each term is kept on one page when it is shorter than roughly 1,800 characters; longer terms flow across pages.
+- `version` and `id` are carried in the document's stored data, so the exact wording an issued document used can always be recovered. Later edits to a snippet never change an existing document.
+- Legacy payloads (`{ "content": "<markdown>", "lastUpdated": "…" }`) still render as a single unnumbered block.
+- `invoice` and `appointment-confirmation` render no terms section when `terms` is omitted.
 
 ---
 

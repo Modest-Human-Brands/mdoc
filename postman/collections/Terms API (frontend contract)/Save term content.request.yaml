@@ -1,0 +1,39 @@
+$kind: http-request
+description: |-
+  Existing endpoint (autosaved by the editor, 1.2 s debounce), extended: it now also increments `version` by 1 and returns it, so a document can record which wording it snapshotted. `content` is Tiptap JSON limited to the supported nodes (terms editor mode): heading, paragraph, bulletList, orderedList, listItem, hardBreak, plus bold and italic marks. Tables, callouts, task lists and code blocks are not rendered in the PDF and must not be offered.
+url: '{{base_url}}/api/compliance/:slug'
+method: PUT
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  slug: '{{term_slug}}'
+body:
+  type: json
+  content: |-
+    {
+      "content": {
+        "type": "doc",
+        "content": [
+          { "type": "paragraph", "content": [{ "type": "text", "text": "Payment schedule" }] },
+          {
+            "type": "bulletList",
+            "content": [
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "50% advance on booking." }] }] },
+              { "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Balance on delivery." }] }] }
+            ]
+          }
+        ]
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Returns success, updatedAt and the new version", () => {
+        const r = pm.response.json();
+        pm.expect(r.success).to.be.true;
+        pm.expect(r.version).to.be.a("number");
+      });
+order: 5000

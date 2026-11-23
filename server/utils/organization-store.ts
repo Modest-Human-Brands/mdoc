@@ -18,7 +18,7 @@ export interface OrganizationProfile {
   }
   branding: {
     logo?: string
-    qr?: { color?: 'brand' | 'monochrome'; eyeShape?: 'square' | 'rounded' | 'circle' | 'leaf'; eyeColor?: 'brand' | 'monochrome'; logo?: boolean }
+    qr?: { color?: 'brand' | 'monochrome'; eyeShape?: 'square' | 'rounded' | 'circle' | 'leaf'; eyeColor?: 'brand' | 'monochrome'; logo?: boolean; target?: 'document' | 'verify' | 'upi' }
     color: { primary: string; accent: string }
     font: string
   }

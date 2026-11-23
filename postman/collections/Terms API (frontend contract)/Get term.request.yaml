@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  Existing endpoint, extended. Returns one term with its content. `content` is the Tiptap JSON the editor loads; `markdown` is what MDoc renders. Now includes all metadata fields from List terms.
+url: '{{base_url}}/api/compliance/:slug'
+method: GET
+pathVariables:
+  slug: '{{term_slug}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const t = pm.response.json();
+      pm.test("Has content, markdown and metadata", () => {
+        pm.expect(t).to.include.keys("id", "slug", "title", "content", "markdown", "version", "status", "appliesTo", "defaultFor", "requiredFor");
+      });
+order: 2000

@@ -1,10 +1,9 @@
 import { defineEventHandler, getRouterParam, getQuery, HTTPError } from 'nitro/h3'
-import mime from 'mime-types'
 
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
-import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { readDocument } from '~/server/utils/documents'
+import { documentFiles, readLatestDocument } from '~/server/utils/document-file'
 import { assertDocumentAccess } from '~/server/utils/document-access'
 
 export default defineEventHandler(async (event) => {
@@ -24,18 +23,13 @@ export default defineEventHandler(async (event) => {
 
     assertDocumentAccess(event, document)
     const { properties, created_time, last_edited_time } = document
-
-    const baseTitle = notionTextStringify(properties.Name.title)
-    const ext = mime.extension(properties['Mime Type'].select.name) || 'pdf'
-    const currentStatus = properties.Status?.status?.name
+    const files = documentFiles(document)
 
     if (requestType === 'image') {
-      const imageFileName = `${baseTitle}.png`
-
       event.res.headers.set('Content-Type', 'image/png')
-      event.res.headers.set('Content-Disposition', `inline; filename="${imageFileName}"`)
+      event.res.headers.set('Content-Disposition', `inline; filename="${files.image}"`)
 
-      const imageBuffer = await readDocument(imageFileName)
+      const imageBuffer = await readDocument(files.image)
 
       if (!imageBuffer) {
         throw new HTTPError({
@@ -47,43 +41,17 @@ export default defineEventHandler(async (event) => {
       return imageBuffer
     }
 
-    let targetFileName = `${baseTitle}.${ext}`
-
-    if (currentStatus === 'Completed') {
-      targetFileName = `${baseTitle}-signed.${ext}`
-    } else if (currentStatus === 'Partially Signed') {
-      const queueRaw = notionTextStringify(properties['Routing Queue']?.rich_text)
-      if (queueRaw) {
-        try {
-          const signers = JSON.parse(queueRaw)
-          const signedOrders = signers.filter((s: any) => s.status === 'SIGNED').map((s: any) => s.order)
-
-          if (signedOrders.length > 0) {
-            const maxSignedOrder = Math.max(...signedOrders)
-            targetFileName = `${baseTitle}-${maxSignedOrder}.${ext}`
-          }
-        } catch {
-          console.warn('Routing queue could not be parsed; serving the baseline file')
-        }
-      }
-    }
-
     const disposition = toDownload ? 'attachment' : 'inline'
 
     event.res.headers.set('Content-Type', properties['Mime Type'].select.name)
-    event.res.headers.set('Content-Disposition', `${disposition}; filename="${targetFileName}"`)
+    event.res.headers.set('Content-Disposition', `${disposition}; filename="${files.target}"`)
     event.res.headers.set('X-Document-Id', id)
     event.res.headers.set('X-Document-Template', properties['Template ID'].select.name)
-    event.res.headers.set('X-Document-Status', currentStatus)
+    event.res.headers.set('X-Document-Status', files.status)
     event.res.headers.set('X-Created-At', created_time)
     event.res.headers.set('X-Updated-At', last_edited_time)
 
-    let pdfBuffer = await readDocument(targetFileName)
-
-    if (!pdfBuffer && targetFileName !== `${baseTitle}.${ext}`) {
-      console.warn(`Target file "${targetFileName}" missing, falling back to baseline "${baseTitle}.${ext}"`)
-      pdfBuffer = await readDocument(`${baseTitle}.${ext}`)
-    }
+    const pdfBuffer = await readLatestDocument(files)
 
     if (!pdfBuffer) {
       throw new HTTPError({

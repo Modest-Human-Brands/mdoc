@@ -8,6 +8,7 @@ import { deepMerge, getTokenPayload } from '~/server/utils/token-payload'
 import { ensureFonts, resolveBrandFont } from '~/server/utils/fonts'
 import type { ApiValidationErrorDetail } from '~/server/types'
 import { organizationSchema } from '~/templates/document/_shared/organization'
+import { previewDocumentUrl } from '~/server/utils/document-link'
 
 const RENDER_TIMEOUT_MS = 20_000
 
@@ -94,9 +95,15 @@ async function prepareFonts(templateDef: TemplateDefinition, variables: Record<s
   return { ...variables, organization: { ...variables.organization, branding: { ...variables.organization.branding, font } } }
 }
 
-export async function renderTemplatePdf(templateDef: TemplateDefinition, rawVariables: Record<string, any>): Promise<Buffer> {
+export interface RenderOptions {
+  /** The public link of the document being rendered; the default target of every QR code. */
+  documentUrl?: string
+}
+
+export async function renderTemplatePdf(templateDef: TemplateDefinition, rawVariables: Record<string, any>, options: RenderOptions = {}): Promise<Buffer> {
   const render = async () => {
-    const variables = await prepareFonts(templateDef, rawVariables)
+    const documentUrl = options.documentUrl ?? previewDocumentUrl()
+    const variables = { ...(await prepareFonts(templateDef, rawVariables)), ...(documentUrl && { _document: { url: documentUrl } }) }
     const props = await templateDef.transformPayload(variables)
     const output = await renderToBuffer(h(templateDef.component, props))
     return Buffer.isBuffer(output) ? output : Buffer.from(output)

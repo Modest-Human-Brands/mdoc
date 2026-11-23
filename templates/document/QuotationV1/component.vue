@@ -3,6 +3,8 @@ import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
 import type { QrStyle } from '~/server/utils/qr'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
+import Terms from '../_shared/Terms.vue'
+import type { TermSection } from '../_shared/terms'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
 import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
@@ -39,14 +41,10 @@ const props = defineProps<{
   accountNumber?: number | string
   bankName?: string
   ifscCode?: string
-  parsedTerms: {
-    type: string
-    text?: string
-    items?: { text: string; subitems?: { text: string }[] }[]
-  }[]
+  termSections: TermSection[]
   expiresIn: string | Date
   qrStyle?: QrStyle
-  qrVerifyUrl?: string
+  qrUrl?: string
 }>()
 
 const computedDeliverables = computed(() => props.deliverables.map((item) => ({ ...item, amount: item.rate * item.quantity })))
@@ -243,23 +241,7 @@ const styles = {
         </View>
       </View>
 
-      <Text :style="{ ...styles.sectionTitle, marginTop: 32, marginBottom: 24 }">TERMS & CONDITIONS</Text>
-      <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
-        <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
-        <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
-        <View v-if="block.type === 'list'">
-          <View v-for="(item, iIndex) in block.items" :key="iIndex">
-            <View :style="styles.bulletRow">
-              <Text :style="styles.bulletText">- {{ item.text }}</Text>
-            </View>
-            <View v-if="item.subitems" :style="{ marginLeft: 16 }">
-              <View v-for="(subitem, sIndex) in item.subitems" :key="'sub_' + sIndex" :style="styles.bulletRow">
-                <Text :style="styles.bulletText">• {{ subitem.text }}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
+      <Terms :sections="termSections" heading="TERMS & CONDITIONS" :heading-style="{ ...styles.sectionTitle, marginTop: 32, marginBottom: 24 }" />
     </Page>
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
@@ -298,8 +280,8 @@ const styles = {
       <Text :render="(ctx) => `N.B: This Letter consists of ${ctx.totalPages} pages including this one. Please sign on all pages.`" :style="styles.accNote"></Text>
 
       <QrCode
-        v-if="qrVerifyUrl"
-        :text="qrVerifyUrl"
+        v-if="qrUrl"
+        :text="qrUrl"
         :qr-style="qrStyle"
         :primary="organizationColorPrimary"
         :accent="organizationColorAccent"

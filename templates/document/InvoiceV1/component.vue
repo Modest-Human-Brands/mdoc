@@ -2,7 +2,9 @@
 import LogoMark from '../_shared/LogoMark.vue'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
 import QrCode from '../_shared/QrCode.vue'
-import { upiLink } from '../_shared/qr'
+import Terms from '../_shared/Terms.vue'
+import type { TermSection } from '../_shared/terms'
+import { upiLink, type QrTarget } from '../_shared/qr'
 import type { QrStyle } from '~/server/utils/qr'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
@@ -44,6 +46,9 @@ const props = defineProps<{
   qrStyle?: QrStyle
   qrUpiId?: string
   qrUpiName?: string
+  qrUrl?: string
+  qrTarget?: QrTarget
+  termSections?: TermSection[]
 }>()
 
 const computedDeliverables = computed(() => props.deliverables.map((item) => ({ ...item, amount: item.rate * item.quantity })))
@@ -56,9 +61,11 @@ const paid = computed(() => optionalNumber(props.amountPaid))
 const hasTotals = computed(() => Number.isFinite(grandTotal.value))
 const amountDue = computed(() => Math.max(0, grandTotal.value - paid.value))
 
-const paymentQr = computed(() => {
-  if (hasTotals.value && paid.value >= grandTotal.value) return undefined
-  return upiLink({ upiId: props.qrUpiId, name: props.qrUpiName, amount: hasTotals.value ? amountDue.value : undefined, note: props.projectInvoiceNumber })
+const qrContent = computed(() => {
+  const payable = !(hasTotals.value && paid.value >= grandTotal.value) && props.qrTarget !== 'document' && props.qrTarget !== 'verify'
+  const payment = payable ? upiLink({ upiId: props.qrUpiId, name: props.qrUpiName, amount: hasTotals.value ? amountDue.value : undefined, note: props.projectInvoiceNumber }) : undefined
+  if (payment) return { text: payment, caption: 'Scan to pay\nvia any UPI app' }
+  return props.qrUrl ? { text: props.qrUrl, caption: 'Scan to view\nthis invoice' } : undefined
 })
 
 const paymentStatus = computed(() => {
@@ -138,14 +145,14 @@ const styles = {
           <Text v-if="organizationPan" :style="{ color: '#888888', marginTop: 4, fontSize: 10 }">PAN: {{ organizationPan }}</Text>
 
           <QrCode
-            v-if="paymentQr"
-            :text="paymentQr"
+            v-if="qrContent"
+            :text="qrContent.text"
             :qr-style="qrStyle"
             :primary="organizationColorPrimary"
             :accent="organizationColorAccent"
             :logo="organizationLogo"
             :size="56"
-            :caption="'Scan to pay\nvia any UPI app'"
+            :caption="qrContent.caption"
             :style="{ marginTop: 12 }" />
         </View>
 
@@ -270,6 +277,8 @@ const styles = {
           <Text :style="styles.accountValue">{{ ifscCode }}</Text>
         </View>
       </View>
+
+      <Terms v-if="termSections?.length" :sections="termSections" heading="TERMS & CONDITIONS" :heading-style="{ fontSize: 16, fontWeight: 'bold', marginTop: 28, marginBottom: 4 }" />
     </Page>
   </Document>
 </template>

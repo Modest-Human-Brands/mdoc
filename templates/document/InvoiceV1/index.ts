@@ -3,6 +3,7 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
 import { qrPayload } from '../_shared/qr'
+import { resolveTerms, termsSchema } from '../_shared/terms'
 
 export const invoiceSchema = z.object({
   recipient: z.object({
@@ -41,6 +42,7 @@ export const invoiceSchema = z.object({
     })
     .optional(),
   dueDate: z.coerce.date(),
+  terms: termsSchema.optional(),
   organization: organizationSchema,
 })
 
@@ -144,12 +146,14 @@ registerTemplate({
       taxRate: financials?.taxRate || 0,
       amountPaid: financials?.amountPaid || 0,
 
-      ...qrPayload(org, rawData.project?.invoiceNumber || p.project.invoiceNumber),
+      ...qrPayload(org, rawData.project?.invoiceNumber || p.project.invoiceNumber, rawData),
 
       accountName: org.accountDetails?.accountName,
       accountNumber: org.accountDetails?.accountNumber,
       bankName: org.accountDetails?.bankName,
       ifscCode: org.accountDetails?.ifscCode,
+
+      termSections: resolveTerms(rawData.terms),
     }
   },
   signerFields: [],

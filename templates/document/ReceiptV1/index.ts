@@ -137,7 +137,7 @@ registerTemplate({
       currency: financials?.currency || 'INR',
       amountPaid: financials?.amountPaid,
 
-      ...qrPayload(org, receipt?.receiptNumber || p.receipt.receiptNumber),
+      ...qrPayload(org, receipt?.receiptNumber || p.receipt.receiptNumber, rawData),
     }
   },
   signerFields: [],

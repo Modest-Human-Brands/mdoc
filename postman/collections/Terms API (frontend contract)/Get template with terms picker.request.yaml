@@ -1,0 +1,22 @@
+$kind: http-request
+description: |-
+  Existing `GET /api/doc/template/:id`. The `terms` variable changes from `"enum:slug|Title,..."` to a picker descriptor:
+  `{ "type": "terms", "multiple": true, "options": [{ slug, title, type, version, order }], "default": ["payment"], "required": ["governing-law"] }`.
+  `default` is Default For for this template (ordered); `required` is Required For. Templates without a terms section (receipt, session report, internship certificate) omit the variable.
+url: '{{base_url}}/api/doc/template/:id'
+method: GET
+pathVariables:
+  id: '{{template_id}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const terms = pm.response.json().variables.terms;
+      pm.test("terms is a picker descriptor", () => {
+        pm.expect(terms.type).to.eql("terms");
+        pm.expect(terms.options).to.be.an("array");
+        pm.expect(terms.default).to.be.an("array");
+        pm.expect(terms.required).to.be.an("array");
+      });
+order: 8000

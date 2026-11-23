@@ -3,6 +3,7 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 
 import { assertDocumentAccess } from '~/server/utils/document-access'
 import notion from '~/server/utils/notion'
+import { documentViewUrl } from '~/server/utils/document-link'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionDocument, NotionProject, NotionContact, NotionUser } from '~/server/types'
 
@@ -97,6 +98,7 @@ export default defineEventHandler(async (event) => {
       routingQueue,
       categories: properties.Category?.multi_select?.map((c: any) => c.name) || [],
       previewUrl: `${config.public.docUrl}/api/document/${docId}/content`,
+      shareUrl: documentViewUrl(docId, event.url.origin),
       createdAt: created_time,
       updatedAt: last_edited_time,
       rawData,

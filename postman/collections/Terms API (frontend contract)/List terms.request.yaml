@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  Lists terms. Without filters it returns every non-archived term for the active organisation (management screen). With `template` it returns only the terms usable on that template (Applies To empty or containing it) and adds the picker flags. Archived terms are excluded unless `status=Archive` is passed.
+  Response item: `{ id, slug, title, type, status, appliesTo[], defaultFor[], requiredFor[], version, order, updatedAt }`; with `template` also `required` (locked on) and `selected` (default pre-selection) booleans. Sorted by `order`, then title.
+url: '{{base_url}}/api/compliance?template={{template_id}}&status=Release'
+method: GET
+queryParams:
+  - key: template
+    value: '{{template_id}}'
+    description: Optional template id (quotation, invoice, retainer-contract, shoot-contract, appointment-confirmation).
+  - key: status
+    value: Release
+    description: Optional Plan | Draft | Release | Archive. The picker always sends Release.
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      const items = pm.response.json();
+      pm.test("Returns an array of term metadata", () => {
+        pm.expect(items).to.be.an("array");
+        items.forEach((t) => {
+          pm.expect(t).to.include.keys("id", "slug", "title", "status", "version", "order", "appliesTo", "defaultFor", "requiredFor");
+          pm.expect(t.appliesTo).to.be.an("array");
+        });
+      });
+      pm.test("Required terms are also selected", () => items.filter((t) => t.required).forEach((t) => pm.expect(t.selected).to.be.true));
+order: 1000

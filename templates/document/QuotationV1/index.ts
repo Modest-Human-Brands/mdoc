@@ -3,8 +3,7 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
 import { qrPayload } from '../_shared/qr'
-import parseMarkdown from '~/server/utils/parse-markdown.ts'
-import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
+import { resolveTerms, termsSchema } from '../_shared/terms'
 
 export const quotationSchema = z.object({
   recipient: z.object({
@@ -39,10 +38,7 @@ export const quotationSchema = z.object({
       taxRate: z.number().min(0).optional(),
     })
     .optional(),
-  terms: z.object({
-    content: z.string().meta({ 'x-boilerplate': true }),
-    lastUpdated: z.coerce.date(),
-  }),
+  terms: termsSchema,
   expiresIn: z.coerce.date(),
   organization: organizationSchema,
 })
@@ -109,8 +105,7 @@ registerTemplate({
     if (safeLogoUrl.endsWith('.svg')) {
       safeLogoUrl = safeLogoUrl.replace('.svg', '.png')
     }
-    const rawTerms = rawData.terms?.content || p.terms.content
-    const parsedTerms: ParsedTerm[] = parseMarkdown(rawTerms)
+    const termSections = resolveTerms(rawData.terms, { fallback: p.terms.content })
 
     return {
       pricingModel: rawData.pricingModel || p.pricingModel || 'project',
@@ -126,7 +121,7 @@ registerTemplate({
       organizationFont: orgBranding.font,
       organizationColorPrimary: orgBranding.color.primary,
       organizationColorAccent: orgBranding.color.accent,
-      ...qrPayload(org, rawData.project?.quoteNumber || p.project.quoteNumber),
+      ...qrPayload(org, rawData.project?.quoteNumber || p.project.quoteNumber, rawData),
 
       clientName: rawData.recipient?.name || p.recipient.name,
       clientAddress: rawData.recipient?.address || p.recipient.address,
@@ -158,7 +153,7 @@ registerTemplate({
       accountNumber: org.accountDetails?.accountNumber,
       bankName: org.accountDetails?.bankName,
       ifscCode: org.accountDetails?.ifscCode,
-      parsedTerms,
+      termSections,
     }
   },
   signerFields: [

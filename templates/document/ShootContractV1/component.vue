@@ -3,6 +3,8 @@ import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
 import type { QrStyle } from '~/server/utils/qr'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
+import Terms from '../_shared/Terms.vue'
+import type { TermSection } from '../_shared/terms'
 import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
 import { dateText, isToken, money, organizationRelationshipLabel } from '../_shared/format'
 
@@ -34,13 +36,9 @@ const props = defineProps<{
   advancePercentage: number | string
   advanceAmount: number | string
   balanceAmount: number | string
-  parsedTerms: {
-    type: string
-    text?: string
-    items?: { text: string; subitems?: { text: string }[] }[]
-  }[]
+  termSections: TermSection[]
   qrStyle?: QrStyle
-  qrVerifyUrl?: string
+  qrUrl?: string
 }>()
 
 const formatTime = (val: string) => {
@@ -193,22 +191,7 @@ const styles = {
         <Text :style="{ ...styles.colAmount, fontSize: 16 }">{{ money(balanceAmount) }}</Text>
       </View>
 
-      <View v-for="(block, bIndex) in parsedTerms" :key="bIndex" :wrap="false">
-        <Text v-if="block.type === 'heading'" :style="styles.termHeading">{{ block.text }}</Text>
-        <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
-        <View v-if="block.type === 'list'" :style="styles.list">
-          <View v-for="(item, iIndex) in block.items" :key="iIndex">
-            <View :style="styles.bulletRow">
-              <Text :style="styles.bulletText">- {{ item.text }}</Text>
-            </View>
-            <View v-if="item.subitems" :style="{ marginLeft: 16 }">
-              <View v-for="(subitem, sIndex) in item.subitems" :key="'sub_' + sIndex" :style="styles.bulletRow">
-                <Text :style="styles.bulletText">• {{ subitem.text }}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
+      <Terms :sections="termSections" />
     </Page>
 
     <Page size="A4" :style="[styles.page, { fontFamily: organizationFont }]">
@@ -248,8 +231,8 @@ const styles = {
       <Text :render="(ctx) => `N.B: This Agreement consists of ${ctx.totalPages} pages including this one. Please initial and sign where indicated.`" :style="styles.accNote"></Text>
 
       <QrCode
-        v-if="qrVerifyUrl"
-        :text="qrVerifyUrl"
+        v-if="qrUrl"
+        :text="qrUrl"
         :qr-style="qrStyle"
         :primary="organizationColorPrimary"
         :accent="organizationColorAccent"

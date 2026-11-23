@@ -32,6 +32,7 @@ export const organizationSchema = z.object({
         eyeShape: z.enum(['square', 'rounded', 'circle', 'leaf']).optional(),
         eyeColor: z.enum(['brand', 'monochrome']).optional(),
         logo: z.boolean().optional(),
+        target: z.enum(['document', 'verify', 'upi']).optional(),
       })
       .optional(),
     color: z.object({ primary: z.string(), accent: z.string() }),

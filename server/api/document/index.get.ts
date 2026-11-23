@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { canAccessDocument } from '~/server/utils/document-access'
 import notion from '~/server/utils/notion'
+import { documentViewUrl } from '~/server/utils/document-link'
 import notionQueryDb from '~/server/utils/notion-query-db.ts'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionContact, NotionDB, NotionDocument, NotionProject } from '~/server/types'
@@ -77,6 +78,7 @@ export default defineEventHandler(async (event) => {
           project: projectDetails,
           organizationId: properties.Organization?.relation?.[0]?.id || null,
           previewUrl: `${config.public.docUrl}/api/document/${id}/content`,
+          shareUrl: documentViewUrl(id, event.url.origin),
           createdAt: created_time,
           updatedAt: last_edited_time,
         }

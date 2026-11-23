@@ -1,0 +1,30 @@
+$kind: http-request
+description: |-
+  New. Partial update of metadata only: title, type, status, appliesTo, defaultFor, requiredFor, order. Does not touch the body and does not bump `version`.
+  Rules: a term in `requiredFor` must also be in `defaultFor`. `status` Release makes it selectable; Archive hides it from pickers while old documents keep their snapshot. Returns the updated meta.
+url: '{{base_url}}/api/compliance/:slug'
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  slug: '{{term_slug}}'
+body:
+  type: json
+  content: |-
+    {
+      "status": "Release",
+      "appliesTo": ["quotation", "invoice"],
+      "defaultFor": ["quotation"],
+      "requiredFor": []
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Required implies default", () => {
+        const t = pm.response.json();
+        (t.requiredFor || []).forEach((id) => pm.expect(t.defaultFor).to.include(id));
+      });
+order: 4000

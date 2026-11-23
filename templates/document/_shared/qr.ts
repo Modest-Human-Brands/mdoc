@@ -7,11 +7,28 @@ interface QrOrganization {
   name: string
 }
 
+export type QrTarget = 'document' | 'verify' | 'upi'
+
+export const QR_TARGETS: QrTarget[] = ['document', 'verify', 'upi']
+
 export interface DocumentQrPayload {
   qrStyle: QrStyle
   qrUpiId?: string
   qrUpiName?: string
-  qrVerifyUrl?: string
+  /** Where scanning the code lands: a custom URL, the document's own link, or the verify page. */
+  qrUrl?: string
+  /** Explicit target, when one was configured. `undefined` leaves the choice to the template (payment templates keep their UPI code while money is due). */
+  qrTarget?: QrTarget
+}
+
+/**
+ * Per-document QR settings, sent next to the template variables:
+ * `{ "qr": { "target": "verify" } }` or `{ "qr": { "url": "https://example.com/thanks" } }`.
+ * `_document.url` is injected by the renderer once the document has a link.
+ */
+interface QrSource {
+  qr?: { url?: unknown; target?: unknown }
+  _document?: { url?: unknown }
 }
 
 export function verifyBaseUrl(org: Pick<QrOrganization, 'website'>): string | undefined {
@@ -24,12 +41,22 @@ export function verifyUrl(org: Pick<QrOrganization, 'website'>, documentNumber: 
   return base && documentNumber ? `${base}/verify/${encodeURIComponent(documentNumber)}` : undefined
 }
 
-export function qrPayload(org: QrOrganization, documentNumber: string | undefined): DocumentQrPayload {
+const asTarget = (value: unknown): QrTarget | undefined => (QR_TARGETS.includes(value as QrTarget) ? (value as QrTarget) : undefined)
+const asUrl = (value: unknown): string | undefined => (typeof value === 'string' && /^https?:\/\//i.test(value.trim()) ? value.trim() : undefined)
+
+export function qrPayload(org: QrOrganization, documentNumber: string | undefined, source?: object): DocumentQrPayload {
+  const { qr, _document } = (source ?? {}) as QrSource
+  const orgQr = org.branding.qr as { target?: unknown } | undefined
+  const target = asTarget(qr?.target) ?? asTarget(orgQr?.target)
+  const verify = verifyUrl(org, documentNumber)
+  const document = asUrl(_document?.url)
+
   return {
     qrStyle: normalizeQrStyle(org.branding.qr),
     qrUpiId: org.accountDetails?.upiId,
     qrUpiName: org.accountDetails?.accountName ?? org.name,
-    qrVerifyUrl: verifyUrl(org, documentNumber),
+    qrUrl: asUrl(qr?.url) ?? (target === 'verify' ? (verify ?? document) : (document ?? verify)),
+    qrTarget: target,
   }
 }
 

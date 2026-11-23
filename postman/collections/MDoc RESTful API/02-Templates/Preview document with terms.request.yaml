@@ -1,0 +1,30 @@
+$kind: http-request
+description: |-
+  Renders a document whose `terms` are resolved term snippets (the shape the frontend sends after it resolves the picked slugs). `items` is ordered; each item renders as "N. title" plus its markdown body. `{{variable}}` placeholders resolve against the template variables, and the retainer contract also supports {{#if}} blocks. The legacy shape `{ "content": "<markdown>", "lastUpdated": "..." }` still renders as one unnumbered block. `invoice` and `appointment-confirmation` render no terms section when `terms` is omitted.
+url: '{{base_url}}/api/document/template/preview?draft=true'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "templateId": "quotation",
+      "variant": "filled",
+      "variables": {
+        "terms": {
+          "items": [
+            { "id": "00000000-0000-0000-0000-000000000001", "slug": "payment", "title": "Payment", "version": 3, "content": "- 50% advance on booking.\n- Balance on delivery." },
+            { "id": "00000000-0000-0000-0000-000000000002", "slug": "cancellation", "title": "Cancellation", "version": 1, "content": "Advance payments are non-refundable." }
+          ]
+        }
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Returns a PDF", () => pm.expect(pm.response.json().pdfBase64).to.be.a("string").and.not.empty);
+order: 6000

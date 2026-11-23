@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  Existing endpoint, extended. Creates a term (Status Plan, Version 1). `slug` must be lowercase-hyphenated and unique (409 on conflict). The body is empty until the first PUT. The metadata fields are optional; Applies To empty means any template. A term in `requiredFor` must also be in `defaultFor` (400 otherwise).
+url: '{{base_url}}/api/compliance'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Payment",
+      "slug": "payment",
+      "type": "Payment",
+      "appliesTo": ["quotation", "invoice", "retainer-contract", "shoot-contract"],
+      "defaultFor": ["quotation"],
+      "requiredFor": [],
+      "order": 10
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Created (200/201)", () => pm.expect([200, 201]).to.include(pm.response.code));
+      const r = pm.response.json();
+      pm.test("Returns doc meta", () => pm.expect(r.doc).to.include.keys("id", "slug", "title", "version", "status"));
+      if (r.doc) pm.collectionVariables.set("term_slug", r.doc.slug);
+order: 3000

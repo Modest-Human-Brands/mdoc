@@ -1,0 +1,14 @@
+$kind: http-request
+description: |-
+  New. Soft delete: sets Status to Archive and removes the slug from every Default For and Required For. The term disappears from pickers; documents already created keep their snapshot. The Notion page is never removed. 404 when the slug does not exist; 200 with no change when already archived.
+url: '{{base_url}}/api/compliance/:slug'
+method: DELETE
+pathVariables:
+  slug: '{{term_slug}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Status is Archive", () => pm.expect(pm.response.json().status).to.eql("Archive"));
+order: 6000

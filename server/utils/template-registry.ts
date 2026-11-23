@@ -21,7 +21,7 @@ export interface DocumentField {
   signerOrder: number
 }
 
-export type TemplateCategory = 'Billing' | 'Contracts' | 'Certificates' | 'Marketing'
+export type TemplateCategory = 'Billing' | 'Contracts' | 'Certificates' | 'Marketing' | 'Clinical'
 
 export interface TemplateDefinition {
   id: string

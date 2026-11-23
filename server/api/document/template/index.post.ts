@@ -10,6 +10,7 @@ import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
 import { organizationFrom } from '~/server/utils/organization-store'
 import { NOTION_ID, toRelationFieldError } from '~/server/utils/notion-errors'
 import { mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
+import { documentViewUrl } from '~/server/utils/document-link'
 import type { NotionDB } from '~/server/types'
 
 import '~/templates/document'
@@ -65,10 +66,6 @@ export default defineEventHandler(async (event) => {
     const validation = templateDef.schema.safeParse(enrichedData)
     if (!validation.success) throw validation.error
 
-    const pdf = await renderTemplatePdf(templateDef, enrichedData)
-    await writeDocument(`${fileName}.pdf`, pdf)
-    await writeDocument(`${fileName}.png`, await generatePdfThumbnail(pdf))
-
     const config = useRuntimeConfig()
     const notionDbId = config.private.notionDbId ? (JSON.parse(config.private.notionDbId) as NotionDB) : ({ document: 'mock-doc-db' } as NotionDB)
 
@@ -79,7 +76,7 @@ export default defineEventHandler(async (event) => {
           Name: { title: [{ text: { content: fileName } }] },
           'Template ID': { select: { name: templateId } },
           'Mime Type': { select: { name: 'application/pdf' } },
-          SizeBytes: { number: pdf.byteLength },
+          SizeBytes: { number: 0 },
           Status: { status: { name: 'Draft' } },
           Contact: { relation: [{ id: contactId }] },
           User: { relation: [{ id: userId }] },
@@ -92,7 +89,19 @@ export default defineEventHandler(async (event) => {
         throw toRelationFieldError(error, { contactId, userId, organizationId: organizationRelationId, projectId })
       })
 
-    return { id: record.id, templateId, name: fileName, sizeBytes: pdf.byteLength }
+    // The record is created first because the document's own link (the default QR destination) is built from its id.
+    const shareUrl = documentViewUrl(record.id, event.url.origin)
+    try {
+      const pdf = await renderTemplatePdf(templateDef, enrichedData, { documentUrl: shareUrl })
+      await writeDocument(`${fileName}.pdf`, pdf)
+      await writeDocument(`${fileName}.png`, await generatePdfThumbnail(pdf))
+      await notion.pages.update({ page_id: record.id, properties: { SizeBytes: { number: pdf.byteLength } } })
+
+      return { id: record.id, templateId, name: fileName, sizeBytes: pdf.byteLength, shareUrl }
+    } catch (error: unknown) {
+      await notion.pages.update({ page_id: record.id, archived: true } as Parameters<typeof notion.pages.update>[0]).catch(() => undefined)
+      throw error
+    }
   } catch (error: unknown) {
     if (error instanceof ZodError) {
       const validationError = new HTTPError({

@@ -1,0 +1,25 @@
+$kind: http-request
+description: |-
+  New. Atomically replaces the default term set for one template: the listed slugs get the template in Default For and every other term loses it. The order of `slugs` becomes their `order` among the template defaults. Each slug must be Release status and apply to the template (400 `invalid_term` otherwise). Terms that are Required For the template cannot be left out (400 `term_required`).
+url: '{{base_url}}/api/compliance/defaults/:templateId'
+method: PUT
+headers:
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  templateId: '{{template_id}}'
+body:
+  type: json
+  content: |-
+    { "slugs": ["payment", "cancellation", "governing-law"] }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Returns the new default set in order", () => {
+        const r = pm.response.json();
+        pm.expect(r.templateId).to.eql(pm.variables.get("template_id"));
+        pm.expect(r.slugs).to.be.an("array");
+      });
+order: 7000

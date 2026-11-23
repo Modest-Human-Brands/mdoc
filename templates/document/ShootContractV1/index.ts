@@ -3,8 +3,7 @@ import registerTemplate from '~/server/utils/template-registry'
 import { z } from 'zod'
 import { organizationSchema, placeholderOrganization } from '../_shared/organization'
 import { qrPayload } from '../_shared/qr'
-import parseMarkdown from '~/server/utils/parse-markdown.ts'
-import { type ParsedTerm } from '~/server/utils/parse-markdown.ts'
+import { resolveTerms, termsSchema } from '../_shared/terms'
 
 export const shootContractSchema = z.object({
   recipient: z.object({
@@ -27,10 +26,7 @@ export const shootContractSchema = z.object({
   advancePercentage: z.number().min(0).max(100).optional().default(0),
   agreementDate: z.coerce.date(),
   expiresIn: z.coerce.date(),
-  terms: z.object({
-    content: z.string().meta({ 'x-boilerplate': true }),
-    lastUpdated: z.coerce.date(),
-  }),
+  terms: termsSchema,
   organization: organizationSchema,
 })
 
@@ -82,7 +78,6 @@ registerTemplate({
     const p = placeholders
     const org = rawData.organization
     const orgBranding = org.branding
-    const rawTerms = rawData.terms?.content || p.terms.content
 
     const transformedVariables = {
       organizationName: org.name,
@@ -96,7 +91,7 @@ registerTemplate({
       organizationFont: orgBranding.font,
       organizationColorPrimary: orgBranding.color.primary,
       organizationColorAccent: orgBranding.color.accent,
-      ...qrPayload(org, rawData.project?.quoteNumber || p.project.quoteNumber),
+      ...qrPayload(org, rawData.project?.quoteNumber || p.project.quoteNumber, rawData),
       agreementDate: rawData.agreementDate || p.agreementDate,
 
       contractorName: rawData.recipient?.name || p.recipient.name,
@@ -119,9 +114,9 @@ registerTemplate({
       balanceAmount: rawData.totalAmount - (rawData.totalAmount * (rawData?.advancePercentage || p.advancePercentage)) / 100,
     }
 
-    const parsedTerms: ParsedTerm[] = parseMarkdown(rawTerms, { ...transformedVariables })
+    const termSections = resolveTerms(rawData.terms, { fallback: p.terms.content, variables: transformedVariables })
 
-    return { ...transformedVariables, parsedTerms }
+    return { ...transformedVariables, termSections }
   },
   signerFields: [
     {

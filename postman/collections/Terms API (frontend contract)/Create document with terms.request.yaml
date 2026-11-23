@@ -1,0 +1,30 @@
+$kind: http-request
+description: |-
+  Existing `POST /api/doc/template` (and `/preview`). `data.terms` is now an ordered array of slugs. Before forwarding to MDoc, `retransformTemplate` must:
+  1. Resolve every slug. It must be Release and apply to the template, else 400 `invalid_term`.
+  2. Require every Required For term. A request that omits one is rejected with 400 `term_required`.
+  3. Replace `data.terms` with `{ "items": [{ id, slug, title, content: <markdown>, version, updatedAt }] }` in the submitted order. This is the snapshot MDoc stores with the document.
+  Omitting `terms` uses the template's default set. Sending `[]` is allowed only when no term is required.
+url: '{{base_url}}/api/doc/template'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "template": "quotation",
+      "recipient": { "id": "19cee3b0-289a-800a-b280-ff6e2055a401" },
+      "project": { "id": "23dee3b0-289a-81d0-9e6b-e539d914d969" },
+      "data": {
+        "terms": ["payment", "cancellation", "governing-law"]
+      }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Created", () => pm.expect([200, 201]).to.include(pm.response.code));
+      pm.test("Returns the document", () => pm.expect(pm.response.json().document).to.include.keys("id", "templateId"));
+order: 9000
