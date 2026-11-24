@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.24
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.23...v0.3.24)
+
+### 💅 Refactors
+
+- Improve message assignment logic in PDF signature verification ([dd7eaff](https://github.com/Modest-Human-Brands/mdoc/commit/dd7eaff))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.23
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.22...v0.3.23)
