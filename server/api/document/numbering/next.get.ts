@@ -1,4 +1,4 @@
-import { defineEventHandler, getHeader, getValidatedQuery, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getValidatedQuery, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
 
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
       throw new HTTPError({ statusCode: 404, statusMessage: 'Template not found' })
     }
 
-    const orgName = query.organizationName || resolveOrganization(query.organizationId || getHeader(event, 'x-org-id')).name
+    const orgName = query.organizationName || resolveOrganization((query.organizationId || event.req.headers.get('x-org-id')) ?? undefined).name
     const prefix = `${orgCode(orgName)}-${TYPE_LETTER[query.templateId] ?? 'D'}-${String(new Date().getFullYear()).slice(-2)}`
 
     const config = useRuntimeConfig()

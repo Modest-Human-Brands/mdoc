@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
-import { defineEventHandler, getHeader, getRequestIP, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRequestIP, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 
 import { NOTION_ID } from '~/server/utils/notion-errors'
@@ -55,15 +55,15 @@ export default defineEventHandler((event) => {
   if (!apiKey && process.env.NODE_ENV === 'production') throw reject(500, 'API key is not configured.')
 
   if (apiKey) {
-    const provided = getHeader(event, 'x-api-key')
+    const provided = event.req.headers.get('x-api-key')
     if (!provided || !matches(provided, apiKey)) throw reject(401, 'Unauthorized', 'x-api-key', 'A valid x-api-key header is required.', 'unauthorized')
   }
 
   // Every protected route is scoped to a tenant and an actor, never to the API key alone.
-  const orgId = getHeader(event, 'x-org-id')?.trim()
+  const orgId = event.req.headers.get('x-org-id')?.trim()
   if (!orgId) throw reject(400, 'Bad Request', 'x-org-id', 'An x-org-id header is required.', 'required')
 
-  const userId = getHeader(event, 'x-user-id')?.trim()
+  const userId = event.req.headers.get('x-user-id')?.trim()
   if (!userId) throw reject(400, 'Bad Request', 'x-user-id', 'An x-user-id header is required.', 'required')
   if (!NOTION_ID.test(userId)) throw reject(400, 'Bad Request', 'x-user-id', 'x-user-id must be a Notion page ID.', 'invalid')
 

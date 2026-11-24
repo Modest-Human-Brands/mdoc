@@ -1,4 +1,4 @@
-import { defineEventHandler, getHeader, HTTPError, readBody } from 'nitro/h3'
+import { defineEventHandler, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z, ZodError } from 'zod'
 
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const selection = await applyTermSelection(orgOf(event), templateDef, rawData)
-    const organizationSlug = getHeader(event, 'x-org-id')?.trim() || body.organizationId
+    const organizationSlug = event.req.headers.get('x-org-id')?.trim() || body.organizationId
     const organizationRelationId = body.organizationId && NOTION_ID.test(body.organizationId) ? body.organizationId : undefined
     const enrichedData = {
       ...mergeTemplateVariables(templateDef, selection),

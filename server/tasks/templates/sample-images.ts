@@ -17,7 +17,7 @@ export default defineTask({
     name: 'templates:sample-images',
     description: 'Renders the neutral sample variant of every template to static PNGs in public/templates (Git LFS).',
   },
-  async run({ payload }) {
+  async run({ payload }): Promise<{ result: { stale: string[]; templates: number; images?: number } }> {
     const check = Boolean(payload?.check)
     const manifest: SampleManifest = {}
     const images: { id: string; page: number; png: Buffer }[] = []
@@ -48,6 +48,6 @@ export default defineTask({
     }
     await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 
-    return { result: { templates: Object.keys(manifest).length, images: images.length } }
+    return { result: { stale: [] as string[], templates: Object.keys(manifest).length, images: images.length } }
   },
 })

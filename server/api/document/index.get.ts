@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
     const offset = query.offset ? Number(query.offset) : 0
 
     const config = useRuntimeConfig()
+    if (!config.private.notionDbId) throw new HTTPError({ statusCode: 500, statusMessage: 'Notion database is not configured. Set NOTION_DB_ID.' })
     const notionDbId = JSON.parse(config.private.notionDbId) as unknown as NotionDB
 
     const documents = await notionQueryDb<NotionDocument>(notion, notionDbId.document)

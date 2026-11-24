@@ -35,7 +35,7 @@ function toDefault(value: any): any {
   return value
 }
 
-export function parseSchemaToJsonSchema(schema: z.ZodTypeAny, placeholders: Record<string, any> = {}): Record<string, any> {
+export function parseSchemaToJsonSchema(schema: z.ZodType, placeholders: Record<string, any> = {}): Record<string, any> {
   const rawJsonSchema = z.toJSONSchema(schema, {
     unrepresentable: 'any',
     override: (ctx) => {
@@ -102,6 +102,6 @@ export function parseSchemaToJsonSchema(schema: z.ZodTypeAny, placeholders: Reco
   return enrichSchema(rawJsonSchema, '', 0, placeholders)
 }
 
-export default function parseSchemaVariables(schema: z.ZodTypeAny): Record<string, any> {
+export default function parseSchemaVariables(schema: z.ZodType): Record<string, any> {
   return parseSchemaToJsonSchema(schema)
 }

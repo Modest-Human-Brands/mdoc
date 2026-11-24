@@ -1,4 +1,4 @@
-import { defineEventHandler, getHeader, getRequestIP, getRouterParam, HTTPError, readBody } from 'nitro/h3'
+import { defineEventHandler, getRequestIP, getRouterParam, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
 import crypto from 'node:crypto'
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
     const config = useRuntimeConfig()
     const { sessionToken, fields: inputFields, certificateDerHex, certificateChainDerHex } = prepareSchema.parse(await readBody(event))
-    const telemetry = { ipAddress: getRequestIP(event, { xForwardedFor: true }), userAgent: getHeader(event, 'user-agent') }
+    const telemetry = { ipAddress: getRequestIP(event, { xForwardedFor: true }), userAgent: event.req.headers.get('user-agent') ?? undefined }
 
     const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret as string)
 

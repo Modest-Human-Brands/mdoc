@@ -41,6 +41,8 @@ export interface TemplateDefinition {
   signerFields: DocumentField[]
 }
 
+type FontWeight = Extract<Parameters<typeof fontStore.register>[0], { src: string }>['fontWeight'] & {}
+
 export const templateRegistry: Record<string, TemplateDefinition> = {}
 
 export default function registerTemplate(definition: TemplateDefinition) {
@@ -55,7 +57,7 @@ export default function registerTemplate(definition: TemplateDefinition) {
         fontStore.register({
           family: font.name,
           src: font.path,
-          ...(font.weight === undefined ? {} : { fontWeight: font.weight }),
+          ...(font.weight === undefined ? {} : { fontWeight: font.weight as FontWeight }),
         })
         markFontRegistered(font.name, font.weight ?? 400)
         registeredFonts.add(fontKey)

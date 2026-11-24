@@ -52,7 +52,7 @@ interface MuPDFDoc {
 
 interface IMuPDF {
   Document: { openDocument(data: Uint8Array | Buffer, magic: string): MuPDFDoc }
-  Image: new (data: Uint8Array | Buffer) => unknown
+  Image: new (data: Uint8Array | Buffer) => { getWidth(): number; getHeight(): number }
 }
 
 const mupdfLib = mupdf as unknown as IMuPDF
@@ -253,8 +253,8 @@ export function applyFieldStamps(
 
         const image = new mupdfLib.Image(imgBuffer)
 
-        const imgWidth = typeof image.getWidth === 'function' ? image.getWidth() : (image as any).width
-        const imgHeight = typeof image.getHeight === 'function' ? image.getHeight() : (image as any).height
+        const imgWidth = image.getWidth()
+        const imgHeight = image.getHeight()
 
         const imgRatio = imgWidth / imgHeight
         const fieldRatio = field.width / field.height

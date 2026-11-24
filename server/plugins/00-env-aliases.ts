@@ -27,6 +27,10 @@ export default definePlugin(() => {
     if (value && (!config.private[key] || (key === 'documentRegion' && config.private[key] === 'auto'))) config.private[key] = value
   }
 
+  // Read at build time by nitro.config.ts (and so inlined empty in the image): take it from the runtime environment too.
+  const notionDbId = process.env.NITRO_MDOC_PRIVATE_NOTION_DB_ID || process.env.NOTION_DB_ID
+  if (notionDbId && !config.private.notionDbId) config.private.notionDbId = notionDbId
+
   const docUrl = process.env.NITRO_MDOC_PUBLIC_DOC_URL
   if (docUrl && !config.public.docUrl) config.public.docUrl = docUrl
 })

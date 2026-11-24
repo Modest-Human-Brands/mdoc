@@ -1,7 +1,7 @@
 import { defineErrorHandler } from 'nitro'
 
 export default defineErrorHandler(async (error, event, opts) => {
-  if (!event.url.pathname.startsWith('/api/') || !opts?.defaultHandler) return
+  if (!new URL(event.req.url).pathname.startsWith('/api/') || !opts?.defaultHandler) return
 
   const { body, status, statusText, headers } = await opts.defaultHandler(error, event)
   const responseHeaders = new Headers(headers)
