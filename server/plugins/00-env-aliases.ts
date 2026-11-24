@@ -23,8 +23,9 @@ export default definePlugin(() => {
 
   for (const [key, name] of Object.entries(PRIVATE)) {
     const value = process.env[`NITRO_MDOC_PRIVATE_${name}`]
-    // An explicit NITRO_PRIVATE_* override (already in the config) wins; the default `auto` region is replaceable.
-    if (value && (!config.private[key] || (key === 'documentRegion' && config.private[key] === 'auto'))) config.private[key] = value
+    // The app-specific name wins over a generic NITRO_PRIVATE_* one: in a shared stack env file the generic name
+    // (e.g. NITRO_PRIVATE_API_KEY) belongs to other services and would otherwise silently replace this app's value.
+    if (value) config.private[key] = value
   }
 
   // Read at build time by nitro.config.ts (and so inlined empty in the image): take it from the runtime environment too.
@@ -32,5 +33,5 @@ export default definePlugin(() => {
   if (notionDbId && !config.private.notionDbId) config.private.notionDbId = notionDbId
 
   const docUrl = process.env.NITRO_MDOC_PUBLIC_DOC_URL
-  if (docUrl && !config.public.docUrl) config.public.docUrl = docUrl
+  if (docUrl) config.public.docUrl = docUrl
 })
