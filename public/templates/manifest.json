@@ -1,38 +1,50 @@
 {
-  "retainer-contract": {
-    "pageCount": 4,
+  "quotation": {
+    "pageCount": 3,
     "width": 1191,
     "height": 1684,
-    "hash": "c9ada1a04aa5"
+    "hash": "5ceecd1a2da0"
+  },
+  "invoice": {
+    "pageCount": 2,
+    "width": 1191,
+    "height": 1684,
+    "hash": "47ecda84a0c4"
+  },
+  "receipt": {
+    "pageCount": 1,
+    "width": 1191,
+    "height": 1684,
+    "hash": "5e4a24dbc8e3"
+  },
+  "session-report": {
+    "pageCount": 1,
+    "width": 1191,
+    "height": 1684,
+    "hash": "94950946ff29"
+  },
+  "appointment-confirmation": {
+    "pageCount": 1,
+    "width": 1191,
+    "height": 1684,
+    "hash": "79bda6d277b5"
+  },
+  "retainer-contract": {
+    "pageCount": 2,
+    "width": 1191,
+    "height": 1684,
+    "hash": "da8ae45aee0c"
+  },
+  "shoot-contract": {
+    "pageCount": 2,
+    "width": 1191,
+    "height": 1684,
+    "hash": "c847d34bce05"
   },
   "internship-completion-certificate": {
     "pageCount": 1,
     "width": 1191,
     "height": 1684,
     "hash": "645fe31b56bc"
-  },
-  "invoice": {
-    "pageCount": 1,
-    "width": 1191,
-    "height": 1684,
-    "hash": "04162b9f6c73"
-  },
-  "quotation": {
-    "pageCount": 6,
-    "width": 1191,
-    "height": 1684,
-    "hash": "4cd5d3f0cf24"
-  },
-  "receipt": {
-    "pageCount": 1,
-    "width": 1191,
-    "height": 1684,
-    "hash": "9a0ecbed79e8"
-  },
-  "shoot-contract": {
-    "pageCount": 3,
-    "width": 1191,
-    "height": 1684,
-    "hash": "deadba2cff10"
   }
 }
