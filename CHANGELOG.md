@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.23
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.22...v0.3.23)
+
+### 💅 Refactors
+
+- Streamline imports and improve error handling in API endpoints ([59d9388](https://github.com/Modest-Human-Brands/mdoc/commit/59d9388))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.22
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.21...v0.3.22)
