@@ -1,0 +1,32 @@
+import { definePlugin } from 'nitro'
+import { useRuntimeConfig } from 'nitro/runtime-config'
+
+/**
+ * `nitro.config.ts` inlines the documented `NITRO_MDOC_*` variables when the image is built, but Nitro only
+ * maps `NITRO_<KEY>` at runtime. Without this, a container started with the documented names boots with an
+ * empty config (production then refuses to start), and the proxy in front answers every browser request
+ * without CORS headers. Runs first (file name), before the storage plugin reads the config.
+ */
+const PRIVATE = {
+  jwtSecret: 'JWT_SECRET',
+  apiKey: 'API_KEY',
+  certificateSecret: 'CERTIFICATE_SECRET',
+  documentBucket: 'DOCUMENT_BUCKET',
+  documentEndpoint: 'DOCUMENT_ENDPOINT',
+  documentRegion: 'DOCUMENT_REGION',
+  documentAccessKeyId: 'DOCUMENT_ACCESS_KEY_ID',
+  documentSecretAccessKey: 'DOCUMENT_SECRET_ACCESS_KEY',
+} as const
+
+export default definePlugin(() => {
+  const config = useRuntimeConfig() as { public: Record<string, string>; private: Record<string, string> }
+
+  for (const [key, name] of Object.entries(PRIVATE)) {
+    const value = process.env[`NITRO_MDOC_PRIVATE_${name}`]
+    // An explicit NITRO_PRIVATE_* override (already in the config) wins; the default `auto` region is replaceable.
+    if (value && (!config.private[key] || (key === 'documentRegion' && config.private[key] === 'auto'))) config.private[key] = value
+  }
+
+  const docUrl = process.env.NITRO_MDOC_PUBLIC_DOC_URL
+  if (docUrl && !config.public.docUrl) config.public.docUrl = docUrl
+})
