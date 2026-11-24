@@ -5,7 +5,13 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 import { NOTION_ID } from '~/server/utils/notion-errors'
 import type { AuthContext } from '~/server/utils/document-access'
 
-const PUBLIC_GET = [/^\/api\/health$/, /^\/api\/document\/[\da-f-]{32,36}\/view$/i, /^\/api\/document\/template\/[^/]+\/sample\/\d+\.png$/, /^\/api\/decor\/(builtin|upload)\/[^/]+$/]
+const PUBLIC_GET = [
+  /^\/api\/health$/,
+  /^\/api\/document\/[\da-f-]{32,36}\/view$/i,
+  /^\/api\/document\/template\/[^/]+\/sample\/\d+\.png$/,
+  /^\/api\/document\/template\/[^/]+\/sample\.pdf$/,
+  /^\/api\/decor\/(builtin|upload)\/[^/]+$/,
+]
 
 const reject = (statusCode: number, statusMessage: string, field?: string, message?: string, code?: string) => {
   const error = new HTTPError({ statusCode, statusMessage, ...(field && { data: { errors: [{ field, message, code }] } }) })

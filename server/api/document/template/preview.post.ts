@@ -1,6 +1,7 @@
 import { defineEventHandler, getQuery, readBody, HTTPError } from 'nitro/h3'
 import { z, ZodError } from 'zod'
 
+import { applyTermSelection, orgOf } from '~/server/utils/terms-store'
 import { templateRegistry } from '~/server/utils/template-registry'
 import { buildVariantVariables, countPdfPages, mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
 
@@ -26,13 +27,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const selected = await applyTermSelection(orgOf(event), templateDef, variables)
+
     let renderVariables: Record<string, any>
     let warnings: { field: string; message: string; code: string }[] = []
 
     if (variant !== 'filled' || draft) {
-      ;({ variables: renderVariables, warnings } = buildVariantVariables(templateDef, variant, variables))
+      ;({ variables: renderVariables, warnings } = buildVariantVariables(templateDef, variant, selected))
     } else {
-      renderVariables = mergeTemplateVariables(templateDef, variables)
+      renderVariables = mergeTemplateVariables(templateDef, selected)
       if (templateDef.schema) {
         const validationResult = templateDef.schema.safeParse(renderVariables)
         if (!validationResult.success) {

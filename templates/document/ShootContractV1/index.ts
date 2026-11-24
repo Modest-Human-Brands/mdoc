@@ -62,6 +62,7 @@ const placeholders: ShootContractPayload = {
 
 registerTemplate({
   id: 'shoot-contract',
+  terms: true,
   label: 'Shoot Contract',
   shortLabel: 'Shoot contract',
   category: 'Contracts',

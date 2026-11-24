@@ -4,6 +4,7 @@ import { z, ZodError } from 'zod'
 
 import normalizeId from '~/server/utils/notion-normalize-id'
 import type { AuthContext } from '~/server/utils/document-access'
+import { applyTermSelection, orgOf } from '~/server/utils/terms-store'
 import notion from '~/server/utils/notion'
 import { templateRegistry } from '~/server/utils/template-registry'
 import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
@@ -56,10 +57,11 @@ export default defineEventHandler(async (event) => {
       throw new HTTPError({ statusCode: 400, statusMessage: `Template target identifier "${templateId}" is unrecognized.` })
     }
 
+    const selection = await applyTermSelection(orgOf(event), templateDef, rawData)
     const organizationSlug = getHeader(event, 'x-org-id')?.trim() || body.organizationId
     const organizationRelationId = body.organizationId && NOTION_ID.test(body.organizationId) ? body.organizationId : undefined
     const enrichedData = {
-      ...mergeTemplateVariables(templateDef, rawData),
+      ...mergeTemplateVariables(templateDef, selection),
       organization: organizationFrom({ ...rawData, organizationId: organizationSlug }, templateDef.placeholders.organization),
     }
 

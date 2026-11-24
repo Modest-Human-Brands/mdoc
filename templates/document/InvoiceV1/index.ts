@@ -83,6 +83,7 @@ const placeholders: InvoicePayload = {
 
 registerTemplate({
   id: 'invoice',
+  terms: true,
   label: 'Billing Invoice',
   shortLabel: 'Invoice',
   category: 'Billing',

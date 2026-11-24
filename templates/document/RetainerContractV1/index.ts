@@ -153,6 +153,7 @@ Each party's liability arising out of this Agreement shall be limited to the fee
 
 registerTemplate({
   id: 'retainer-contract',
+  terms: true,
   label: 'Retainer Contract',
   shortLabel: 'Retainer contract',
   category: 'Contracts',

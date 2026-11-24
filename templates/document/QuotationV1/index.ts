@@ -83,6 +83,7 @@ const placeholders: QuotationPayload = {
 
 registerTemplate({
   id: 'quotation',
+  terms: true,
   label: 'Quotation',
   shortLabel: 'Quotation',
   category: 'Billing',

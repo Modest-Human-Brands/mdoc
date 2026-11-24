@@ -1,10 +1,11 @@
 import { defineEventHandler, getRouterParam, HTTPError } from 'nitro/h3'
 import { templateRegistry } from '~/server/utils/template-registry'
+import { orgOf, termsFieldSchema } from '~/server/utils/terms-store'
 import { parseSchemaToJsonSchema } from '~/server/utils/zod-to-json-schema'
 
 import '~/templates/document'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
 
@@ -24,7 +25,10 @@ export default defineEventHandler((event) => {
       })
     }
 
-    const jsonSchema = template.schema ? parseSchemaToJsonSchema(template.schema, template.placeholders) : {}
+    const jsonSchema: Record<string, any> = template.schema ? parseSchemaToJsonSchema(template.schema, template.placeholders) : {}
+    if (template.terms && jsonSchema.properties) {
+      jsonSchema.properties.terms = await termsFieldSchema(orgOf(event), template, jsonSchema.properties.terms)
+    }
 
     return {
       id: template.id,

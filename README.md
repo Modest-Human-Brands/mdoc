@@ -50,6 +50,9 @@ bun x nitro task run fonts:warm
 # Pre-fetch additional brand fonts
 bun x nitro task run fonts:warm --payload '{"families":["Inter","Poppins"]}'
 
+# Import the templates' built-in terms into an organisation's term library
+bun x nitro task run terms:seed --payload '{"orgId":"modest-human-brands"}'
+
 # Generate missing PNG thumbnails for stored PDFs
 bun x nitro task run backfill-thumbnails
 
@@ -128,7 +131,7 @@ Validation errors return HTTP `400 Bad Request` with an exact path to the offend
 ```
 
 > [!NOTE]
-> **Authentication.** Every `/api/**` request must send `x-api-key: <NITRO_PRIVATE_API_KEY>`; a missing or wrong key returns 401. Every protected request must also send `x-org-id` (organisation slug or Notion page ID) and `x-user-id` (Notion user page ID); a missing one returns 400. Routes under `/api/document/:id` (content, get, patch, void, envelope, session) and `GET /api/document` return 403 / filter out documents whose `User` relation is not `x-user-id` (and whose `Organization` relation differs from `x-org-id` when that is a Notion ID); `POST /api/document/template` requires `userId` to equal `x-user-id`. Signer routes (`session/verify`, `sign/prepare`, `sign/client`, `sign/server`) are bound by the signer session token instead of the owner check, but still 403 when the document's `Organization` differs from `x-org-id` (a Notion ID), and `sign/client` / `sign/server` 403 when the stored signing session belongs to a different document than the URL. Public exceptions: `GET /api/health`, template sample images (`/sample/:page.png`) and decor images (`/api/decor/builtin|upload/:file`), so they work in `<img>` tags. If the key is unset, production returns 500 and development skips the check. Error responses, including 401, carry the same CORS headers as successes so a browser on another origin can read them. The web app's Setup screen verifies the API key with `GET /api/document?limit=1`.
+> **Authentication.** Every `/api/**` request must send `x-api-key: <NITRO_PRIVATE_API_KEY>`; a missing or wrong key returns 401. Every protected request must also send `x-org-id` (organisation slug or Notion page ID) and `x-user-id` (Notion user page ID); a missing one returns 400. Routes under `/api/document/:id` (content, get, patch, void, envelope, session) and `GET /api/document` return 403 / filter out documents whose `User` relation is not `x-user-id` (and whose `Organization` relation differs from `x-org-id` when that is a Notion ID); `POST /api/document/template` requires `userId` to equal `x-user-id`. Signer routes (`session/verify`, `sign/prepare`, `sign/client`, `sign/server`) are bound by the signer session token instead of the owner check, but still 403 when the document's `Organization` differs from `x-org-id` (a Notion ID), and `sign/client` / `sign/server` 403 when the stored signing session belongs to a different document than the URL. Public exceptions: `GET /api/health`, template sample images and PDFs (`/sample/:page.png`, `/sample.pdf`) and decor images (`/api/decor/builtin|upload/:file`), so they work in `<img>` tags. If the key is unset, production returns 500 and development skips the check. Error responses, including 401, carry the same CORS headers as successes so a browser on another origin can read them. The web app's Setup screen verifies the API key with `GET /api/document?limit=1`.
 >
 > Stack traces and local file system paths are completely stripped from error payloads across both development and production environments.
 
@@ -378,27 +381,35 @@ Customise it per organisation under `organization.branding.qr` (all optional) an
 - `eyeShape`: `square`, `rounded`, `circle` or `leaf`.
 - `logo`: place the brand logo in the centre (the code switches to high error correction).
 
-### Terms (Term Snippets)
+### Terms (Term Library)
 
-`quotation`, `invoice`, `retainer-contract`, `shoot-contract` and `appointment-confirmation` accept a `terms` object. Terms are reusable markdown snippets that are **selected, never typed, when a document is created**. MDoc does not store the library: the caller (the frontend's Compliance library) resolves the chosen snippets and sends them in the request, in the order they should appear.
+`quotation`, `invoice`, `retainer-contract`, `shoot-contract` and `appointment-confirmation` render terms from a **per-organisation library** (scoped by `x-org-id`). Terms are reusable snippets that are **selected, never typed, when a document is created**.
+
+**Library API** (`/api/compliance`, stored in the document storage mount under `_terms:<org>:<slug>.json`):
+
+| Method   | Path                                   | Description                                                                                                                       |
+| :------- | :------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/compliance`                      | List terms. `?template=<id>` limits to terms usable on it and adds `required` / `selected`; `?status=` (archive only on request). |
+| `POST`   | `/api/compliance`                      | Create a `Draft` term `{ title, slug, type?, appliesTo?, defaultFor?, requiredFor?, order? }` → `{ doc }`.                        |
+| `GET`    | `/api/compliance/:slug`                | Term with its Tiptap `content` and rendered `markdown`.                                                                           |
+| `PATCH`  | `/api/compliance/:slug`                | Metadata: `title`, `type`, `status` (`Plan`/`Draft`/`Release`/`Archive`), `appliesTo`, `defaultFor`, `requiredFor`, `order`.      |
+| `PUT`    | `/api/compliance/:slug`                | Save content (Tiptap JSON limited to paragraphs, h1–h3, bullet/ordered lists, bold/italic). Bumps `version`.                      |
+| `DELETE` | `/api/compliance/:slug`                | Archive (soft delete). Documents already created are unaffected.                                                                  |
+| `PUT`    | `/api/compliance/defaults/:templateId` | Replace the template's default set `{ slugs }` (also sets their order). Required terms always stay.                               |
+
+`appliesTo` empty means any template; `requiredFor` implies `defaultFor`. Only `Release` terms can be picked.
+
+**Picking.** `GET /api/document/template/:id` exposes the field as `{ "type": "terms", "multiple": true, "options": [{ slug, title, type, version, order }], "default": [slugs], "required": [slugs] }` for the caller's organisation. Create and preview then take an ordered slug list:
 
 ```json
-{
-  "terms": {
-    "items": [
-      { "id": "…", "slug": "payment", "title": "Payment", "version": 3, "content": "- 50% advance on booking.\n- Balance on delivery." },
-      { "id": "…", "slug": "cancellation", "title": "Cancellation", "version": 1, "content": "Advance is non-refundable." }
-    ]
-  }
-}
+{ "templateId": "quotation", "variables": { "terms": ["payment", "cancellation"] } }
 ```
 
-- Each item renders as `N. <title>` followed by its markdown body. `N` is assigned by position, so snippets are written without numbers.
-- Supported markdown: headings (rendered as sub-headings), paragraphs and bullet/numbered lists with one nested level. Bold/italic markers are stripped (only regular-weight fonts are registered). `{{variable}}` placeholders resolve against the template's own variables; the retainer contract also supports `{{#if condition}}…{{/if}}`.
-- Each term is kept on one page when it is shorter than roughly 1,800 characters; longer terms flow across pages.
-- `version` and `id` are carried in the document's stored data, so the exact wording an issued document used can always be recovered. Later edits to a snippet never change an existing document.
-- Legacy payloads (`{ "content": "<markdown>", "lastUpdated": "…" }`) still render as a single unnumbered block.
-- `invoice` and `appointment-confirmation` render no terms section when `terms` is omitted.
+- The server **snapshots** each chosen term (`id`, `slug`, `title`, `version`, markdown `content`) into the document's stored data, so later edits never change an issued document.
+- Free text is rejected: `terms` must be an array of slugs that are `Release` terms usable on the template (400 `invalid_term` otherwise). A required term left out is rejected with 400 (`required`) on every preview variant, draft or not; an unusable slug is `invalid_term`. Omitting `terms` uses the template's default set (which includes the required terms).
+- Each term renders as `N. <title>` followed by its markdown body; `N` is assigned by position. `{{variable}}` placeholders resolve against the template's variables; the retainer contract also supports `{{#if condition}}…{{/if}}`. A term shorter than roughly 1,800 characters is kept on one page.
+- Without any library terms the template falls back to its built-in text (quotation, contracts) or renders no terms section (invoice, appointment confirmation).
+- Import the built-in text of the quotation, retainer and shoot contract templates as library terms with `bun x nitro task run terms:seed --payload '{"orgId":"modest-human-brands"}'` (add `"publish":false` to import as drafts).
 
 ---
 

@@ -84,6 +84,7 @@ const placeholders: AppointmentConfirmationPayload = {
 
 registerTemplate({
   id: 'appointment-confirmation',
+  terms: true,
   label: 'Appointment Confirmation',
   shortLabel: 'Appointment',
   category: 'Clinical',

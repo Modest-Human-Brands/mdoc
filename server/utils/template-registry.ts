@@ -32,6 +32,8 @@ export interface TemplateDefinition {
 
   fonts?: TemplateFont[]
   organizationFields?: ('address' | 'accountDetails')[]
+  /** The template renders terms picked from the organisation's term library (the `terms` field). */
+  terms?: boolean
   component: Component
   schema: z.ZodObject<any, any>
   placeholders: Record<string, any>
