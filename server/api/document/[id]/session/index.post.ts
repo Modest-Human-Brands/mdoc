@@ -1,26 +1,21 @@
-import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { z } from 'zod'
-import jwt from 'jsonwebtoken'
-import notion from '~/server/utils/notion'
+
 import type { NotionDocument } from '~/server/types'
-import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { assertDocumentAccess } from '~/server/utils/document-access'
+import notion from '~/server/utils/notion'
+import { normalizeEmail, readQueue, sameEmail } from '~/server/utils/routing-queue'
+import { toRouteError } from '~/server/utils/route-error'
+import { issueSessionToken, tokenLifetimeSeconds } from '~/server/utils/session-token'
 
 const sessionSchema = z.object({
-  signerEmail: z.email(),
+  signerEmail: z.email().transform(normalizeEmail),
+  /** Optional absolute expiry. Defaults to 7 days; at most 30 days ahead. */
   expiresIn: z
     .string()
     .nullish()
-    .refine(
-      (val) => {
-        if (!val) return true
-        return !Number.isNaN(Date.parse(val))
-      },
-      {
-        message: 'Invalid date format for expiresIn',
-      }
-    ),
+    .refine((value) => !value || !Number.isNaN(Date.parse(value)), { message: 'Invalid date format for expiresIn' }),
 })
 
 export default defineEventHandler(async (event) => {
@@ -29,25 +24,23 @@ export default defineEventHandler(async (event) => {
     if (!envelopeId) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
     const config = useRuntimeConfig()
-    const { signerEmail, expiresIn } = await readValidatedBody(event, sessionSchema)
+    const { signerEmail, expiresIn } = sessionSchema.parse(await readBody(event))
 
     const document = (await notion.pages.retrieve({ page_id: envelopeId })) as unknown as NotionDocument
 
     assertDocumentAccess(event, document)
     const currentStatus = document.properties.Status.status.name
-    const queueData = notionTextStringify(document.properties['Routing Queue'].rich_text)
 
     if (!['Sent', 'Partially Signed'].includes(currentStatus)) {
       throw new HTTPError({ statusCode: 403, statusMessage: `Document is not accepting signatures (Status: ${currentStatus})` })
     }
 
-    if (!queueData) {
+    const signers = readQueue(document)
+    if (signers.length === 0) {
       throw new HTTPError({ statusCode: 500, statusMessage: 'Document envelope is corrupted or missing routing data.' })
     }
 
-    const signers = JSON.parse(queueData)
-    const targetSigner = signers.find((s: any) => s.email === signerEmail)
-
+    const targetSigner = signers.find((signer) => sameEmail(signer.email, signerEmail))
     if (!targetSigner) {
       throw new HTTPError({ statusCode: 403, statusMessage: 'Email address is not part of this document envelope.' })
     }
@@ -56,56 +49,19 @@ export default defineEventHandler(async (event) => {
       throw new HTTPError({ statusCode: 409, statusMessage: 'This user has already signed the document.' })
     }
 
-    const routingType = document.properties['Routing Type'].select.name
-    if (routingType === 'SEQUENTIAL') {
-      const expectedSignerEmail = document.properties['Next Signer'].email
-      if (expectedSignerEmail !== signerEmail) {
-        throw new HTTPError({ statusCode: 403, statusMessage: `It is not ${signerEmail}'s turn to sign yet.` })
-      }
+    if (document.properties['Routing Type'].select.name === 'SEQUENTIAL' && !sameEmail(document.properties['Next Signer'].email, signerEmail)) {
+      throw new HTTPError({ statusCode: 403, statusMessage: `It is not ${signerEmail}'s turn to sign yet.` })
     }
 
-    let expiresInSeconds: number | undefined = undefined
-    let expiresAtStr: string | null = null
-
-    if (expiresIn) {
-      const expirationDate = new Date(expiresIn)
-      expiresInSeconds = Math.floor((expirationDate.getTime() - Date.now()) / 1000)
-
-      if (expiresInSeconds <= 0) {
-        throw new HTTPError({ statusCode: 400, statusMessage: 'Expiration date must be in the future.' })
-      }
-      expiresAtStr = expirationDate.toISOString()
-    }
-
-    const jwtOptions: jwt.SignOptions = {}
-    if (expiresInSeconds !== undefined) {
-      jwtOptions.expiresIn = expiresInSeconds
-    }
-
-    const sessionToken = jwt.sign(
-      {
-        documentId: envelopeId,
-        signerEmail: targetSigner.email,
-        role: targetSigner.role,
-      },
-      config.private.jwtSecret,
-      jwtOptions
-    )
+    const lifetime = tokenLifetimeSeconds(expiresIn)
+    const sessionToken = issueSessionToken({ documentId: envelopeId, signerEmail: targetSigner.email, role: targetSigner.role }, config.private.jwtSecret as string, lifetime)
 
     return {
       signer: targetSigner.email,
-      expiresAt: expiresAtStr,
+      expiresAt: new Date(Date.now() + lifetime * 1000).toISOString(),
       sessionToken,
     }
   } catch (error: unknown) {
-    if (error instanceof Error && 'statusCode' in error) {
-      error.stack = undefined
-      throw error
-    }
-
-    console.error('document/id/session POST', error)
-    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
-    serverError.stack = undefined
-    throw serverError
+    toRouteError(error, 'document/id/session POST')
   }
 })

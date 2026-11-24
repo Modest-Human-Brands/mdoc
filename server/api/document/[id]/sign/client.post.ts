@@ -1,78 +1,67 @@
-import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
-import { useStorage } from 'nitro/storage'
-import { z, ZodError } from 'zod'
-import { finalizeSignedData, buildMinimalChain } from '~/server/utils/cms-signer'
-import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
-import { embedSignature } from '~/server/utils/pdf-byte-range'
-import { assertSigningSession } from '~/server/utils/document-access'
+import { defineEventHandler, getRouterParam, HTTPError, readBody } from 'nitro/h3'
+import { z } from 'zod'
+
+import { buildMinimalChain, finalizeSignedData, inspectCertificate, verifyCmsSignature } from '~/server/utils/cms-signer'
+import { finalizeAndPersist } from '~/server/utils/document-signing'
+import { embedSignature, extractSigningContent } from '~/server/utils/pdf-byte-range'
+import { toRouteError } from '~/server/utils/route-error'
+import { deleteSignSession, readSignSession } from '~/server/utils/sign-sessions'
 
 const clientSignSchema = z.object({
   sessionId: z.string(),
-  signatureHex: z.string(),
+  signatureHex: z
+    .string()
+    .regex(/^[\da-f]+$/i)
+    .max(20_000),
 })
 
+const rejected = (message: string, code: string) => new HTTPError({ statusCode: 400, statusMessage: 'Bad Request', data: { errors: [{ field: 'signatureHex', message, code }] } })
+
+const toArrayBuffer = (buffer: Buffer) => buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer
+
+/**
+ * Public: authenticated by the signing session `prepare` created for a magic-link token.
+ * The signature is verified before anything is stored: a wrong, expired or non-RSA signature never reaches the document.
+ */
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event)
-    const { sessionId, signatureHex } = clientSignSchema.parse(body)
+    const { sessionId, signatureHex } = clientSignSchema.parse(await readBody(event))
 
-    const signStorage = useStorage<SignSession>('data:sign')
-
-    const session = await signStorage.getItem(`session:${sessionId}`)
-    if (!session) throw new HTTPError({ statusCode: 400, statusMessage: 'Signing session expired or invalid. Please refresh and try again.' })
-    assertSigningSession(event, getRouterParam(event, 'id'), session)
-
-    const patchedBytes = Buffer.from(session.patchedPdfHex, 'hex')
-    const signerInfoDer = Buffer.from(session.signerInfoDerHex!, 'hex')
-    const signatureBytes = Buffer.from(signatureHex, 'hex')
-    const certDer = Buffer.from(session.certificateDerHex!, 'hex')
-    const certDerAB = certDer.buffer.slice(certDer.byteOffset, certDer.byteOffset + certDer.byteLength) as ArrayBuffer
-    const certChainCandidates = session.certificateChainDerHex!.map((h) => {
-      const b = Buffer.from(h, 'hex')
-      return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer
-    })
-
-    const certChainDer = buildMinimalChain(certDerAB, certChainCandidates)
-    if (certChainCandidates.length > 10) {
-      console.warn(`[ClientSign] Unusually large chain candidate pool (${certChainCandidates.length}) from signing bridge for session ${sessionId} — check frontend chain assembly.`)
+    const { session, pdf: patchedBytes } = await readSignSession(sessionId)
+    if (session.documentId !== getRouterParam(event, 'id')) throw new HTTPError({ statusCode: 403, statusMessage: 'This signing session belongs to a different document.' })
+    if (!session.signerInfoDerHex || !session.certificateDerHex || session.ltIdx === undefined || session.gtIdx === undefined) {
+      throw new HTTPError({ statusCode: 400, statusMessage: 'This signing session was not prepared for a client-side signature.' })
     }
 
+    const certDerAB = toArrayBuffer(Buffer.from(session.certificateDerHex, 'hex'))
+    const certificate = inspectCertificate(certDerAB)
+    const now = Date.now()
+    if (!certificate.isRsa) throw rejected('Only RSA signing certificates are supported.', 'unsupported_algorithm')
+    if (now < certificate.notBefore.getTime() || now > certificate.notAfter.getTime()) throw rejected('The signing certificate is expired or not yet valid.', 'certificate_expired')
+
+    const certChainCandidates = (session.certificateChainDerHex ?? []).map((hex) => toArrayBuffer(Buffer.from(hex, 'hex')))
     const cmsDer = finalizeSignedData({
-      signerInfoDer,
-      signatureBytes,
+      signerInfoDer: Buffer.from(session.signerInfoDerHex, 'hex'),
+      signatureBytes: Buffer.from(signatureHex, 'hex'),
       certDer: certDerAB,
-      certChainDer,
+      certChainDer: buildMinimalChain(certDerAB, certChainCandidates),
     })
 
-    const signedPdfBuffer = embedSignature(patchedBytes, cmsDer, session.ltIdx!, session.gtIdx!)
+    if (!(await verifyCmsSignature(cmsDer, extractSigningContent(patchedBytes, session.ltIdx, session.gtIdx)))) {
+      throw rejected('The signature does not match the document and certificate.', 'invalid_signature')
+    }
 
-    const { ctx, telemetry } = session
-    const pendingSigners = ctx.signers.filter((s: SignerDetails) => s.status === 'PENDING')
-    const isCompleted = pendingSigners.length === 1
-    const targetFileName = isCompleted ? ctx.signedFileName : ctx.currentFileName
-
-    const result = await finalizeAndPersist(session.documentId, targetFileName, signedPdfBuffer, ctx.signers, ctx.currentSigner, telemetry)
-    await signStorage.removeItem(`session:${sessionId}`)
+    const signedPdfBuffer = embedSignature(patchedBytes, cmsDer, session.ltIdx, session.gtIdx)
+    const result = await finalizeAndPersist(session, signedPdfBuffer, {
+      subject: certificate.subject,
+      issuer: certificate.issuer,
+      serialNumber: certificate.serialNumber,
+      notAfter: certificate.notAfter.toISOString(),
+    })
+    await deleteSignSession(sessionId)
 
     return result
   } catch (error: unknown) {
-    if (error instanceof ZodError) {
-      const validationError = new HTTPError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
-      })
-      validationError.stack = undefined
-      throw validationError
-    }
-    if (error instanceof Error && 'statusCode' in error) {
-      error.stack = undefined
-      throw error
-    }
-
-    console.error('document/[id]/client POST', error)
-    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'An error occurred while injecting the hardware signature.' })
-    serverError.stack = undefined
-    throw serverError
+    toRouteError(error, '[ClientSign - FATAL ERROR]')
   }
 })

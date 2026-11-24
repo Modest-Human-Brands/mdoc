@@ -1,7 +1,6 @@
-import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getHeader, getRequestIP, getRouterParam, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
-import { useStorage } from 'nitro/storage'
-import { z, ZodError } from 'zod'
+import { z } from 'zod'
 import crypto from 'node:crypto'
 import { plainAddPlaceholder } from '@signpdf/placeholder-plain'
 
@@ -9,35 +8,51 @@ import '~/templates/document'
 
 import { templateRegistry } from '~/server/utils/template-registry'
 import { buildPreparedSignerInfo } from '~/server/utils/cms-signer'
-import { type SignSession, resolveSigningContext, applyFieldStamps } from '~/server/utils/document-signing'
+import { resolveSigningContext, applyFieldStamps } from '~/server/utils/document-signing'
 import { patchByteRange, extractSigningContent } from '~/server/utils/pdf-byte-range'
 import { readDocument } from '~/server/utils/documents'
-import { assertDocumentOrganization } from '~/server/utils/document-access'
+import { toRouteError } from '~/server/utils/route-error'
+import { createSignSession } from '~/server/utils/sign-sessions'
+
+const MAX_CERT_HEX = 20_000
 
 const prepareSchema = z.object({
   sessionToken: z.string(),
   fields: z.record(z.string(), z.union([z.string(), z.boolean()])).default({}),
-  certificateDerHex: z.string().optional(),
-  certificateChainDerHex: z.array(z.string()).default([]),
-  telemetry: z.object({ ipAddress: z.string().optional(), userAgent: z.string().optional() }).optional(),
+  certificateDerHex: z
+    .string()
+    .regex(/^[\da-f]+$/i)
+    .max(MAX_CERT_HEX)
+    .optional(),
+  certificateChainDerHex: z
+    .array(
+      z
+        .string()
+        .regex(/^[\da-f]+$/i)
+        .max(MAX_CERT_HEX)
+    )
+    .max(10)
+    .default([]),
 })
 
+/**
+ * Public: the signer's browser calls this with only the magic-link token (the credential). The document is
+ * taken from the token, never from request headers, and the audit telemetry is read from this request
+ * rather than from the body, where a signer could write anything.
+ */
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
     const config = useRuntimeConfig()
-    const signStorage = useStorage<SignSession>('data:sign')
+    const { sessionToken, fields: inputFields, certificateDerHex, certificateChainDerHex } = prepareSchema.parse(await readBody(event))
+    const telemetry = { ipAddress: getRequestIP(event, { xForwardedFor: true }), userAgent: getHeader(event, 'user-agent') }
 
-    const body = await readBody(event)
-    const { sessionToken, fields: inputFields, certificateDerHex, certificateChainDerHex, telemetry } = prepareSchema.parse(body)
-
-    const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret)
-    assertDocumentOrganization(event, ctx.document)
+    const ctx = await resolveSigningContext(id, sessionToken, config.private.jwtSecret as string)
 
     const pdfBuffer = await readDocument(ctx.fileName)
-    if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: `PDF file missing for document "${ctx.fileName}"` })
+    if (!pdfBuffer) throw new HTTPError({ statusCode: 404, statusMessage: 'The document file is missing from storage.' })
 
     const targetTemplate = templateRegistry[ctx.document.properties['Template ID'].select.name]
     const signatureFields = (targetTemplate?.signerFields || []).filter((f: any) => Number(f.signerOrder) === Number(ctx.currentSigner.order))
@@ -56,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
     let digestHex: string | undefined = undefined
     let signerInfoDerHex: string | undefined = undefined
-    let pdfToStoreHex = placeholderBytes.toString('hex')
+    let pdfToStore: Buffer = placeholderBytes
     let storedLtIdx: number | undefined = undefined
     let storedGtIdx: number | undefined = undefined
 
@@ -73,37 +88,30 @@ export default defineEventHandler(async (event) => {
 
       digestHex = digestToSign.toString('hex')
       signerInfoDerHex = signerInfoDer.toString('hex')
-      pdfToStoreHex = patchedBytes.toString('hex')
+      pdfToStore = patchedBytes
       storedLtIdx = ltIdx
       storedGtIdx = gtIdx
     }
 
-    const sessionId = crypto.randomUUID()
-    await signStorage.setItem(
-      `session:${sessionId}`,
-      { documentId: id, patchedPdfHex: pdfToStoreHex, ltIdx: storedLtIdx, gtIdx: storedGtIdx, signerInfoDerHex, certificateDerHex, certificateChainDerHex, ctx, telemetry },
-      { ttl: 300 }
+    const sessionId = await createSignSession(
+      {
+        documentId: id,
+        signerEmail: ctx.currentSigner.email,
+        fileName: ctx.fileName,
+        currentFileName: ctx.currentFileName,
+        signedFileName: ctx.signedFileName,
+        ltIdx: storedLtIdx,
+        gtIdx: storedGtIdx,
+        signerInfoDerHex,
+        certificateDerHex,
+        certificateChainDerHex,
+        telemetry,
+      },
+      pdfToStore
     )
 
     return { sessionId, digestHex, signerEmail: ctx.currentSigner.email, documentStatus: ctx.document.properties.Status.status.name }
   } catch (error: unknown) {
-    if (error instanceof ZodError) {
-      const validationError = new HTTPError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
-      })
-      validationError.stack = undefined
-      throw validationError
-    }
-    if (error instanceof Error && 'statusCode' in error) {
-      error.stack = undefined
-      throw error
-    }
-
-    console.error('[Prepare - FATAL ERROR]', error)
-    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'An error occurred while preparing the document for signing.' })
-    serverError.stack = undefined
-    throw serverError
+    toRouteError(error, '[Prepare - FATAL ERROR]', 'An error occurred while preparing the document for signing.')
   }
 })

@@ -117,3 +117,56 @@ export function finalizeSignedData(params: { signerInfoDer: Buffer; signatureByt
 
   return Buffer.from(contentInfo.toSchema().toBER(false))
 }
+
+const OID_COMMON_NAME = '2.5.4.3'
+const commonName = (dn: pkijs.RelativeDistinguishedNames) => dn.typesAndValues.find((tv) => tv.type === OID_COMMON_NAME)?.value.valueBlock.value as string | undefined
+
+export interface CertificateInfo {
+  subject?: string
+  issuer?: string
+  serialNumber: string
+  notBefore: Date
+  notAfter: Date
+  isRsa: boolean
+}
+
+/** What the signing bridge's certificate is, for validity checks and the audit record. */
+export function inspectCertificate(certDer: ArrayBuffer): CertificateInfo {
+  const cert = pkijs.Certificate.fromBER(certDer)
+  return {
+    subject: commonName(cert.subject),
+    issuer: commonName(cert.issuer),
+    serialNumber: Buffer.from(cert.serialNumber.valueBlock.valueHexView).toString('hex'),
+    notBefore: cert.notBefore.value,
+    notAfter: cert.notAfter.value,
+    isRsa: cert.subjectPublicKeyInfo.algorithm.algorithmId === OID_RSA_ENCRYPTION,
+  }
+}
+
+/** Checks the finished CMS signature against the PDF bytes it covers, exactly as a verifier would. */
+export async function verifyCmsSignature(cmsDer: Buffer, signedContent: Buffer): Promise<boolean> {
+  try {
+    const cmsAB = cmsDer.buffer.slice(cmsDer.byteOffset, cmsDer.byteOffset + cmsDer.byteLength) as ArrayBuffer
+    const contentInfo = new pkijs.ContentInfo({ schema: asn1js.fromBER(cmsAB).result })
+    const signedData = new pkijs.SignedData({ schema: contentInfo.content })
+    const contentAB = signedContent.buffer.slice(signedContent.byteOffset, signedContent.byteOffset + signedContent.byteLength) as ArrayBuffer
+    return Boolean(await signedData.verify({ signer: 0, data: contentAB, checkChain: false }))
+  } catch {
+    return false
+  }
+}
+
+/** The certificate of the first signer of a CMS signature, when the signature embeds it. */
+export function describeCmsSigner(cmsDer: Buffer): CertificateInfo | undefined {
+  try {
+    const cmsAB = cmsDer.buffer.slice(cmsDer.byteOffset, cmsDer.byteOffset + cmsDer.byteLength) as ArrayBuffer
+    const contentInfo = new pkijs.ContentInfo({ schema: asn1js.fromBER(cmsAB).result })
+    const signedData = new pkijs.SignedData({ schema: contentInfo.content })
+    const sid = signedData.signerInfos[0]?.sid
+    const certificates = (signedData.certificates ?? []).filter((c): c is pkijs.Certificate => c instanceof pkijs.Certificate)
+    const cert = (sid instanceof pkijs.IssuerAndSerialNumber ? certificates.find((c) => c.serialNumber.isEqual(sid.serialNumber)) : undefined) ?? certificates[0]
+    return cert ? inspectCertificate(cert.toSchema(true).toBER(false)) : undefined
+  } catch {
+    return undefined
+  }
+}

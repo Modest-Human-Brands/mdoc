@@ -26,21 +26,6 @@ const deny = (field: string) => {
 
 const same = (a: string, b: string) => normalizeId(a).toLowerCase() === normalizeId(b).toLowerCase()
 
-/** Tenant-only check for signer flows, where the caller is the signer (bound by a session token) rather than the owner. */
-export function assertDocumentOrganization(event: H3Event, document: AccessibleDocument) {
-  const auth = event.context.auth as AuthContext | undefined
-  if (!auth) throw new HTTPError({ statusCode: 401, statusMessage: 'Unauthorized' })
-
-  const organization = document.properties?.Organization?.relation?.[0]?.id
-  if (organization && NOTION_ID.test(auth.orgId) && !same(organization, auth.orgId)) throw deny('x-org-id')
-}
-
-/** A stored signing session must belong to the document in the URL and to the caller's organisation. */
-export function assertSigningSession(event: H3Event, documentId: string | undefined, session: { documentId: string; ctx: { document: AccessibleDocument } }) {
-  if (!documentId || !same(session.documentId, documentId)) throw deny('id')
-  assertDocumentOrganization(event, session.ctx.document)
-}
-
 export function canAccessDocument(event: H3Event, document: AccessibleDocument) {
   try {
     assertDocumentAccess(event, document)

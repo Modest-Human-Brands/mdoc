@@ -1,72 +1,39 @@
-import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useStorage } from 'nitro/storage'
-import { z, ZodError } from 'zod'
+import { z } from 'zod'
 import { SignPdf } from '@signpdf/signpdf'
 import { P12Signer } from '@signpdf/signer-p12'
 
-import { type SignSession, type SignerDetails, finalizeAndPersist } from '~/server/utils/document-signing'
-import { assertSigningSession } from '~/server/utils/document-access'
+import { finalizeAndPersist } from '~/server/utils/document-signing'
+import { toRouteError } from '~/server/utils/route-error'
+import { deleteSignSession, readSignSession } from '~/server/utils/sign-sessions'
 
-const serverSignSchema = z.object({
-  sessionId: z.string(),
-})
+const serverSignSchema = z.object({ sessionId: z.string() })
 
+/** Public: authenticated by the signing session `prepare` created for a magic-link token. */
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event)
-    const { sessionId } = serverSignSchema.parse(body)
+    const { sessionId } = serverSignSchema.parse(await readBody(event))
 
     const config = useRuntimeConfig()
-    const signStorage = useStorage<SignSession>('data:sign')
-
-    const session = await signStorage.getItem(`session:${sessionId}`)
-    if (!session) {
-      throw new HTTPError({ statusCode: 400, statusMessage: 'Signing session expired or invalid.' })
-    }
-    assertSigningSession(event, getRouterParam(event, 'id'), session)
-
-    const pdfWithPlaceholder = Buffer.from(session.patchedPdfHex, 'hex')
+    const { session, pdf: pdfWithPlaceholder } = await readSignSession(sessionId)
+    if (session.documentId !== getRouterParam(event, 'id')) throw new HTTPError({ statusCode: 403, statusMessage: 'This signing session belongs to a different document.' })
 
     const certificateBuffer = await useStorage('fs').getItemRaw<Buffer>('certificate.p12')
     if (!certificateBuffer) {
-      throw new HTTPError({ statusCode: 500, statusMessage: 'Server signing certificate (certificate.p12) not found.' })
+      console.error('[ServerSign] The server signing certificate is not installed.')
+      throw new HTTPError({ statusCode: 500, statusMessage: 'Server-side signing is not available.' })
     }
 
-    const signer = new P12Signer(certificateBuffer, {
-      passphrase: config.private.certificateSecret as string,
-    })
-
+    const signer = new P12Signer(certificateBuffer, { passphrase: config.private.certificateSecret as string })
     const signedPdfBuffer = await new SignPdf().sign(pdfWithPlaceholder, signer)
 
-    const { ctx, telemetry } = session
-    const pendingSigners = ctx.signers.filter((s: SignerDetails) => s.status === 'PENDING')
-    const isCompleted = pendingSigners.length === 1
-    const targetFileName = isCompleted ? ctx.signedFileName : ctx.currentFileName
-
-    const result = await finalizeAndPersist(session.documentId, targetFileName, signedPdfBuffer, ctx.signers, ctx.currentSigner, telemetry)
-
-    await signStorage.removeItem(`session:${sessionId}`)
+    const result = await finalizeAndPersist(session, signedPdfBuffer)
+    await deleteSignSession(sessionId)
 
     return result
   } catch (error: unknown) {
-    if (error instanceof ZodError) {
-      const validationError = new HTTPError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        data: { errors: error.issues.map(({ path, message, code }) => ({ field: path.join('.'), message, code })) },
-      })
-      validationError.stack = undefined
-      throw validationError
-    }
-    if (error instanceof Error && 'statusCode' in error) {
-      error.stack = undefined
-      throw error
-    }
-
-    console.error('[ServerSign - FATAL ERROR]', error)
-    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'An error occurred during server-side document signing.' })
-    serverError.stack = undefined
-    throw serverError
+    toRouteError(error, '[ServerSign - FATAL ERROR]', 'An error occurred during server-side document signing.')
   }
 })

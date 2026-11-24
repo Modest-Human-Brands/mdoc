@@ -1,49 +1,30 @@
-import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, HTTPError, readBody } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
-import jwt from 'jsonwebtoken'
-import notion from '~/server/utils/notion'
-import type { NotionDocument } from '~/server/types'
-import notionTextStringify from '~/server/utils/notion-text-stringify'
-import { assertDocumentOrganization } from '~/server/utils/document-access'
+import { z } from 'zod'
 
+import type { NotionDocument } from '~/server/types'
+import notion from '~/server/utils/notion'
+import { readQueue, sameEmail } from '~/server/utils/routing-queue'
+import { toRouteError } from '~/server/utils/route-error'
+import { readSessionToken } from '~/server/utils/session-token'
+
+const bodySchema = z.object({ sessionToken: z.string().min(1, 'Session token is required') })
+
+/** Public: the signer's browser calls this with only the magic-link token, which is the credential. */
 export default defineEventHandler(async (event) => {
   try {
     const id = getRouterParam(event, 'id')
-
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
-    const config = useRuntimeConfig()
-    const { sessionToken } = await readBody<{ sessionToken: string }>(event)
-
-    if (!sessionToken) {
-      throw new HTTPError({ statusCode: 400, statusMessage: 'Session token is required' })
-    }
-
-    let decodedToken: any
-    try {
-      decodedToken = jwt.verify(sessionToken, config.private.jwtSecret)
-    } catch {
-      throw new HTTPError({ statusCode: 401, statusMessage: 'Session expired or invalid.' })
-    }
-
-    if (decodedToken.documentId !== id) {
-      throw new HTTPError({ statusCode: 403, statusMessage: 'Token ID does not match this document ID.' })
-    }
+    const { sessionToken } = bodySchema.parse(await readBody(event))
+    const token = readSessionToken(sessionToken, id, useRuntimeConfig().private.jwtSecret as string)
 
     const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
-    assertDocumentOrganization(event, document)
-    const queueData = notionTextStringify(document.properties['Routing Queue']?.rich_text)
+    const signers = readQueue(document)
+    if (signers.length === 0) throw new HTTPError({ statusCode: 500, statusMessage: 'Document envelope is corrupted or missing routing data.' })
 
-    if (!queueData) {
-      throw new HTTPError({ statusCode: 500, statusMessage: 'Document envelope is corrupted or missing routing data.' })
-    }
-
-    const signers = JSON.parse(queueData)
-    const targetSigner = signers.find((s: any) => s.email === decodedToken.signerEmail)
-
-    if (!targetSigner) {
-      throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in the routing queue.' })
-    }
+    const targetSigner = signers.find((signer) => sameEmail(signer.email, token.signerEmail))
+    if (!targetSigner) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in the routing queue.' })
 
     return {
       isValid: true,
@@ -53,14 +34,6 @@ export default defineEventHandler(async (event) => {
       status: targetSigner.status,
     }
   } catch (error: unknown) {
-    if (error instanceof Error && 'statusCode' in error) {
-      error.stack = undefined
-      throw error
-    }
-
-    console.error('document/[id]/session/verify POST', error)
-    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
-    serverError.stack = undefined
-    throw serverError
+    toRouteError(error, 'document/[id]/session/verify POST')
   }
 })

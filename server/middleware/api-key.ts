@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
-import { defineEventHandler, getHeader, HTTPError } from 'nitro/h3'
+import { defineEventHandler, getHeader, getRequestIP, HTTPError } from 'nitro/h3'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 
 import { NOTION_ID } from '~/server/utils/notion-errors'
@@ -12,6 +12,23 @@ const PUBLIC_GET = [
   /^\/api\/document\/template\/[^/]+\/sample\.pdf$/,
   /^\/api\/decor\/(builtin|upload)\/[^/]+$/,
 ]
+
+// The signer's browser has no API key: these four routes are authenticated by the magic-link token (or the signing
+// session it creates) inside the handler, and are rate limited per client address.
+const SIGNER_POST = /^\/api\/document\/[^/]+\/(session\/verify|sign\/prepare|sign\/client|sign\/server)$/
+const SIGNER_LIMIT = { windowMs: 60_000, max: 30 }
+const hits = new Map<string, { count: number; resetAt: number }>()
+
+function rateLimited(key: string) {
+  const now = Date.now()
+  if (hits.size > 10_000) for (const [k, v] of hits) if (v.resetAt < now) hits.delete(k)
+  const entry = hits.get(key)
+  if (!entry || entry.resetAt < now) {
+    hits.set(key, { count: 1, resetAt: now + SIGNER_LIMIT.windowMs })
+    return false
+  }
+  return ++entry.count > SIGNER_LIMIT.max
+}
 
 const reject = (statusCode: number, statusMessage: string, field?: string, message?: string, code?: string) => {
   const error = new HTTPError({ statusCode, statusMessage, ...(field && { data: { errors: [{ field, message, code }] } }) })
@@ -29,6 +46,10 @@ export default defineEventHandler((event) => {
   const { pathname } = event.url
   if (!pathname.startsWith('/api/') || event.req.method === 'OPTIONS') return
   if (event.req.method === 'GET' && PUBLIC_GET.some((pattern) => pattern.test(pathname))) return
+  if (event.req.method === 'POST' && SIGNER_POST.test(pathname)) {
+    if (rateLimited(`${getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'}:${pathname.split('/').at(-1)}`)) throw reject(429, 'Too Many Requests')
+    return
+  }
 
   const apiKey = useRuntimeConfig().private.apiKey as string
   if (!apiKey && process.env.NODE_ENV === 'production') throw reject(500, 'API key is not configured.')

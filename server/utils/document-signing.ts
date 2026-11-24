@@ -1,42 +1,15 @@
 import { HTTPError } from 'nitro/h3'
 import * as mupdf from 'mupdf'
 import { createCanvas } from '@napi-rs/canvas'
-import jwt, { type JwtPayload } from 'jsonwebtoken'
 import mime from 'mime-types'
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
-import { writeDocument } from '~/server/utils/documents'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
+import { cleanTelemetry, readQueue, sameEmail, toRichText, withDocumentLock, type SignerCertificate, type SignerDetails } from '~/server/utils/routing-queue'
+import { readSessionToken } from '~/server/utils/session-token'
+import { removeDocument, writeDocument } from '~/server/utils/documents'
+import type { SignSession } from '~/server/utils/sign-sessions'
 import { getTemplateOrThrow, requiredSignerOrders } from '~/server/utils/signer-requirements'
-
-export interface SignerDetails {
-  order: number
-  name: string
-  email: string
-  role: string
-  status: string
-  signedAt: string
-  telemetry?: { ipAddress?: string; userAgent?: string }
-}
-
-export interface SignSession {
-  documentId: string
-  patchedPdfHex: string
-  ltIdx?: number
-  gtIdx?: number
-  signerInfoDerHex?: string
-  certificateDerHex?: string
-  certificateChainDerHex?: string[]
-  ctx: {
-    document: NotionDocument
-    signers: SignerDetails[]
-    currentSigner: SignerDetails
-    fileName: string
-    currentFileName: string
-    signedFileName: string
-  }
-  telemetry?: { ipAddress?: string; userAgent?: string }
-}
 
 export interface SignatureField {
   id: string
@@ -48,12 +21,6 @@ export interface SignatureField {
   height: number
   required?: boolean
   fontSize?: number
-}
-
-export interface AppConfig {
-  private: {
-    jwtSecret: string
-  }
 }
 
 interface MuPDFAnnotation {
@@ -152,45 +119,65 @@ function createTextImage(text: string, width: number, height: number, fontSize: 
   return canvas.toBuffer('image/png')
 }
 
+const error = (statusCode: number, statusMessage: string) => {
+  const err = new HTTPError({ statusCode, statusMessage })
+  err.stack = undefined
+  return err
+}
+
+const SIGNABLE = new Set(['Sent', 'Partially Signed'])
+
+/** Throws unless this signer may sign right now: document open, signer still pending, and (sequential) their turn. */
+function assertCanSign(document: NotionDocument, signers: SignerDetails[], signerEmail: string) {
+  const status = document.properties.Status.status.name
+  if (!SIGNABLE.has(status)) throw error(403, `Document is not accepting signatures (Status: ${status}).`)
+
+  const signer = signers.find((s) => sameEmail(s.email, signerEmail))
+  if (!signer) throw error(403, 'Signer not found in queue.')
+  if (signer.status === 'SIGNED') throw error(409, 'Already signed.')
+
+  if (document.properties['Routing Type']?.select?.name === 'SEQUENTIAL' && !sameEmail(document.properties['Next Signer']?.email, signer.email)) {
+    throw error(403, `It is not ${signer.email}'s turn to sign yet.`)
+  }
+  return signer
+}
+
 export async function resolveSigningContext(id: string, sessionToken: string, jwtSecret: string) {
-  let decodedToken: JwtPayload & { documentId?: string; signerEmail?: string }
-  try {
-    decodedToken = jwt.verify(sessionToken, jwtSecret) as JwtPayload & { documentId?: string; signerEmail?: string }
-  } catch {
-    throw new HTTPError({ statusCode: 401, statusMessage: 'Session expired or invalid.' })
-  }
-  if (decodedToken.documentId !== id) {
-    throw new HTTPError({ statusCode: 403, statusMessage: 'Token id does not match this document id.' })
-  }
+  const decodedToken = readSessionToken(sessionToken, id, jwtSecret)
 
   const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
-  const queueData = notionTextStringify(document.properties['Routing Queue']?.rich_text)
-  const currentStatus = document.properties.Status.status.name
-
-  if (!['Sent', 'Partially Signed'].includes(currentStatus)) {
-    throw new HTTPError({ statusCode: 403, statusMessage: `Document is not accepting signatures (Status: ${currentStatus}).` })
-  }
-
-  const signers = JSON.parse(queueData) as SignerDetails[]
-  const signerIndex = signers.findIndex((s) => s.email === decodedToken.signerEmail)
-  if (signerIndex === -1) throw new HTTPError({ statusCode: 403, statusMessage: 'Signer not found in queue.' })
+  const signers = readQueue(document)
+  const currentSigner = assertCanSign(document, signers, decodedToken.signerEmail)
 
   const templateDef = getTemplateOrThrow(document.properties['Template ID']?.select?.name)
   const allowedOrders = requiredSignerOrders(templateDef)
-  if (signers.length !== allowedOrders.length || !allowedOrders.includes(signers[signerIndex]!.order)) {
-    throw new HTTPError({ statusCode: 409, statusMessage: `This envelope has ${signers.length} signer(s) but "${templateDef.label}" requires ${allowedOrders.length}. Recreate the envelope.` })
+  if (signers.length !== allowedOrders.length || !allowedOrders.includes(currentSigner.order)) {
+    throw error(409, `This envelope has ${signers.length} signer(s) but "${templateDef.label}" requires ${allowedOrders.length}. Recreate the envelope.`)
   }
-
-  const currentSigner = signers[signerIndex]
-  if (currentSigner?.status === 'SIGNED') throw new HTTPError({ statusCode: 409, statusMessage: 'Already signed.' })
 
   const baseTitle = notionTextStringify(document.properties.Name.title)
   const ext = mime.extension(document.properties['Mime Type'].select.name) || 'pdf'
-  const fileName = `${baseTitle}${currentSigner!.order === 1 ? '' : '-' + (currentSigner!.order - 1)}.${ext}`
-  const currentFileName = `${baseTitle}-${currentSigner!.order}.${ext}`
+  const fileName = `${baseTitle}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${ext}`
+  const currentFileName = `${baseTitle}-${currentSigner.order}.${ext}`
   const signedFileName = `${baseTitle}-signed.${ext}`
 
-  return { document, signers, currentSigner: currentSigner!, fileName, currentFileName, signedFileName }
+  return { document, signers, currentSigner, fileName, currentFileName, signedFileName }
+}
+
+const MAX_SIGNATURE_BYTES = 1_000_000
+const MAX_TEXT_FIELD = 200
+const IMAGE_DATA_URL = /^data:image\/(png|jpeg);base64,([\w+/]+={0,2})$/
+const MAGIC = { png: [0x89, 0x50, 0x4e, 0x47], jpeg: [0xff, 0xd8, 0xff] }
+
+/** Only a bounded PNG or JPEG data URL reaches the PDF engine; anything else is a 400. */
+function decodeSignatureImage(value: string | boolean, fieldId: string): Buffer {
+  const match = typeof value === 'string' ? IMAGE_DATA_URL.exec(value) : null
+  const bytes = match ? Buffer.from(match[2]!, 'base64') : undefined
+  const type = match?.[1] as keyof typeof MAGIC | undefined
+  if (!bytes || !type || bytes.length === 0 || bytes.length > MAX_SIGNATURE_BYTES || !MAGIC[type].every((byte, index) => bytes[index] === byte)) {
+    throw new HTTPError({ statusCode: 400, statusMessage: `Field ${fieldId} must be a PNG or JPEG image under 1 MB.` })
+  }
+  return bytes
 }
 
 export function applyFieldStamps(
@@ -213,11 +200,9 @@ export function applyFieldStamps(
         case 'SIGNATURE':
         case 'INITIALS': {
           const imgVal = inputFields[field.id]
-          if (field.required && !imgVal) throw new HTTPError({ statusCode: 400, statusMessage: `Image is required for field: ${field.id}` })
-          if (imgVal && typeof imgVal === 'string') {
-            const b64 = imgVal.replace(/^data:image\/(png|jpeg|jpg);base64,/, '')
-            imgBuffer = Buffer.from(b64, 'base64')
-          }
+          // A signature is what the signer is committing to: it is required unless the template says otherwise.
+          if (field.required !== false && !imgVal) throw new HTTPError({ statusCode: 400, statusMessage: `Image is required for field: ${field.id}` })
+          if (imgVal) imgBuffer = decodeSignatureImage(imgVal, field.id)
           break
         }
         case 'DATE': {
@@ -237,6 +222,7 @@ export function applyFieldStamps(
           const textVal = inputFields[field.id]
           if (field.required && !textVal) throw new HTTPError({ statusCode: 400, statusMessage: `Field ${field.id} is required.` })
           if (textVal && typeof textVal === 'string') {
+            if (textVal.length > MAX_TEXT_FIELD) throw new HTTPError({ statusCode: 400, statusMessage: `Field ${field.id} is too long (max ${MAX_TEXT_FIELD} characters).` })
             imgBuffer = createTextImage(textVal, field.width, field.height, field.fontSize || 12, false)
           }
           break
@@ -305,36 +291,58 @@ export function applyFieldStamps(
   return Buffer.from(outBytes)
 }
 
-export async function finalizeAndPersist(
-  id: string,
-  targetFileName: string,
-  signedBytes: Uint8Array | Buffer,
-  signers: SignerDetails[],
-  currentSigner: SignerDetails,
-  telemetry?: { ipAddress?: string; userAgent?: string }
-) {
-  const signerInArray = signers.find((s) => s.email === currentSigner.email)
-  if (!signerInArray) {
-    throw new HTTPError({ statusCode: 500, statusMessage: `Signer ${currentSigner.email} not found in routing queue.` })
+const notionUpdateWithRetry = async (params: Parameters<typeof notion.pages.update>[0], attempts = 3) => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await notion.pages.update(params)
+    } catch (error_) {
+      if (attempt >= attempts) throw error_
+      await new Promise((resolve) => setTimeout(resolve, 250 * attempt))
+    }
   }
-  signerInArray.status = 'SIGNED'
-  signerInArray.signedAt = new Date().toISOString()
-  signerInArray.telemetry = telemetry
-
-  await writeDocument(targetFileName, signedBytes)
-
-  const pendingSigners = signers.filter((s) => s.status === 'PENDING')
-  const isCompleted = pendingSigners.length === 0
-  const nextStatus = isCompleted ? 'Completed' : 'Partially Signed'
-  const nextSigner = isCompleted ? null : pendingSigners[0]
-
-  await notion.pages.update({
-    page_id: id,
-    properties: {
-      Status: { status: { name: nextStatus } },
-      'Routing Queue': { rich_text: [{ text: { content: JSON.stringify(signers) } }] },
-      'Next Signer': { email: nextSigner?.email ?? null },
-    },
-  })
-  return { id, documentStatus: nextStatus, currentSigner: signerInArray, nextSigner }
 }
+
+/**
+ * Records a finished signature. It re-reads the document instead of trusting what `prepare` saw, so a document
+ * voided or advanced in between, or a signature replayed from an old session, is rejected rather than overwritten.
+ * The signed file is removed again if the status cannot be saved, so the signer can simply retry.
+ */
+export function finalizeAndPersist(session: SignSession, signedBytes: Uint8Array | Buffer, certificate?: SignerCertificate) {
+  return withDocumentLock(session.documentId, async () => {
+    const document = (await notion.pages.retrieve({ page_id: session.documentId })) as unknown as NotionDocument
+    const signers = readQueue(document)
+    const signerInArray = assertCanSign(document, signers, session.signerEmail)
+
+    const isCompleted = signers.filter((s) => s.status === 'PENDING').length === 1
+    const targetFileName = isCompleted ? session.signedFileName : session.currentFileName
+
+    signerInArray.status = 'SIGNED'
+    signerInArray.signedAt = new Date().toISOString()
+    signerInArray.telemetry = cleanTelemetry(session.telemetry)
+    if (certificate) signerInArray.certificate = certificate
+
+    const pendingSigner = signers.find((s) => s.status === 'PENDING')
+    const nextStatus = isCompleted ? 'Completed' : 'Partially Signed'
+    const nextSigner = pendingSigner ?? null
+
+    await writeDocument(targetFileName, signedBytes)
+    try {
+      await notionUpdateWithRetry({
+        page_id: session.documentId,
+        properties: {
+          Status: { status: { name: nextStatus } },
+          'Routing Queue': { rich_text: toRichText(signers) },
+          'Next Signer': { email: nextSigner?.email ?? null },
+        },
+      })
+    } catch (error_) {
+      await removeDocument(targetFileName).catch(() => {})
+      console.error('[Sign] Could not save the signing state; the signed file was discarded.', error_)
+      throw error(503, 'The signature could not be saved. Please try again.')
+    }
+
+    return { id: session.documentId, documentStatus: nextStatus, currentSigner: signerInArray, nextSigner }
+  })
+}
+
+export { type SignerDetails } from '~/server/utils/routing-queue'
