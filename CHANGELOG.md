@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.3.20
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.19...v0.3.20)
+
+### 🚀 Enhancements
+
+- **terms:** Implement term library functionality and API endpoints ([267cb48](https://github.com/Modest-Human-Brands/mdoc/commit/267cb48))
+
+### 🏡 Chore
+
+- Regenerate template sample images ([78e1a53](https://github.com/Modest-Human-Brands/mdoc/commit/78e1a53))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.19
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.18...v0.3.19)
