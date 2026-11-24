@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.22
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.21...v0.3.22)
+
+### 💅 Refactors
+
+- Document signing and verification processes ([f954f10](https://github.com/Modest-Human-Brands/mdoc/commit/f954f10))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.21
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.20...v0.3.21)
