@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.21
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.20...v0.3.21)
+
+### 🚀 Enhancements
+
+- **env:** Add environment variable aliases for Nitro configuration ([116141f](https://github.com/Modest-Human-Brands/mdoc/commit/116141f))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.20
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.19...v0.3.20)
