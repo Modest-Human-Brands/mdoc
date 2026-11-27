@@ -25,12 +25,12 @@ export default defineEventHandler(async (event) => {
     const properties = document?.properties
     if (!document || !properties?.['Template ID']?.select?.name || !properties['Mime Type']?.select?.name || !properties.Name?.title) throw notFound()
 
-    const files = documentFiles(document)
+    const files = await documentFiles(document)
     const pdf = await readLatestDocument(files)
     if (!pdf) throw notFound()
 
     event.res.headers.set('Content-Type', properties['Mime Type'].select.name)
-    event.res.headers.set('Content-Disposition', `inline; filename="${files.target.replace(/"/g, '')}"`)
+    event.res.headers.set('Content-Disposition', `inline; filename="${files.displayName(files.target)}"`)
     event.res.headers.set('Cache-Control', 'private, max-age=60')
     event.res.headers.set('X-Robots-Tag', 'noindex, nofollow')
     return pdf

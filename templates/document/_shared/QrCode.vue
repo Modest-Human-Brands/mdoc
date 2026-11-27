@@ -2,6 +2,7 @@
 import { G, Image, Path, Svg, Text, View } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
 import { buildQr, defaultQrStyle, type QrStyle } from '~/server/utils/qr'
+import { QR_PRINT_SIZE } from './qr'
 
 const props = withDefaults(
   defineProps<{
@@ -10,22 +11,22 @@ const props = withDefaults(
     primary: string
     accent: string
     logo?: string
-    size?: number
     caption?: string
     captionAlign?: 'left' | 'right'
     layout?: 'row' | 'column'
   }>(),
-  { size: 64, layout: 'row', captionAlign: 'left' }
+  { layout: 'row', captionAlign: 'left' }
 )
 
 const QUIET = 2
+const size = QR_PRINT_SIZE
 const style = computed(() => props.qrStyle ?? defaultQrStyle)
 const render = computed(() => buildQr(props.text, style.value, { primary: props.accent, accent: props.accent }))
 const total = computed(() => render.value.size + QUIET * 2)
 const logoFrame = computed(() => {
   const box = render.value.logoBox
   if (!box || !props.logo) return undefined
-  const unit = props.size / total.value
+  const unit = size / total.value
   const side = box.size * unit
   return { left: (box.x + QUIET) * unit, top: (box.y + QUIET) * unit, side }
 })

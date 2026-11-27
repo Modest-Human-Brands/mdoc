@@ -6,11 +6,12 @@ import { hasDocument, writeDocument } from '~/server/utils/documents'
 export default defineTask({
   meta: {
     name: 'documents:migrate',
-    description: 'Copies generated PDFs and PNGs from the local static folder to the document storage (R2/S3). Nothing is deleted.',
+    description: 'Copies generated PDFs and PNGs from the top level of the static folder (subfolders such as old/ are skipped) to the document storage (R2/S3). Nothing is deleted.',
   },
   async run({ payload }) {
     const source = useStorage('fs')
-    const keys = (await source.getKeys()).filter((key) => /\.(pdf|png)$/.test(key))
+    // A ':' in the key means a subfolder (e.g. static/old), which is not migrated.
+    const keys = (await source.getKeys()).filter((key) => !key.includes(':') && /\.(pdf|png)$/.test(key))
     let copied = 0
     let skipped = 0
 

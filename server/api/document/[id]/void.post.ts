@@ -1,16 +1,18 @@
-import { defineEventHandler, getRouterParam, HTTPError, readValidatedBody } from 'nitro/h3'
+import { defineEventHandler, getRouterParam, HTTPError, readBody } from 'nitro/h3'
 import { z } from 'zod'
-import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
-import mime from 'mime-types'
 
 import notion from '~/server/utils/notion'
 import type { NotionDocument } from '~/server/types'
-import notionTextStringify from '~/server/utils/notion-text-stringify'
-import { readDocument, removeDocument, writeDocument } from '~/server/utils/documents'
 import { assertDocumentAccess } from '~/server/utils/document-access'
+import { documentFiles } from '~/server/utils/document-file'
+import { readDocument, removeDocument, writeDocument } from '~/server/utils/documents'
+import { readQueue, toRichText, withDocumentLock } from '~/server/utils/routing-queue'
+import { toRouteError } from '~/server/utils/route-error'
+import { stampVoid } from '~/server/utils/void-stamp'
+import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
 
 const voidSchema = z.object({
-  reason: z.string().min(5, 'A reason must be provided to void the document.'),
+  reason: z.string().trim().min(5, 'A reason must be provided to void the document.').max(500),
 })
 
 export default defineEventHandler(async (event) => {
@@ -18,99 +20,54 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')
     if (!id) throw new HTTPError({ statusCode: 400, statusMessage: 'Document ID is required' })
 
-    const { reason } = await readValidatedBody(event, voidSchema)
+    const { reason } = voidSchema.parse(await readBody(event))
 
-    const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
+    // The same lock as signing: a signature cannot complete between reading the state and saving it as void.
+    return await withDocumentLock(id, async () => {
+      const document = (await notion.pages.retrieve({ page_id: id })) as unknown as NotionDocument
 
-    assertDocumentAccess(event, document)
-    const currentStatus = document.properties.Status.status.name
+      assertDocumentAccess(event, document)
+      const currentStatus = document.properties.Status.status.name
+      if (['Completed', 'Void'].includes(currentStatus)) {
+        throw new HTTPError({ statusCode: 403, statusMessage: `Cannot void a document that is already ${currentStatus}.` })
+      }
 
-    if (['Completed', 'Void'].includes(currentStatus)) {
-      throw new HTTPError({
-        statusCode: 403,
-        statusMessage: `Cannot void a document that is already ${currentStatus}.`,
-      })
-    }
+      // A draft has no signer queue yet and can still be voided.
+      const signers = readQueue(document)
+      const files = await documentFiles(document)
 
-    const queueData = notionTextStringify(document.properties['Routing Queue']?.rich_text)
-    const signers = JSON.parse(queueData)
+      const source = await readDocument(files.latestSigned)
+      if (!source) throw new HTTPError({ statusCode: 404, statusMessage: 'Original PDF file missing from storage.' })
 
-    const pendingSigner = signers.find((s: any) => s.status === 'PENDING')
-    const currentSigner = pendingSigner
+      // The earlier copies are kept as the record of what was signed; only the voided copy is served from now on.
+      const voided = await stampVoid(source, reason)
+      await writeDocument(files.voided, voided)
 
-    const baseTitle = notionTextStringify(document.properties.Name.title)
-    const ext = mime.extension(document.properties['Mime Type'].select.name)
+      try {
+        const queue = signers.map((signer) => (signer.status === 'PENDING' ? { ...signer, status: 'CANCELLED' } : signer))
+        await notion.pages.update({
+          page_id: id,
+          properties: {
+            Status: { status: { name: 'Void' } },
+            ...(queue.length > 0 && { 'Routing Queue': { rich_text: toRichText(queue) } }),
+            'Next Signer': { email: null },
+          },
+        })
+      } catch (error) {
+        await removeDocument(files.voided).catch(() => {})
+        throw error
+      }
 
-    const currentFileName = currentSigner ? `${baseTitle}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${ext}` : `${baseTitle}.${ext}`
-    const voidedFileName = `${baseTitle}-voided.${ext}`
+      // The thumbnail is a convenience: if it fails, it is drawn from the voided copy when first requested.
+      try {
+        await writeDocument(files.voidedImage, await generatePdfThumbnail(voided))
+      } catch (error) {
+        console.warn('document/[id]/void POST: could not store the voided thumbnail', error)
+      }
 
-    const pdfBuffer = await readDocument(currentFileName)
-    if (!pdfBuffer) {
-      throw new HTTPError({ statusCode: 404, statusMessage: 'Original PDF file missing from storage.' })
-    }
-
-    const pdfDoc = await PDFDocument.load(pdfBuffer)
-    const pages = pdfDoc.getPages()
-    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-
-    for (const page of pages) {
-      const { width, height } = page.getSize()
-      const text = 'VOID'
-      const textSize = 150
-      const textWidth = helveticaBold.widthOfTextAtSize(text, textSize)
-      const textHeight = helveticaBold.heightAtSize(textSize)
-
-      page.drawText(text, {
-        x: width / 2 - textWidth / 2,
-        y: height / 2 - textHeight / 2,
-        size: textSize,
-        font: helveticaBold,
-        color: rgb(1, 0, 0),
-        opacity: 0.3,
-        rotate: degrees(45),
-      })
-
-      page.drawText(`Void Reason: ${reason}`, {
-        x: 80,
-        y: 30,
-        size: 12,
-        font: helveticaBold,
-        color: rgb(1, 0, 0),
-      })
-    }
-
-    const voidedPdfBytes = await pdfDoc.save()
-
-    await writeDocument(voidedFileName, Buffer.from(voidedPdfBytes))
-    await removeDocument(currentFileName).catch(() => {})
-
-    const updatedSigners = signers.map((s: any) => {
-      if (s.status === 'PENDING') return { ...s, status: 'CANCELLED' }
-      return s
+      return { documentStatus: 'Void', fileName: files.displayName(files.voided) }
     })
-
-    await notion.pages.update({
-      page_id: id,
-      properties: {
-        Status: { status: { name: 'Void' } },
-        'Routing Queue': { rich_text: [{ text: { content: JSON.stringify(updatedSigners) } }] },
-        'Next Signer': { email: null },
-      },
-    })
-
-    return {
-      documentStatus: 'Void',
-      fileName: voidedFileName,
-    }
   } catch (error: unknown) {
-    if (error instanceof Error && 'statusCode' in error) {
-      error.stack = undefined
-      throw error
-    }
-
-    console.error('document/[id]/void POST', error)
-    const serverError = new HTTPError({ statusCode: 500, statusMessage: 'Internal Server Error' })
-    serverError.stack = undefined
-    throw serverError
+    toRouteError(error, 'document/[id]/void POST')
   }
 })

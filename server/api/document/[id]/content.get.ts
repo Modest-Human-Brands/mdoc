@@ -2,8 +2,7 @@ import { defineEventHandler, getRouterParam, getQuery, HTTPError } from 'nitro/h
 
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
-import { readDocument } from '~/server/utils/documents'
-import { documentFiles, readLatestDocument } from '~/server/utils/document-file'
+import { documentFiles, readLatestDocument, readPreviewImage } from '~/server/utils/document-file'
 import { assertDocumentAccess } from '~/server/utils/document-access'
 
 export default defineEventHandler(async (event) => {
@@ -23,13 +22,13 @@ export default defineEventHandler(async (event) => {
 
     assertDocumentAccess(event, document)
     const { properties, created_time, last_edited_time } = document
-    const files = documentFiles(document)
+    const files = await documentFiles(document)
 
     if (requestType === 'image') {
       event.res.headers.set('Content-Type', 'image/png')
-      event.res.headers.set('Content-Disposition', `inline; filename="${files.image}"`)
+      event.res.headers.set('Content-Disposition', `inline; filename="${files.displayName(files.image)}"`)
 
-      const imageBuffer = await readDocument(files.image)
+      const imageBuffer = await readPreviewImage(files)
 
       if (!imageBuffer) {
         throw new HTTPError({
@@ -44,7 +43,7 @@ export default defineEventHandler(async (event) => {
     const disposition = toDownload ? 'attachment' : 'inline'
 
     event.res.headers.set('Content-Type', properties['Mime Type'].select.name)
-    event.res.headers.set('Content-Disposition', `${disposition}; filename="${files.target}"`)
+    event.res.headers.set('Content-Disposition', `${disposition}; filename="${files.displayName(files.target)}"`)
     event.res.headers.set('X-Document-Id', id)
     event.res.headers.set('X-Document-Template', properties['Template ID'].select.name)
     event.res.headers.set('X-Document-Status', files.status)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
-import { upiLink, type QrTarget } from '../_shared/qr'
+import { QR_PRINT_SIZE, upiLink, type QrTarget } from '../_shared/qr'
 import type { QrStyle } from '~/server/utils/qr'
 import { Document, Page, View, Text } from '@ceereals/vue-pdf'
 import { computed } from 'vue'
@@ -140,7 +140,8 @@ const styles = {
         </View>
       </View>
 
-      <View :style="styles.billed">
+      <!-- The QR is positioned absolutely, so the block reserves the code's height plus its two caption lines. -->
+      <View :style="[styles.billed, qrContent ? { minHeight: QR_PRINT_SIZE + 28 } : {}]">
         <QrCode
           v-if="qrContent"
           :text="qrContent.text"
@@ -148,7 +149,6 @@ const styles = {
           :primary="organizationColorPrimary"
           :accent="organizationColorAccent"
           :logo="organizationLogo"
-          :size="64"
           :caption="qrContent.caption"
           layout="column"
           caption-align="right"

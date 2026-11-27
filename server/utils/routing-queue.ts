@@ -54,12 +54,14 @@ export function readQueue(document: NotionDocument): SignerDetails[] {
 /** Serialises state changes of one document inside this process, so two requests cannot interleave a read-modify-write. */
 const locks = new Map<string, Promise<unknown>>()
 export async function withDocumentLock<T>(id: string, task: () => Promise<T>): Promise<T> {
-  const previous = locks.get(id) ?? Promise.resolve()
+  // One page, one lock: a request may write its ID with or without dashes, in either case.
+  const key = id.replaceAll('-', '').toLowerCase()
+  const previous = locks.get(key) ?? Promise.resolve()
   const run = previous.catch(() => {}).then(task)
-  locks.set(id, run)
+  locks.set(key, run)
   try {
     return await run
   } finally {
-    if (locks.get(id) === run) locks.delete(id)
+    if (locks.get(key) === run) locks.delete(key)
   }
 }

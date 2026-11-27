@@ -79,11 +79,15 @@ export default defineEventHandler(async (event) => {
     const finalCoversToEnd = results.some((result) => result.coversToEnd)
     const isIntact = allValid && finalCoversToEnd
 
+    let message = 'Document is tampered or a signature is invalid.'
+    if (isIntact) message = 'Document is intact and every signature is valid.'
+    else if (allValid) message = 'Content was added after the last signature.'
+
     return {
       isIntact,
       signer: results.at(-1)?.signer,
       signatures: results,
-      message: isIntact ? 'Document is intact and every signature is valid.' : allValid ? 'Content was added after the last signature.' : 'Document is tampered or a signature is invalid.',
+      message,
     }
   } catch (error: unknown) {
     toRouteError(error, 'document/[id]/sign/verify POST')

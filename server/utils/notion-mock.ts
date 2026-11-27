@@ -120,9 +120,15 @@ class LocalNotionMockDatabase {
     fs.writeFileSync(DB_FILE, JSON.stringify(this.db, null, 2), 'utf8')
   }
 
+  /** Like Notion, an ID is accepted with or without dashes. */
+  private pageKey(id: string) {
+    const wanted = id.replaceAll('-', '').toLowerCase()
+    return Object.keys(this.db.pages).find((key) => key.replaceAll('-', '').toLowerCase() === wanted) ?? id
+  }
+
   public pages = {
     retrieve: async ({ page_id }: { page_id: string }) => {
-      const page = this.db.pages[page_id]
+      const page = this.db.pages[this.pageKey(page_id)]
       if (!page) {
         const error: any = new Error(`Mock Notion: Page "${page_id}" not found.`)
         error.code = 'object_not_found'
@@ -148,7 +154,7 @@ class LocalNotionMockDatabase {
       return newPage
     },
     update: async ({ page_id, properties }: { page_id: string; properties: any }) => {
-      const page = this.db.pages[page_id]
+      const page = this.db.pages[this.pageKey(page_id)]
       if (!page) {
         const error: any = new Error(`Mock Notion: Page "${page_id}" not found.`)
         error.code = 'object_not_found'
@@ -177,7 +183,7 @@ class LocalNotionMockDatabase {
     children: {
       list: async ({ block_id }: { block_id: string }) => {
         return {
-          results: this.db.blocks[block_id] || [],
+          results: this.db.blocks[this.pageKey(block_id)] || [],
           has_more: false,
           next_cursor: null,
         }

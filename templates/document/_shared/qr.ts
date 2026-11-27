@@ -7,6 +7,12 @@ interface QrOrganization {
   name: string
 }
 
+/**
+ * The printed side of every QR code, in PDF points (96pt is about 34mm). A document link needs 49 modules plus the
+ * quiet zone, so this keeps each module near 0.6mm, which a phone camera reads comfortably from paper.
+ */
+export const QR_PRINT_SIZE = 96
+
 export type QrTarget = 'document' | 'verify' | 'upi'
 
 export const QR_TARGETS: QrTarget[] = ['document', 'verify', 'upi']

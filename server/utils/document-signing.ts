@@ -1,13 +1,12 @@
 import { HTTPError } from 'nitro/h3'
 import * as mupdf from 'mupdf'
 import { createCanvas } from '@napi-rs/canvas'
-import mime from 'mime-types'
 import type { NotionDocument } from '~/server/types'
 import notion from '~/server/utils/notion'
-import notionTextStringify from '~/server/utils/notion-text-stringify'
 import { cleanTelemetry, readQueue, sameEmail, toRichText, withDocumentLock, type SignerCertificate, type SignerDetails } from '~/server/utils/routing-queue'
 import { readSessionToken } from '~/server/utils/session-token'
 import { removeDocument, writeDocument } from '~/server/utils/documents'
+import { documentFiles } from '~/server/utils/document-file'
 import type { SignSession } from '~/server/utils/sign-sessions'
 import { getTemplateOrThrow, requiredSignerOrders } from '~/server/utils/signer-requirements'
 
@@ -155,11 +154,10 @@ export async function resolveSigningContext(id: string, sessionToken: string, jw
     throw error(409, `This envelope has ${signers.length} signer(s) but "${templateDef.label}" requires ${allowedOrders.length}. Recreate the envelope.`)
   }
 
-  const baseTitle = notionTextStringify(document.properties.Name.title)
-  const ext = mime.extension(document.properties['Mime Type'].select.name) || 'pdf'
-  const fileName = `${baseTitle}${currentSigner.order === 1 ? '' : '-' + (currentSigner.order - 1)}.${ext}`
-  const currentFileName = `${baseTitle}-${currentSigner.order}.${ext}`
-  const signedFileName = `${baseTitle}-signed.${ext}`
+  const files = await documentFiles(document)
+  const fileName = currentSigner.order === 1 ? files.baseline : files.step(currentSigner.order - 1)
+  const currentFileName = files.step(currentSigner.order)
+  const signedFileName = files.signed
 
   return { document, signers, currentSigner, fileName, currentFileName, signedFileName }
 }

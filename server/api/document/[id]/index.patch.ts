@@ -2,9 +2,11 @@ import { defineEventHandler, getRouterParam, readBody, HTTPError } from 'nitro/h
 import { z, ZodError } from 'zod'
 import notion from '~/server/utils/notion'
 import { assertDocumentAccess } from '~/server/utils/document-access'
+import { moveToIdLayout } from '~/server/utils/document-file'
+import { withUniqueName } from '~/server/utils/document-names'
 
 const updateSchema = z.object({
-  name: z.string().optional(),
+  name: z.string().trim().min(1).max(200).optional(),
   status: z.enum(['Plan', 'Draft', 'Ready', 'Delivered']).optional(),
 })
 
@@ -49,10 +51,18 @@ export default defineEventHandler(async (event) => {
       return { success: true, message: 'No changes provided' }
     }
 
-    const updatedPage = await notion.pages.update({
-      page_id: id,
-      properties,
-    })
+    const save = () => notion.pages.update({ page_id: id, properties })
+    const { name } = parsedBody
+    const updatedPage = name
+      ? await withUniqueName(
+          name,
+          async () => {
+            await moveToIdLayout(document)
+            return save()
+          },
+          document.id
+        )
+      : await save()
 
     return {
       success: true,

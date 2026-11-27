@@ -151,7 +151,6 @@ const styles = {
             :primary="organizationColorPrimary"
             :accent="organizationColorAccent"
             :logo="organizationLogo"
-            :size="56"
             :caption="qrContent.caption"
             :style="{ marginTop: 12 }" />
         </View>

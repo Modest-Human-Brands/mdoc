@@ -126,13 +126,13 @@ const paymentRows = computed(() =>
 
 const styles = {
   page: { paddingTop: 0, paddingBottom: 84, paddingHorizontal: 0, fontSize: 13, color: '#262629', fontStyle: 'normal' as const },
-  header: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-start' as const, paddingTop: 22, paddingBottom: 6, paddingHorizontal: 40 },
-  headerSide: { width: 110 },
-  banner: { alignItems: 'center' as const, paddingVertical: 10, paddingHorizontal: 40 },
+  header: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-start' as const, paddingTop: 10, paddingBottom: 4, paddingHorizontal: 40 },
+  headerSide: { width: 180 },
+  banner: { alignItems: 'center' as const, paddingVertical: 8, paddingHorizontal: 40 },
   title: { fontSize: 26, letterSpacing: 1 },
   subtitle: { fontSize: 13, marginTop: 4 },
   meta: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, paddingHorizontal: 40, paddingTop: 6, paddingBottom: 4 },
-  section: { paddingHorizontal: 40, marginTop: 8 },
+  section: { paddingHorizontal: 40, marginTop: 5 },
   heading: { fontSize: 11.5, fontWeight: 'bold' as const, letterSpacing: 0.6, paddingTop: 2, paddingBottom: 3, borderBottomWidth: 0.75, borderBottomStyle: 'solid' as const },
   row: { flexDirection: 'row' as const, paddingVertical: 3, borderBottomWidth: 0.5, borderBottomColor: '#E8E8EB', borderBottomStyle: 'solid' as const },
   key: { width: 160, color: '#7E7E87' },
@@ -157,10 +157,8 @@ const styles = {
             :primary="organizationColorPrimary"
             :accent="organizationColorAccent"
             :logo="organizationLogo"
-            :size="56"
             :caption="'Scan to view\nthis receipt'"
-            layout="column"
-            caption-align="left" />
+            layout="row" />
         </View>
         <LogoMark :src="organizationLogo" :box="{ width: 56, height: 56 }" />
         <View :style="styles.headerSide" />

@@ -123,7 +123,7 @@ function eyeShapes(shape: QrEyeShape, x: number, y: number): { frame: string; ba
 }
 
 export function qrGeometry(text: string, style: Pick<QrStyle, 'eyeShape' | 'logo'>): QrGeometry {
-  const { data, size } = encode(text, { ecc: style.logo ? 'H' : 'M', border: 0 })
+  const { data, size } = encode(text, { ecc: style.logo ? 'Q' : 'M', border: 0 })
 
   const logoSide = style.logo ? Math.max(5, Math.round(size * 0.24) | 1) : 0
   const logoStart = Math.floor((size - logoSide) / 2)

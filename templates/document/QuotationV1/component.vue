@@ -286,7 +286,6 @@ const styles = {
         :primary="organizationColorPrimary"
         :accent="organizationColorAccent"
         :logo="organizationLogo"
-        :size="72"
         :caption="'Scan to verify\nthis agreement online'"
         :style="{ marginTop: 24 }" />
     </Page>

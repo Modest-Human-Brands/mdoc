@@ -16,12 +16,14 @@ import type { NotionDB } from '~/server/types'
 
 import '~/templates/document'
 import { writeDocument } from '~/server/utils/documents'
+import { storageBaseOf } from '~/server/utils/document-file'
+import { withUniqueName } from '~/server/utils/document-names'
 
 const notionId = z.string().regex(NOTION_ID, 'must be a Notion page ID')
 
 const createDocSchema = z
   .object({
-    name: z.string().min(1, 'name is required'),
+    name: z.string().trim().min(1, 'name is required').max(200),
     template: z.string().min(1).optional(),
     templateId: z.string().min(1).optional(),
     contactId: notionId,
@@ -71,32 +73,37 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
     const notionDbId = config.private.notionDbId ? (JSON.parse(config.private.notionDbId) as NotionDB) : ({ document: 'mock-doc-db' } as NotionDB)
 
-    const record = await notion.pages
-      .create({
-        parent: { data_source_id: notionDbId.document },
-        properties: {
-          Name: { title: [{ text: { content: fileName } }] },
-          'Template ID': { select: { name: templateId } },
-          'Mime Type': { select: { name: 'application/pdf' } },
-          SizeBytes: { number: 0 },
-          Status: { status: { name: 'Draft' } },
-          Contact: { relation: [{ id: contactId }] },
-          User: { relation: [{ id: userId }] },
-          ...(organizationRelationId && { Organization: { relation: [{ id: organizationRelationId }] } }),
-          ...(projectId && { Project: { relation: [{ id: projectId }] } }),
-        },
-        children: toJsonBlocks(enrichedData),
-      })
-      .catch((error: unknown) => {
-        throw toRelationFieldError(error, { contactId, userId, organizationId: organizationRelationId, projectId })
-      })
+    // The name is checked and taken in one step, so two requests cannot both create it.
+    const record = await withUniqueName(fileName, () =>
+      notion.pages
+        .create({
+          parent: { data_source_id: notionDbId.document },
+          properties: {
+            Name: { title: [{ text: { content: fileName } }] },
+            'Template ID': { select: { name: templateId } },
+            'Mime Type': { select: { name: 'application/pdf' } },
+            SizeBytes: { number: 0 },
+            Status: { status: { name: 'Draft' } },
+            Contact: { relation: [{ id: contactId }] },
+            User: { relation: [{ id: userId }] },
+            ...(organizationRelationId && { Organization: { relation: [{ id: organizationRelationId }] } }),
+            ...(projectId && { Project: { relation: [{ id: projectId }] } }),
+          },
+          children: toJsonBlocks(enrichedData),
+        })
+        .catch((error: unknown) => {
+          throw toRelationFieldError(error, { contactId, userId, organizationId: organizationRelationId, projectId })
+        })
+    )
 
     // The record is created first because the document's own link (the default QR destination) is built from its id.
     const shareUrl = documentViewUrl(record.id, event.url.origin)
     try {
       const pdf = await renderTemplatePdf(templateDef, enrichedData, { documentUrl: shareUrl })
-      await writeDocument(`${fileName}.pdf`, pdf)
-      await writeDocument(`${fileName}.png`, await generatePdfThumbnail(pdf))
+      const storageBase = storageBaseOf(record.id)
+      // The thumbnail goes first: the PDF's presence is what marks the document as stored under its ID.
+      await writeDocument(`${storageBase}.png`, await generatePdfThumbnail(pdf))
+      await writeDocument(`${storageBase}.pdf`, pdf)
       await notion.pages.update({ page_id: record.id, properties: { SizeBytes: { number: pdf.byteLength } } })
 
       return { id: record.id, templateId, name: fileName, sizeBytes: pdf.byteLength, shareUrl }

@@ -104,7 +104,6 @@ const styles = {
             :primary="organizationColorPrimary"
             :accent="organizationColorAccent"
             :logo="organizationLogo"
-            :size="64"
             :caption="practitionerPhone || 'Scan to view\nthis report'"
             layout="column"
             caption-align="left" />
