@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.25
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.24...v0.3.25)
+
+### 🚀 Enhancements
+
+- Enhance document handling and signing features ([5d83475](https://github.com/Modest-Human-Brands/mdoc/commit/5d83475))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.24
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.23...v0.3.24)
