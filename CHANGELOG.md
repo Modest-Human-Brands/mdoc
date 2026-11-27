@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.27
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.26...v0.3.27)
+
+### 🚀 Enhancements
+
+- Implement PDF word breaking and enhance document templates for better layout handling ([5db32f2](https://github.com/Modest-Human-Brands/mdoc/commit/5db32f2))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.26
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.25...v0.3.26)
