@@ -1,13 +1,33 @@
 <script setup lang="ts">
-import { View, Text } from '@ceereals/vue-pdf'
+import { computed } from 'vue'
+import { View, Text, fitsOnPage } from './pdf'
 import type { TermSection } from './terms'
 
-defineProps<{
+const props = defineProps<{
   sections: TermSection[]
   /** Optional section heading, for example "TERMS & CONDITIONS". Omit to render the terms inline. */
   heading?: string
   headingStyle?: Record<string, string | number>
 }>()
+
+type Block = TermSection['blocks'][number]
+
+const blockTexts = (block: Block) => (block.type === 'list' ? block.items.flatMap((item) => [item.text, ...(item.subitems ?? []).map((subitem) => subitem.text)]) : [block.text])
+
+/** The pieces the page breaker may move between pages. A heading and a title always travel with the block after them. */
+const chunks = computed(() =>
+  props.sections.flatMap((section, sIndex) => {
+    const groups = section.keepTogether ? [section.blocks] : section.blocks.map((block) => [block])
+    return (groups.length > 0 ? groups : [[]]).map((blocks, gIndex) => ({
+      heading: sIndex === 0 && gIndex === 0 ? props.heading : undefined,
+      title: gIndex === 0 && section.title ? `${section.number}. ${section.title}` : undefined,
+      titled: Boolean(section.title),
+      blocks,
+      // Terms run the full width of the page.
+      fits: fitsOnPage(blocks.flatMap(blockTexts), 70),
+    }))
+  })
+)
 
 const styles = {
   termTitle: { fontSize: 13, fontWeight: 'bold' as const, color: '#000000', marginTop: 14, marginBottom: 4 },
@@ -22,13 +42,13 @@ const styles = {
 
 <template>
   <View v-if="sections.length > 0">
-    <Text v-if="heading" :style="headingStyle">{{ heading }}</Text>
+    <!-- A flat list on purpose: the page breaker cannot move a block that is the first thing inside its own wrapper. -->
+    <View v-for="(chunk, cIndex) in chunks" :key="cIndex" :wrap="!chunk.fits">
+      <Text v-if="chunk.heading" :style="headingStyle">{{ chunk.heading }}</Text>
+      <Text v-if="chunk.title" :style="styles.termTitle">{{ chunk.title }}</Text>
 
-    <View v-for="(section, sIndex) in sections" :key="sIndex" :wrap="!section.keepTogether">
-      <Text v-if="section.title" :style="styles.termTitle" :min-presence-ahead="48">{{ section.number }}. {{ section.title }}</Text>
-
-      <View v-for="(block, bIndex) in section.blocks" :key="bIndex" :wrap="false">
-        <Text v-if="block.type === 'heading'" :style="section.title ? styles.termSubHeading : styles.termHeading">{{ block.text }}</Text>
+      <View v-for="(block, bIndex) in chunk.blocks" :key="bIndex">
+        <Text v-if="block.type === 'heading'" :style="chunk.titled ? styles.termSubHeading : styles.termHeading">{{ block.text }}</Text>
         <Text v-if="block.type === 'paragraph'" :style="styles.termParagraph">{{ block.text }}</Text>
         <View v-if="block.type === 'list'" :style="styles.list">
           <View v-for="(item, iIndex) in block.items" :key="iIndex">

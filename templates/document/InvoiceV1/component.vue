@@ -6,7 +6,8 @@ import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
 import { upiLink, type QrTarget } from '../_shared/qr'
 import type { QrStyle } from '~/server/utils/qr'
-import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, Image, fitsOnPage } from '../_shared/pdf'
 import { computed } from 'vue'
 import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
 
@@ -109,7 +110,7 @@ const styles = {
   accountCol: { paddingRight: 16, whitespace: 'nowrap' as const },
   accountLabel: { fontWeight: 'bold' as const, fontSize: 12, marginBottom: 4 },
   accountValue: { fontSize: 12, color: '#555555' },
-  stampContainer: { position: 'absolute' as const, top: 448, left: 0, right: 0, alignItems: 'center' as const, zIndex: -1 },
+  stampContainer: { position: 'absolute' as const, top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center' as const, justifyContent: 'center' as const, zIndex: -1 },
   stampBox: { borderWidth: 4, padding: '10 20', opacity: 0.3, transform: 'rotate(-45deg)' },
   stampText: { fontSize: 56, fontWeight: 'bold' as const, lineHeight: 1, textAlign: 'center' as const },
   systemNoticeText: { fontSize: 12, color: '#888888', textAlign: 'right' as const, width: '100%' },
@@ -208,7 +209,7 @@ const styles = {
         <Text :style="styles.colAmount">Amount</Text>
       </View>
 
-      <View v-for="(item, index) in computedDeliverables" :key="index" :style="styles.tableRow" :wrap="false">
+      <View v-for="(item, index) in computedDeliverables" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage(item.points.length ? item.points : [item.description])">
         <Text :style="styles.colName">{{ item.title }}</Text>
         <View :style="styles.colDesc">
           <View v-if="item.points.length">

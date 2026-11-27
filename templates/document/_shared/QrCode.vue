@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { G, Image, Path, Svg, Text, View } from '@ceereals/vue-pdf'
+import { G, Path, Svg } from '@ceereals/vue-pdf'
+import { Image, Text, View } from './pdf'
 import { computed } from 'vue'
 import { buildQr, defaultQrStyle, type QrStyle } from '~/server/utils/qr'
 import { QR_PRINT_SIZE } from './qr'

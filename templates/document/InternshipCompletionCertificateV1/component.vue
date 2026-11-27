@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
-import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, Image } from '../_shared/pdf'
+import { computed } from 'vue'
 
 const props = defineProps<{
   recipientName: string
@@ -13,6 +15,9 @@ const props = defineProps<{
   basePdfBackground: string
 }>()
 
+/** The name has one line's room above the body text, so a long one is set smaller instead of running into it. */
+const nameSize = computed(() => Math.max(22, Math.min(56, Math.floor((56 * 20) / Math.max(1, props.recipientName.length)))))
+
 const styles = {
   page: { fontFamily: 'Exo2', position: 'relative' as const, width: '100%', height: '100%' },
   bgImage: { position: 'absolute' as const, top: 0, left: 0, width: 595, height: 841, objectFit: 'fill' as const },
@@ -24,7 +29,7 @@ const styles = {
   presentedToText: { fontSize: 14, color: '#555555' },
 
   recipientContainer: { position: 'absolute' as const, left: 105, top: 332, width: 386, justifyContent: 'center' as const, alignItems: 'center' as const },
-  recipientText: { fontFamily: 'IslandMoments', fontSize: 56, color: '#1a0a00', textAlign: 'center' as const },
+  recipientText: { fontFamily: 'IslandMoments', color: '#1a0a00', textAlign: 'center' as const },
   bodyContainer: { position: 'absolute' as const, left: 106, top: 418, width: 384 },
   bodyText: { fontSize: 12, color: '#1a1a1a', textAlign: 'center' as const, lineHeight: 1.5 },
   logoContainer: { position: 'absolute' as const, left: 105, top: 600, width: 386, justifyContent: 'center' as const, alignItems: 'center' as const },
@@ -47,7 +52,7 @@ const styles = {
       </View>
 
       <View :style="styles.recipientContainer">
-        <Text :style="styles.recipientText">{{ recipientName }}</Text>
+        <Text :style="{ ...styles.recipientText, fontSize: nameSize }">{{ recipientName }}</Text>
       </View>
 
       <View :style="styles.bodyContainer">

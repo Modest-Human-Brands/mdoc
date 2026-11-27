@@ -3,7 +3,8 @@ import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
 import { QR_PRINT_SIZE, upiLink, type QrTarget } from '../_shared/qr'
 import type { QrStyle } from '~/server/utils/qr'
-import { Document, Page, View, Text } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, fitsOnPage } from '../_shared/pdf'
 import { computed } from 'vue'
 import { dateText, isToken, optionalNumber } from '../_shared/format'
 
@@ -99,12 +100,12 @@ const meta = computed(() =>
 const styles = {
   page: { padding: '40 40 40 40', fontSize: 10, color: '#26262B', fontStyle: 'normal' as const },
   headerRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, marginBottom: 24 },
-  left: { width: '50%' },
+  left: { width: '50%', paddingRight: 12 },
   right: { width: '50%', alignItems: 'flex-end' as const },
   muted: { color: '#6B6B73', fontSize: 10, marginTop: 3 },
-  metaRow: { flexDirection: 'row' as const, marginTop: 3 },
+  metaRow: { flexDirection: 'row' as const, marginTop: 3, maxWidth: '100%' },
   metaLabel: { fontSize: 10, color: '#6B6B73', marginRight: 4 },
-  metaValue: { fontSize: 10, fontWeight: 'bold' as const },
+  metaValue: { fontSize: 10, fontWeight: 'bold' as const, flexShrink: 1, textAlign: 'right' as const },
   billed: { marginBottom: 24, position: 'relative' as const },
   billedLabel: { fontSize: 8, fontWeight: 'bold' as const, marginBottom: 4 },
   tableHeader: { flexDirection: 'row' as const, borderBottomWidth: 1, paddingBottom: 6 },
@@ -170,7 +171,7 @@ const styles = {
         <Text :style="{ ...styles.th, ...styles.colNum }">{{ isToken(currency) ? 'AMOUNT' : `AMOUNT (${currency})` }}</Text>
       </View>
 
-      <View v-for="(row, index) in rows" :key="index" :style="styles.tableRow" :wrap="false">
+      <View v-for="(row, index) in rows" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage([row.title, row.description, period(row)])">
         <View :style="styles.colDesc">
           <Text :style="{ fontWeight: 'bold' }">{{ row.title }}</Text>
           <Text v-if="row.description" :style="styles.muted">{{ row.description }}</Text>

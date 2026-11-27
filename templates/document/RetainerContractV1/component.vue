@@ -5,7 +5,8 @@ import type { QrStyle } from '~/server/utils/qr'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
 import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
-import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, Image, fitsOnPage } from '../_shared/pdf'
 import { dateText, isToken, money, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
@@ -178,7 +179,7 @@ const styles = {
         <Text :style="{ flex: 1, fontWeight: 'bold' as const, fontSize: 12 }">Description</Text>
       </View>
 
-      <View v-for="(item, index) in scopeOfWork" :key="index" :style="styles.tableRow" :wrap="false">
+      <View v-for="(item, index) in scopeOfWork" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage([item])">
         <Text :style="{ width: 40, fontSize: 12 }">{{ String(index + 1).padStart(2, '0') }}</Text>
         <Text :style="{ flex: 1, fontSize: 12, lineHeight: 1.4 }">{{ item }}</Text>
       </View>
@@ -189,7 +190,7 @@ const styles = {
           <Text :style="styles.colAmount">{{ formatCurrency(flatMonthlyFee) }} / month</Text>
         </View>
 
-        <View v-for="(target, tIndex) in targetBasedFees" :key="tIndex" :style="styles.financialRow" :wrap="false">
+        <View v-for="(target, tIndex) in targetBasedFees" :key="tIndex" :style="styles.financialRow" :wrap="!fitsOnPage([target.description])">
           <Text :style="{ ...styles.colLeftSpan, color: '#888888', fontSize: 12 }"> Target-Based Fee &middot; {{ target.description }} </Text>
           <Text :style="{ ...styles.colAmount, color: '#888888' }">{{ formatCurrency(target.amountPerUnit) }} / {{ target.unit }}</Text>
         </View>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Image, Text, View } from '@ceereals/vue-pdf'
+import { Image, Text, View } from './pdf'
 import { computed } from 'vue'
 
 const props = defineProps<{

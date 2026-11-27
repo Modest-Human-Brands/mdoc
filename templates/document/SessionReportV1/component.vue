@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
-import { Document, Page, View, Text } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, fitsOnPage } from '../_shared/pdf'
 import { computed } from 'vue'
 import { isToken } from '../_shared/format'
 import { upiLink, type QrTarget } from '../_shared/qr'
@@ -131,7 +132,7 @@ const styles = {
           <Text :style="styles.bold">{{ section.heading }}: </Text>{{ section.text }}
         </Text>
         <Text v-else :style="styles.heading">{{ section.heading }}</Text>
-        <View v-for="(bullet, bIndex) in section.bullets" :key="bIndex" :style="styles.bulletRow" :wrap="false">
+        <View v-for="(bullet, bIndex) in section.bullets" :key="bIndex" :style="styles.bulletRow" :wrap="!fitsOnPage([bullet])">
           <Text :style="styles.bullet">•</Text>
           <Text :style="styles.bulletText">{{ bullet }}</Text>
         </View>

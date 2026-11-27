@@ -3,7 +3,8 @@ import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
 import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
-import { Document, Page, View, Text } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, fitsOnPage } from '../_shared/pdf'
 import { computed } from 'vue'
 import { isToken } from '../_shared/format'
 import { upiLink, type QrTarget } from '../_shared/qr'
@@ -170,13 +171,13 @@ const styles = {
       </View>
 
       <View :style="styles.meta">
-        <Text>Receipt No. {{ receiptNumber }}</Text>
+        <Text :style="{ flex: 1, paddingRight: 12 }">Receipt No. {{ receiptNumber }}</Text>
         <Text>Issued on {{ shortDate(issuedAt) }}</Text>
       </View>
 
       <View :style="styles.section">
         <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">PATIENT</Text>
-        <View v-for="([label, value, strong], index) in patientRows" :key="index" :style="styles.row" :wrap="false">
+        <View v-for="([label, value, strong], index) in patientRows" :key="index" :style="styles.row" :wrap="!fitsOnPage([value])">
           <Text :style="styles.key">{{ label }}</Text>
           <Text :style="[styles.value, strong ? { fontWeight: 'bold' } : {}]">{{ value }}</Text>
         </View>
@@ -184,7 +185,7 @@ const styles = {
 
       <View :style="styles.section">
         <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">APPOINTMENT</Text>
-        <View v-for="([label, value], index) in appointmentRows" :key="index" :style="styles.row" :wrap="false">
+        <View v-for="([label, value], index) in appointmentRows" :key="index" :style="styles.row" :wrap="!fitsOnPage([value])">
           <Text :style="styles.key">{{ label }}</Text>
           <Text :style="styles.value">{{ value }}</Text>
         </View>
@@ -192,7 +193,7 @@ const styles = {
 
       <View :style="styles.section">
         <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">PAYMENT</Text>
-        <View v-for="([label, value], index) in paymentRows" :key="index" :style="styles.row" :wrap="false">
+        <View v-for="([label, value], index) in paymentRows" :key="index" :style="styles.row" :wrap="!fitsOnPage([value])">
           <Text :style="styles.key">{{ label }}</Text>
           <Text :style="styles.value">{{ value }}</Text>
         </View>
@@ -210,9 +211,7 @@ const styles = {
         </View>
       </View>
 
-      <View v-if="termSections?.length" :style="styles.section">
-        <Terms :sections="termSections" heading="TERMS" :heading-style="{ ...styles.heading, borderBottomColor: organizationColorAccent }" />
-      </View>
+      <Terms v-if="termSections?.length" :style="styles.section" :sections="termSections" heading="TERMS" :heading-style="{ ...styles.heading, borderBottomColor: organizationColorAccent }" />
 
       <Text v-if="closingMessage" :style="styles.closing">{{ closingMessage }}</Text>
 

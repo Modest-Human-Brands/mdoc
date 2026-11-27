@@ -5,7 +5,8 @@ import type { QrStyle } from '~/server/utils/qr'
 import LogoWatermark from '../_shared/LogoWatermark.vue'
 import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
-import { Document, Page, View, Text, Image } from '@ceereals/vue-pdf'
+import { Document, Page } from '@ceereals/vue-pdf'
+import { View, Text, Image, fitsOnPage } from '../_shared/pdf'
 import { computed } from 'vue'
 import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
 
@@ -183,7 +184,7 @@ const styles = {
         <Text :style="styles.colAmount">Amount</Text>
       </View>
 
-      <View v-for="(item, index) in computedDeliverables" :key="index" :style="styles.tableRow" :wrap="false">
+      <View v-for="(item, index) in computedDeliverables" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage(item.points.length ? item.points : [item.description])">
         <Text :style="styles.colName">{{ item.title }}</Text>
         <View :style="styles.colDesc">
           <View v-if="item.points.length">

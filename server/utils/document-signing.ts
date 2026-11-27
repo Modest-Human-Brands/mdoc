@@ -109,7 +109,11 @@ function createTextImage(text: string, width: number, height: number, fontSize: 
   const canvas = createCanvas(w, h)
   const ctx = canvas.getContext('2d')
 
-  ctx.font = `${isBold ? 'bold ' : ''}${fontSize}px Helvetica, Arial, sans-serif`
+  const fontOf = (size: number) => `${isBold ? 'bold ' : ''}${size}px Helvetica, Arial, sans-serif`
+  ctx.font = fontOf(fontSize)
+  // A long name or email address is set smaller so that it fits the field instead of losing both ends.
+  const textWidth = ctx.measureText(text).width
+  if (textWidth > w - 4) ctx.font = fontOf((fontSize * (w - 4)) / textWidth)
   ctx.fillStyle = '#000000'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'

@@ -1,10 +1,11 @@
 import { fontStore } from '@ceereals/vue-pdf'
 import { markFontRegistered, type TemplateFont } from '~/server/utils/fonts'
+import { pdfWordBreaks } from '~/server/utils/pdf-line-break'
 import type { Component } from 'vue'
 import type { z } from 'zod'
 
 const registeredFonts = new Set<string>()
-let hyphenationDisabled = false
+let lineBreaksRegistered = false
 
 export type FieldType = 'SIGNATURE' | 'INITIALS' | 'DATE' | 'TEXT' | 'NAME' | 'EMAIL' | 'CHECKBOX'
 
@@ -65,8 +66,8 @@ export default function registerTemplate(definition: TemplateDefinition) {
     }
   }
 
-  if (!hyphenationDisabled) {
-    fontStore.registerHyphenationCallback((word) => [word])
-    hyphenationDisabled = true
+  if (!lineBreaksRegistered) {
+    fontStore.registerHyphenationCallback(pdfWordBreaks)
+    lineBreaksRegistered = true
   }
 }
