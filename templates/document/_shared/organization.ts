@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { organizationPresets } from '~/server/utils/organization-store'
 
 export const organizationSchema = z.object({
   id: z.string(),
@@ -45,4 +44,4 @@ export const organizationSchema = z.object({
   socials: z.record(z.string(), z.any()).optional(),
 })
 
-export const placeholderOrganization = organizationPresets['modest-human-brands']!
+export { sampleOrganization as placeholderOrganization } from '~/server/utils/organization-store'

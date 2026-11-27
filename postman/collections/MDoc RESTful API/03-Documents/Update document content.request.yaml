@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  Edits a Draft. Takes the same input as creating a document, replaces its form data, re-renders the PDF and thumbnail with the current organisation branding and term wording, and keeps the same id and share link. data replaces the stored data in full, so send every field. name, contactId and projectId are optional and left unchanged when omitted (projectId null removes the project). The template and owner cannot change (template or templateId is 400 template_immutable). revision is required and comes from Get single document (409 stale_revision when the document changed since). Any status other than Draft is 403 not_draft; another organisation's document is 403; a taken name is 409.
+url: '{{base_url}}/api/document/:id'
+method: PUT
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: x-org-id
+    value: '{{organization_id}}'
+  - key: x-user-id
+    value: '{{user_id}}'
+pathVariables:
+  id: '{{document_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "revision": "{{document_revision}}",
+      "data": {{document_data}}
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Returns the new revision", () => pm.expect(pm.response.json()).to.include.keys("id", "templateId", "name", "sizeBytes", "shareUrl", "revision"));
+      if (pm.response.code === 200) pm.collectionVariables.set("document_revision", pm.response.json().revision);
+order: 9500

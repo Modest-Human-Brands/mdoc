@@ -1,5 +1,5 @@
 $kind: http-request
-description: Brand step preview. Only the organisation is sent; every dynamic field of the template shows its own {{Field Label}} token (short labels are prefixed with their Details section, e.g. {{Recipient Name}}) so users can see which fields are dynamic and which section they belong to. Never returns 400.
+description: Brand step preview. Only the organisation is sent; every dynamic field of the template shows its own {{Field Label}} token (short labels are prefixed with their Details section, e.g. {{Recipient Name}}) so users can see which fields are dynamic and which section they belong to. Never returns 400. The branded and filled variants use variables.organization when sent (to preview unsaved edits); otherwise they read the x-org-id organisation from Notion, which requires membership.
 url: '{{base_url}}/api/document/template/preview'
 method: POST
 headers:

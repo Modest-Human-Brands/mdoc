@@ -1,5 +1,5 @@
 $kind: http-request
-description: Peeks the next document number, e.g. MHB-I-26-014 (org code, type letter I/Q/R/S/C, 2-digit year, 3-digit sequence). Nothing is reserved. Prefill fields marked x-auto in the template schema. Organisation comes from the organizationId query or the x-org-id header (preset), or organizationName.
+description: Peeks the next document number, e.g. MHB-I-26-014 (org code, type letter I/Q/R/S/C, 2-digit year, 3-digit sequence). Nothing is reserved. Prefill fields marked x-auto in the template schema. The org code comes from the name on the Notion organisation selected by x-org-id; x-user-id must be a member.
 url: '{{base_url}}/api/document/numbering/next?templateId=invoice'
 method: GET
 headers:
@@ -9,9 +9,6 @@ headers:
 queryParams:
   - key: templateId
     value: invoice
-  - key: organizationName
-    value: Modest Human Brands
-    disabled: true
 scripts:
   - type: afterResponse
     language: text/javascript

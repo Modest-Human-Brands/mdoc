@@ -8,7 +8,7 @@ import { applyTermSelection, orgOf } from '~/server/utils/terms-store'
 import notion from '~/server/utils/notion'
 import { templateRegistry } from '~/server/utils/template-registry'
 import generatePdfThumbnail from '~/server/utils/generate-pdf-thumbnail'
-import { organizationFrom } from '~/server/utils/organization-store'
+import { loadOrganization } from '~/server/utils/organization-notion'
 import { NOTION_ID, toRelationFieldError } from '~/server/utils/notion-errors'
 import { mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
 import { documentViewUrl } from '~/server/utils/document-link'
@@ -16,8 +16,11 @@ import type { NotionDB } from '~/server/types'
 
 import '~/templates/document'
 import { writeDocument } from '~/server/utils/documents'
+import { toJsonBlocks } from '~/server/utils/document-data'
 import { storageBaseOf } from '~/server/utils/document-file'
 import { withUniqueName } from '~/server/utils/document-names'
+
+const sameId = (a: string, b: string) => normalizeId(a).toLowerCase() === normalizeId(b).toLowerCase()
 
 const notionId = z.string().regex(NOTION_ID, 'must be a Notion page ID')
 
@@ -35,20 +38,11 @@ const createDocSchema = z
   })
   .refine((body) => body.template || body.templateId, { message: 'template identifier is required', path: ['template'] })
 
-const toJsonBlocks = (value: unknown) => {
-  const chunks = JSON.stringify(value).match(/[\s\S]{1,2000}/g) ?? []
-  return Array.from({ length: Math.ceil(chunks.length / 100) }, (_, index) => ({
-    object: 'block' as const,
-    type: 'code' as const,
-    code: { language: 'json' as const, rich_text: chunks.slice(index * 100, index * 100 + 100).map((chunk) => ({ text: { content: chunk } })) },
-  }))
-}
-
 export default defineEventHandler(async (event) => {
   try {
     const body = createDocSchema.parse(await readBody(event))
     const { name: fileName, contactId, userId, projectId } = body
-    if (normalizeId(userId).toLowerCase() !== normalizeId((event.context.auth as AuthContext).userId).toLowerCase()) {
+    if (!sameId(userId, (event.context.auth as AuthContext).userId)) {
       throw new HTTPError({ statusCode: 403, statusMessage: 'Forbidden', data: { errors: [{ field: 'userId', message: 'userId must match the x-user-id header.', code: 'forbidden' }] } })
     }
     const templateId = (body.template || body.templateId)!
@@ -59,13 +53,20 @@ export default defineEventHandler(async (event) => {
       throw new HTTPError({ statusCode: 400, statusMessage: `Template target identifier "${templateId}" is unrecognized.` })
     }
 
-    const selection = await applyTermSelection(orgOf(event), templateDef, rawData)
-    const organizationSlug = event.req.headers.get('x-org-id')?.trim() || body.organizationId
-    const organizationRelationId = body.organizationId && NOTION_ID.test(body.organizationId) ? body.organizationId : undefined
-    const enrichedData = {
-      ...mergeTemplateVariables(templateDef, selection),
-      organization: organizationFrom({ ...rawData, organizationId: organizationSlug }, templateDef.placeholders.organization),
+    const auth = event.context.auth as AuthContext
+    // The Notion record is authoritative: an `organization` object sent by the caller never reaches a stored document.
+    const { pageId: organizationRelationId, organization } = await loadOrganization(auth.orgId, auth.userId)
+    const requested = body.organizationId?.trim()
+    if (requested && requested !== organization.id && requested !== auth.orgId && !sameId(requested, organizationRelationId)) {
+      throw new HTTPError({
+        statusCode: 400,
+        statusMessage: 'Bad Request',
+        data: { errors: [{ field: 'organizationId', message: 'organizationId must match the x-org-id header.', code: 'organization_mismatch' }] },
+      })
     }
+
+    const selection = await applyTermSelection(orgOf(event), templateDef, rawData)
+    const enrichedData = { ...mergeTemplateVariables(templateDef, { ...selection, organization }), organization }
 
     const validation = templateDef.schema.safeParse(enrichedData)
     if (!validation.success) throw validation.error
@@ -86,7 +87,7 @@ export default defineEventHandler(async (event) => {
             Status: { status: { name: 'Draft' } },
             Contact: { relation: [{ id: contactId }] },
             User: { relation: [{ id: userId }] },
-            ...(organizationRelationId && { Organization: { relation: [{ id: organizationRelationId }] } }),
+            Organization: { relation: [{ id: organizationRelationId }] },
             ...(projectId && { Project: { relation: [{ id: projectId }] } }),
           },
           children: toJsonBlocks(enrichedData),

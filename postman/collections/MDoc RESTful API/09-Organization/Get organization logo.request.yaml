@@ -1,0 +1,8 @@
+$kind: http-request
+description: Public (no API key). A logo uploaded through Update organization; this URL is what branding.logo holds. The file name is the content hash, so the response is cached as immutable. 404 if there is no such file.
+url: '{{base_url}}/api/organization/:id/logo/:file'
+method: GET
+pathVariables:
+  id: '{{organization_page_id}}'
+  file: '{{logo_file}}'
+order: 3000

@@ -2,6 +2,8 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import crypto from 'node:crypto'
 
+import { MOCK_ORGANIZATION_DB, seedOrganizationPages } from './notion-mock-organizations'
+
 interface MockDbStorage {
   pages: Record<string, any>
   blocks: Record<string, any[]>
@@ -114,6 +116,15 @@ class LocalNotionMockDatabase {
       this.db = seedInitialData()
       this.persist()
     }
+    this.addMissingOrganizations()
+  }
+
+  /** Mock files created before organisations lived in Notion get the seed rows; existing pages are never replaced. */
+  private addMissingOrganizations() {
+    const missing = Object.entries(seedOrganizationPages()).filter(([id]) => !this.db.pages[id])
+    if (missing.length === 0) return
+    for (const [id, page] of missing) this.db.pages[id] = page
+    this.persist()
   }
 
   private persist() {
@@ -137,11 +148,12 @@ class LocalNotionMockDatabase {
       }
       return page
     },
-    create: async ({ properties, children }: { parent: any; properties: any; children?: any[] }) => {
+    create: async ({ parent, properties, children }: { parent: any; properties: any; children?: any[] }) => {
       const id = crypto.randomUUID()
       const now = new Date().toISOString()
       const newPage = {
         id,
+        parent,
         created_time: now,
         last_edited_time: now,
         properties,
@@ -169,8 +181,14 @@ class LocalNotionMockDatabase {
   }
 
   public dataSources = {
-    query: async () => {
-      const results = Object.values(this.db.pages).filter((p) => p.properties?.['Template ID'])
+    query: async (args: { data_source_id?: string; filter?: { property: string; rich_text: { equals: string } } } = {}) => {
+      const textOf = (value: any) => (value?.rich_text ?? []).map((part: any) => part.text?.content ?? part.plain_text).join('')
+      const results =
+        args.data_source_id === MOCK_ORGANIZATION_DB
+          ? Object.values(this.db.pages).filter(
+              (p) => p.parent?.data_source_id === MOCK_ORGANIZATION_DB && (!args.filter || textOf(p.properties?.[args.filter.property]) === args.filter.rich_text.equals)
+            )
+          : Object.values(this.db.pages).filter((p) => p.properties?.['Template ID'])
       return {
         results,
         has_more: false,
@@ -179,15 +197,56 @@ class LocalNotionMockDatabase {
     },
   }
 
+  /** Blocks saved without an ID get one on first read, as every Notion block has one. */
+  private blocksOf(pageId: string) {
+    const key = this.pageKey(pageId)
+    const blocks = this.db.blocks[key] ?? []
+    if (blocks.some((block) => !block.id)) {
+      for (const block of blocks) block.id ??= crypto.randomUUID()
+      this.persist()
+    }
+    return blocks
+  }
+
+  private findBlock(blockId: string) {
+    for (const blocks of Object.values(this.db.blocks)) {
+      const index = blocks.findIndex((block) => block.id === blockId)
+      if (index !== -1) return { blocks, index }
+    }
+    const error: any = new Error(`Mock Notion: Block "${blockId}" not found.`)
+    error.code = 'object_not_found'
+    error.status = 404
+    throw error
+  }
+
   public blocks = {
     children: {
       list: async ({ block_id }: { block_id: string }) => {
         return {
-          results: this.db.blocks[this.pageKey(block_id)] || [],
+          results: this.blocksOf(block_id),
           has_more: false,
           next_cursor: null,
         }
       },
+      append: async ({ block_id, children }: { block_id: string; children: any[] }) => {
+        const key = this.pageKey(block_id)
+        const added = children.map((block) => ({ ...block, id: crypto.randomUUID() }))
+        this.db.blocks[key] = [...this.blocksOf(block_id), ...added]
+        this.persist()
+        return { results: added }
+      },
+    },
+    update: async ({ block_id, ...changes }: { block_id: string; [key: string]: any }) => {
+      const { blocks, index } = this.findBlock(block_id)
+      blocks[index] = { ...blocks[index], ...changes }
+      this.persist()
+      return blocks[index]
+    },
+    delete: async ({ block_id }: { block_id: string }) => {
+      const { blocks, index } = this.findBlock(block_id)
+      const [removed] = blocks.splice(index, 1)
+      this.persist()
+      return removed
     },
   }
 }

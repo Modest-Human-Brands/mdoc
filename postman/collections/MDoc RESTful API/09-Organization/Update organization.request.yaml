@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  Writes changed fields to the organisation's Notion page and returns the new record. Same headers and membership rule as Get organization. revision is required and must match the stored record (409 stale_revision). A field left out is not touched; "" or null clears it. accountDetails, socials, branding, branding.color and branding.qr merge key by key, and keys this API does not know are kept. branding.logo takes a PNG or JPEG data URL (up to 1 MB; stored by this service, Notion keeps the link), an http(s) URL, or "" to remove it. The slug (id) cannot be changed; unknown fields are 400.
+url: '{{base_url}}/api/organization'
+method: PATCH
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: x-org-id
+    value: '{{organization_id}}'
+  - key: x-user-id
+    value: '{{user_id}}'
+body:
+  type: json
+  content: |-
+    {
+      "revision": "{{organization_revision}}",
+      "legalName": "Example Legal Name LLP",
+      "branding": { "color": { "accent": "#5945EA" } }
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Returns the new revision", () => pm.expect(pm.response.json()).to.include.keys("pageId", "revision", "organization"));
+      pm.collectionVariables.set("organization_revision", pm.response.json().revision);
+order: 2000

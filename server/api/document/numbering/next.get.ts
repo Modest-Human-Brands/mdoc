@@ -5,7 +5,8 @@ import { z } from 'zod'
 import notion from '~/server/utils/notion'
 import notionQueryDb from '~/server/utils/notion-query-db'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
-import { resolveOrganization } from '~/server/utils/organization-store'
+import { loadOrganization } from '~/server/utils/organization-notion'
+import type { AuthContext } from '~/server/utils/document-access'
 import { templateRegistry } from '~/server/utils/template-registry'
 import type { NotionDB, NotionDocument } from '~/server/types'
 
@@ -21,8 +22,6 @@ const TYPE_LETTER: Record<string, string> = {
 
 const querySchema = z.object({
   templateId: z.string().min(1, 'templateId is required'),
-  organizationId: z.string().optional(),
-  organizationName: z.string().optional(),
 })
 
 function orgCode(name: string): string {
@@ -42,7 +41,8 @@ export default defineEventHandler(async (event) => {
       throw new HTTPError({ statusCode: 404, statusMessage: 'Template not found' })
     }
 
-    const orgName = query.organizationName || resolveOrganization((query.organizationId || event.req.headers.get('x-org-id')) ?? undefined).name
+    const auth = event.context.auth as AuthContext
+    const orgName = (await loadOrganization(auth.orgId, auth.userId, { cached: true })).organization.name
     const prefix = `${orgCode(orgName)}-${TYPE_LETTER[query.templateId] ?? 'D'}-${String(new Date().getFullYear()).slice(-2)}`
 
     const config = useRuntimeConfig()

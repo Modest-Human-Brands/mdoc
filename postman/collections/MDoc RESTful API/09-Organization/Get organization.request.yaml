@@ -1,0 +1,30 @@
+$kind: http-request
+description: |-
+  The caller's organisation profile and branding, read from the Notion Organization database on every call. x-org-id is the organisation's "Id" slug or its Notion page ID. x-user-id must belong to a member with Status Verified or Active (403 not_a_member otherwise). An unknown organisation is 404; a Notion JSON property that cannot be parsed is 502 invalid_notion_json. Keep the returned revision for an update.
+url: '{{base_url}}/api/organization'
+method: GET
+headers:
+  - key: x-org-id
+    value: '{{organization_id}}'
+  - key: x-user-id
+    value: '{{user_id}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200", () => pm.response.to.have.status(200));
+      pm.test("Matches the organisation record schema", () => pm.response.to.have.jsonSchema({
+        type: "object",
+        required: ["pageId", "revision", "organization"],
+        properties: {
+          pageId: { type: "string" },
+          revision: { type: "string" },
+          organization: {
+            type: "object",
+            required: ["id", "name", "branding"],
+            properties: { id: { type: "string" }, name: { type: "string" }, branding: { type: "object", required: ["color", "font"] } }
+          }
+        }
+      }));
+      pm.collectionVariables.set("organization_revision", pm.response.json().revision);
+order: 1000

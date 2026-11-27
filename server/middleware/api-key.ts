@@ -11,6 +11,7 @@ const PUBLIC_GET = [
   /^\/api\/document\/template\/[^/]+\/sample\/\d+\.png$/,
   /^\/api\/document\/template\/[^/]+\/sample\.pdf$/,
   /^\/api\/decor\/(builtin|upload)\/[^/]+$/,
+  /^\/api\/organization\/[\da-f]{32}\/logo\/[\da-f]{40}\.png$/,
 ]
 
 // The signer's browser has no API key: these four routes are authenticated by the magic-link token (or the signing

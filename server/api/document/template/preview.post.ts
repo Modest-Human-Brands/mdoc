@@ -2,6 +2,8 @@ import { defineEventHandler, getQuery, readBody, HTTPError } from 'nitro/h3'
 import { z, ZodError } from 'zod'
 
 import { applyTermSelection, orgOf } from '~/server/utils/terms-store'
+import { loadOrganization } from '~/server/utils/organization-notion'
+import type { AuthContext } from '~/server/utils/document-access'
 import { templateRegistry } from '~/server/utils/template-registry'
 import { buildVariantVariables, countPdfPages, mergeTemplateVariables, renderTemplatePdf } from '~/server/utils/render-template'
 
@@ -28,6 +30,11 @@ export default defineEventHandler(async (event) => {
     }
 
     const selected = await applyTermSelection(orgOf(event), templateDef, variables)
+    // An inline `organization` previews edits that are not saved yet; otherwise the Notion record is shown.
+    if (variant !== 'sample' && !selected.organization) {
+      const auth = event.context.auth as AuthContext
+      selected.organization = (await loadOrganization(auth.orgId, auth.userId, { cached: true })).organization
+    }
 
     let renderVariables: Record<string, any>
     let warnings: { field: string; message: string; code: string }[] = []

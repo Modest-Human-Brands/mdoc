@@ -4,6 +4,7 @@ import { useRuntimeConfig } from 'nitro/runtime-config'
 import { assertDocumentAccess } from '~/server/utils/document-access'
 import notion from '~/server/utils/notion'
 import { documentViewUrl } from '~/server/utils/document-link'
+import { contentRevision, readDocumentData } from '~/server/utils/document-data'
 import notionTextStringify from '~/server/utils/notion-text-stringify'
 import type { NotionDocument, NotionProject, NotionContact, NotionUser } from '~/server/types'
 
@@ -69,18 +70,7 @@ export default defineEventHandler(async (event) => {
 
     const routingQueue = properties['Routing Queue']?.rich_text?.length ? JSON.parse(notionTextStringify(properties['Routing Queue'].rich_text)) : null
 
-    let rawData = null
-    const children = await notion.blocks.children.list({ block_id: id, page_size: 100 })
-    let jsonChunk = null
-    for (const child of children.results || []) {
-      if ((child as any).type === 'code' && (child as any).code?.rich_text) {
-        jsonChunk = notionTextStringify((child as any).code.rich_text)
-        break
-      }
-    }
-    if (jsonChunk) {
-      rawData = JSON.parse(jsonChunk)
-    }
+    const { data: rawData } = await readDocumentData(id)
 
     return {
       id: docId,
@@ -102,6 +92,7 @@ export default defineEventHandler(async (event) => {
       createdAt: created_time,
       updatedAt: last_edited_time,
       rawData,
+      revision: contentRevision(page, rawData),
     }
   } catch (error: unknown) {
     if (error instanceof Error && 'statusCode' in error) {

@@ -77,34 +77,38 @@ All API routes are exposed under `/api/**` with CORS enabled.
 
 ### Endpoints Overview
 
-| Method      | Endpoint                                      | Description                                                             | Auth / Key Params                                                                                    |
-| :---------- | :-------------------------------------------- | :---------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| `GET`       | `/api/health`                                 | Node status, app version, and build timestamp.                          | Public                                                                                               |
-| `GET`       | `/api/document/template`                      | List registered templates with category, description, and sample URLs.  | Public                                                                                               |
-| `GET`       | `/api/document/template/:id`                  | Template JSON Schema, field hints, and signer requirements.             | `:id` (Template ID)                                                                                  |
-| `GET`       | `/api/document/template/:id/sample.pdf`       | Sample PDF stream with placeholder tokens (`?variant=sample\|branded`). | `:id`, `variant` (default: `sample`)                                                                 |
-| `GET`       | `/api/document/template/:id/sample/:page.png` | Pre-rendered template page PNG for preview galleries.                   | `:id`, `:page`, `v` (cache hash)                                                                     |
-| `POST`      | `/api/document/template/preview`              | Live PDF rendering (`{ pdfBase64, pageCount, warnings }`).              | `?draft=true`, body: `{ templateId, variant, variables }`                                            |
-| `POST`      | `/api/document/template`                      | Generate PDF, create thumbnail, and persist draft record in Notion.     | Body: `{ name, templateId, contactId, userId, data }`; header `x-org-id` (org preset slug, optional) |
-| `GET`       | `/api/document/numbering/next`                | Peek next document serial number (`{OrgCode}-{Type}-{YY}-{Seq}`).       | `templateId` (req), `organizationId`, `organizationName`; header `x-org-id` (preset)                 |
-| `GET`       | `/api/document`                               | Filtered, paginated list of documents.                                  | Query: `limit`, `offset`, `templateId`, `status`                                                     |
-| `GET`       | `/api/document/:id`                           | Fetch document record, status, relations, and stored `rawData`.         | `:id` (Notion Page ID)                                                                               |
-| `PATCH`     | `/api/document/:id`                           | Update document metadata (`name`, `status`).                            | `:id`, body: `{ name?, status? }`                                                                    |
-| `GET`       | `/api/document/:id/content`                   | Serve PDF file or thumbnail PNG (`?type=image`, `?download`).           | `:id`, query: `type`, `download`                                                                     |
-| `POST`      | `/api/document/:id/envelope`                  | Configure signer queue and initiate envelope (`Sent` status).           | `:id`, body: `{ routingType, signers }`                                                              |
-| `POST`      | `/api/document/:id/session`                   | Generate JWT signer session token for magic-link signing.               | `:id`, body: `{ signerEmail, expiresIn? }`                                                           |
-| `POST`      | `/api/document/:id/session/verify`            | Verify active signer session token.                                     | `:id`, body: `{ sessionToken }`                                                                      |
-| `POST`      | `/api/document/:id/sign/prepare`              | Apply visual stamps and inject `/ByteRange` placeholder for signing.    | `:id`, body: `{ sessionToken, fields, certificateDerHex? }`                                          |
-| `POST`      | `/api/document/:id/sign/client`               | Inject hardware DSC signature (USB token / SmartCard / WebCrypto).      | Body: `{ sessionId, signatureHex }`                                                                  |
-| `POST`      | `/api/document/:id/sign/server`               | Apply automated server-side digital signature (`certificate.p12`).      | Body: `{ sessionId }`                                                                                |
-| `POST`      | `/api/document/:id/sign/verify`               | Cryptographically verify digital signature integrity via PKCS#7 / CMS.  | `multipart/form-data` with `pdf` file                                                                |
-| `POST`      | `/api/document/:id/void`                      | Invalidate document with a diagonal VOID watermark across all pages.    | `:id`, body: `{ reason }` (&ge; 5 characters)                                                        |
-| `GET`       | `/api/decor`                                  | List built-in SVG/raster decor assets (`?slot=`).                       | Query: `slot` (e.g. `panel-corner`)                                                                  |
-| `GET`       | `/api/decor/builtin/:file.png`                | Serve built-in decor thumbnail.                                         | `:file` (e.g. `leaf.png`)                                                                            |
-| `POST`      | `/api/decor/upload`                           | Upload custom decor asset (PNG, JPG, WebP, SVG &le; 2 MB).              | `multipart/form-data` with `file`                                                                    |
-| `GET`       | `/api/decor/upload/:file.png`                 | Serve uploaded content-addressed decor asset.                           | `:file` (e.g. `<sha1>.png`)                                                                          |
-| `GET`       | `/api/fonts`                                  | Search Google Fonts catalog available for on-demand resolution.         | Query: `q`, `limit` (max 50, default 20)                                                             |
-| `GET\|POST` | `/mcp`                                        | Model Context Protocol endpoint for autonomous agent tooling.           | MCP Protocol                                                                                         |
+| Method      | Endpoint                                      | Description                                                                 | Auth / Key Params                                                                                                |
+| :---------- | :-------------------------------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| `GET`       | `/api/health`                                 | Node status, app version, and build timestamp.                              | Public                                                                                                           |
+| `GET`       | `/api/document/template`                      | List registered templates with category, description, and sample URLs.      | Public                                                                                                           |
+| `GET`       | `/api/document/template/:id`                  | Template JSON Schema, field hints, and signer requirements.                 | `:id` (Template ID)                                                                                              |
+| `GET`       | `/api/document/template/:id/sample.pdf`       | Sample PDF stream with placeholder tokens (`?variant=sample\|branded`).     | `:id`, `variant` (default: `sample`)                                                                             |
+| `GET`       | `/api/document/template/:id/sample/:page.png` | Pre-rendered template page PNG for preview galleries.                       | `:id`, `:page`, `v` (cache hash)                                                                                 |
+| `POST`      | `/api/document/template/preview`              | Live PDF rendering (`{ pdfBase64, pageCount, warnings }`).                  | `?draft=true`, body: `{ templateId, variant, variables }`                                                        |
+| `POST`      | `/api/document/template`                      | Generate PDF, create thumbnail, and persist draft record in Notion.         | Body: `{ name, templateId, contactId, userId, data }`; branding comes from the `x-org-id` organisation in Notion |
+| `GET`       | `/api/document/numbering/next`                | Peek next document serial number (`{OrgCode}-{Type}-{YY}-{Seq}`).           | `templateId` (req); org code from the `x-org-id` organisation in Notion                                          |
+| `GET`       | `/api/organization`                           | Organisation profile and branding, read from Notion.                        | Verified or Active members only; returns `revision`                                                              |
+| `PATCH`     | `/api/organization`                           | Write changed profile and branding fields to the Notion page.               | Body: `{ revision, ...changes }`; 409 when `revision` is stale                                                   |
+| `GET`       | `/api/organization/:id/logo/:file`            | Serve an uploaded logo (public).                                            | Notion stores this link in the `Branding` property                                                               |
+| `GET`       | `/api/document`                               | Filtered, paginated list of documents.                                      | Query: `limit`, `offset`, `templateId`, `status`                                                                 |
+| `GET`       | `/api/document/:id`                           | Fetch document record, status, relations, and stored `rawData`.             | `:id` (Notion Page ID)                                                                                           |
+| `PATCH`     | `/api/document/:id`                           | Update document metadata (`name`, `status`).                                | `:id`, body: `{ name?, status? }`                                                                                |
+| `PUT`       | `/api/document/:id`                           | Edit a `Draft`: replace its data and re-render. The template cannot change. | `:id`, body: `{ revision, data, name?, contactId?, projectId? }`                                                 |
+| `GET`       | `/api/document/:id/content`                   | Serve PDF file or thumbnail PNG (`?type=image`, `?download`).               | `:id`, query: `type`, `download`                                                                                 |
+| `POST`      | `/api/document/:id/envelope`                  | Configure signer queue and initiate envelope (`Sent` status).               | `:id`, body: `{ routingType, signers }`                                                                          |
+| `POST`      | `/api/document/:id/session`                   | Generate JWT signer session token for magic-link signing.                   | `:id`, body: `{ signerEmail, expiresIn? }`                                                                       |
+| `POST`      | `/api/document/:id/session/verify`            | Verify active signer session token.                                         | `:id`, body: `{ sessionToken }`                                                                                  |
+| `POST`      | `/api/document/:id/sign/prepare`              | Apply visual stamps and inject `/ByteRange` placeholder for signing.        | `:id`, body: `{ sessionToken, fields, certificateDerHex? }`                                                      |
+| `POST`      | `/api/document/:id/sign/client`               | Inject hardware DSC signature (USB token / SmartCard / WebCrypto).          | Body: `{ sessionId, signatureHex }`                                                                              |
+| `POST`      | `/api/document/:id/sign/server`               | Apply automated server-side digital signature (`certificate.p12`).          | Body: `{ sessionId }`                                                                                            |
+| `POST`      | `/api/document/:id/sign/verify`               | Cryptographically verify digital signature integrity via PKCS#7 / CMS.      | `multipart/form-data` with `pdf` file                                                                            |
+| `POST`      | `/api/document/:id/void`                      | Invalidate document with a diagonal VOID watermark across all pages.        | `:id`, body: `{ reason }` (&ge; 5 characters)                                                                    |
+| `GET`       | `/api/decor`                                  | List built-in SVG/raster decor assets (`?slot=`).                           | Query: `slot` (e.g. `panel-corner`)                                                                              |
+| `GET`       | `/api/decor/builtin/:file.png`                | Serve built-in decor thumbnail.                                             | `:file` (e.g. `leaf.png`)                                                                                        |
+| `POST`      | `/api/decor/upload`                           | Upload custom decor asset (PNG, JPG, WebP, SVG &le; 2 MB).                  | `multipart/form-data` with `file`                                                                                |
+| `GET`       | `/api/decor/upload/:file.png`                 | Serve uploaded content-addressed decor asset.                               | `:file` (e.g. `<sha1>.png`)                                                                                      |
+| `GET`       | `/api/fonts`                                  | Search Google Fonts catalog available for on-demand resolution.             | Query: `q`, `limit` (max 50, default 20)                                                                         |
+| `GET\|POST` | `/mcp`                                        | Model Context Protocol endpoint for autonomous agent tooling.               | MCP Protocol                                                                                                     |
 
 ---
 
@@ -135,6 +139,8 @@ Validation errors return HTTP `400 Bad Request` with an exact path to the offend
 >
 > Stack traces and local file system paths are completely stripped from error payloads across both development and production environments.
 
+> **Editing drafts.** Only a `Draft` can be edited (`PUT /api/document/:id`, otherwise 403 `not_draft`). It takes the same data as creation; `template`/`templateId` is 400 `template_immutable`. Send the `revision` from `GET /api/document/:id` (409 `stale_revision` if the document changed since). The PDF is re-rendered with the current organisation branding and term wording, and the document keeps its ID and share link. A `Ready` document can be switched back to `Draft` with `PATCH` to edit it; a sent or delivered one cannot.
+
 > **Signing rules.** An envelope can only be sent from `Draft`/`Ready`, or re-sent while nobody has signed (otherwise 409). Signers are always created `PENDING` and emails are stored lower-case. Only `SEQUENTIAL` routing is supported. Session tokens (HS256) always expire: 7 days by default, at most 30 (`expiresIn`). A signing session lives 5 minutes in the document storage. Completing a signature re-reads the document, so a voided, advanced or already-signed document is rejected (409/403), and the signed file is discarded if the status cannot be saved (503, retry). Client-side (certificate) signatures are verified against the document before they are stored (`invalid_signature`, `certificate_expired`, `unsupported_algorithm` for non-RSA); the certificate's subject, issuer, serial and expiry are recorded on the signer. Audit telemetry (IP, user agent) is taken from the request, not the body. Signature images must be PNG/JPEG under 1 MB, and a `SIGNATURE` field is required unless the template sets `required: false`. `POST /api/document/:id/sign/verify` checks every signature in the uploaded PDF (max 25 MB) and reports `isIntact: false` when content was added after the last one.
 
 ### 2. Live Preview with Draft Tolerances
@@ -150,7 +156,6 @@ const response = await fetch('http://localhost:3000/api/document/template/previe
     templateId: 'invoice',
     variant: 'filled',
     variables: {
-      organizationId: 'modest-human-brands', // Resolves preset branding & logo
       recipient: {
         name: 'Wayne Enterprises',
         email: 'billing@wayne.ent',
@@ -181,13 +186,13 @@ console.log(`Rendered ${pageCount} pages. Warnings:`, warnings ?? 'none')
 
 #### Preview Variants
 
-| Variant   | Organization Scope                               | Data Fields                         | Typical Wizard Stage           |
-| :-------- | :----------------------------------------------- | :---------------------------------- | :----------------------------- |
-| `sample`  | Neutral placeholder ("Your Company", gray logo)  | Shows `{{Field Label}}` tokens      | Template gallery cards         |
-| `branded` | Organization branding applied (`organizationId`) | Shows `{{Field Label}}` tokens      | Brand selection step           |
-| `filled`  | Organization branding applied                    | User variables merged over defaults | Form completion / final review |
+| Variant   | Organization Scope                              | Data Fields                         | Typical Wizard Stage           |
+| :-------- | :---------------------------------------------- | :---------------------------------- | :----------------------------- |
+| `sample`  | Neutral placeholder ("Your Company", gray logo) | Shows `{{Field Label}}` tokens      | Template gallery cards         |
+| `branded` | Organization branding applied (from Notion)     | Shows `{{Field Label}}` tokens      | Brand selection step           |
+| `filled`  | Organization branding applied                   | User variables merged over defaults | Form completion / final review |
 
-**Organization.** `organizationId` selects a built-in preset with all of its fields. An `organization` object is used exactly as sent and is never merged over a preset: fields you leave out stay empty and their lines are not printed. Only the brand colours and font fall back to defaults. `name` and `contactEmail` are required (a missing one is a 400 on create and a warning in previews). Previews also return `warnings` with code `missing_recommended` for fields a template prints that are empty (`address`, and `accountDetails` for invoices and quotations).
+**Organization.** The Notion Organization database is the only store for profiles and branding (`NOTION_DB_ID` needs an `organization` data source ID, and the integration needs access to the Organization and Organization Member databases). `x-org-id` selects the record and `x-user-id` must be a member with Status Verified or Active. Creating a document always uses that record and ignores any `organization` in the request. A preview may send an `organization` object to show unsaved edits: it is used exactly as sent, with only the brand colours and font falling back to defaults. `name` and `contactEmail` are required (a missing one is a 400 on create and a warning in previews). In development without an `organization` ID, the local Notion mock provides two sample organisations. Previews also return `warnings` with code `missing_recommended` for fields a template prints that are empty (`address`, and `accountDetails` for invoices and quotations).
 
 ---
 

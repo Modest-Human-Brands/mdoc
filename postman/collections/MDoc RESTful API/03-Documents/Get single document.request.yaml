@@ -1,5 +1,5 @@
 $kind: http-request
-description: Fetch metadata, signer queues, and raw JSON payload for a single document.
+description: Fetch metadata, signer queues, and raw JSON payload for a single document. Saves revision and the form data for Update document content.
 url: '{{base_url}}/api/document/:id'
 method: GET
 pathVariables:
@@ -9,6 +9,11 @@ scripts:
     language: text/javascript
     code: |-
       if (pm.response.code === 200) {
+        const saved = pm.response.json();
+        const { organization, terms, ...data } = saved.rawData || {};
+        if (terms) data.terms = (terms.items || []).map((item) => item.slug);
+        pm.collectionVariables.set("document_revision", saved.revision);
+        pm.collectionVariables.set("document_data", JSON.stringify(data));
         const outputSchema = {
           type: "object",
           required: ["id", "name", "mimeType", "status", "previewUrl"],

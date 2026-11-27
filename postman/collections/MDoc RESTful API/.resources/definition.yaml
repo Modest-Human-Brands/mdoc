@@ -13,6 +13,13 @@ auth:
       value: header
 variables:
   base_url: http://localhost:3002
+  organization_id: modest-human-brands
+  user_id: 19cee3b0-289a-8072-bc12-f4728d11c002
+  organization_page_id: 3d7ee3b0289a80d48f0ec55b44df80a6
+  organization_revision: ''
+  document_revision: ''
+  document_data: '{}'
+  logo_file: ''
   api_key: change-me
   document_id: 398ee3b0-289a-8197-a050-d3b993fdb642
   template_id: internship-completion-certificate

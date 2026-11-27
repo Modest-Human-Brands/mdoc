@@ -6,6 +6,7 @@ import type { TemplateDefinition } from '~/server/utils/template-registry'
 import { neutralOrganization, organizationFrom } from '~/server/utils/organization-store'
 import { deepMerge, getTokenPayload } from '~/server/utils/token-payload'
 import { ensureFonts, resolveBrandFont } from '~/server/utils/fonts'
+import { inlineStoredLogo } from '~/server/utils/organization-logo'
 import type { ApiValidationErrorDetail } from '~/server/types'
 import { organizationSchema } from '~/templates/document/_shared/organization'
 import { previewDocumentUrl } from '~/server/utils/document-link'
@@ -84,6 +85,13 @@ export function buildVariantVariables(templateDef: TemplateDefinition, variant: 
   return { variables: { ...deepMerge(tokens, cleaned), organization }, warnings }
 }
 
+async function prepareLogo(variables: Record<string, any>) {
+  const logo = variables.organization?.branding?.logo
+  const inlined = await inlineStoredLogo(logo)
+  if (inlined === logo) return variables
+  return { ...variables, organization: { ...variables.organization, branding: { ...variables.organization.branding, logo: inlined } } }
+}
+
 async function prepareFonts(templateDef: TemplateDefinition, variables: Record<string, any>) {
   await ensureFonts(templateDef.fonts ?? [])
 
@@ -103,7 +111,7 @@ export interface RenderOptions {
 export async function renderTemplatePdf(templateDef: TemplateDefinition, rawVariables: Record<string, any>, options: RenderOptions = {}): Promise<Buffer> {
   const render = async () => {
     const documentUrl = options.documentUrl ?? previewDocumentUrl()
-    const variables = { ...(await prepareFonts(templateDef, rawVariables)), ...(documentUrl && { _document: { url: documentUrl } }) }
+    const variables = { ...(await prepareLogo(await prepareFonts(templateDef, rawVariables))), ...(documentUrl && { _document: { url: documentUrl } }) }
     const props = await templateDef.transformPayload(variables)
     const output = await renderToBuffer(h(templateDef.component, props))
     return Buffer.isBuffer(output) ? output : Buffer.from(output)

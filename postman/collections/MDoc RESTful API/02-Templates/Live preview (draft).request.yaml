@@ -1,5 +1,5 @@
 $kind: http-request
-description: Same as preview but never rejects partial input. Invalid fields fall back to template placeholders and are reported in warnings[{field,message,code}]. Call it on every keystroke; use strict preview or create for the final check.
+description: Same as preview but never rejects partial input. Invalid fields fall back to template placeholders and are reported in warnings[{field,message,code}]. Call it on every keystroke; use strict preview or create for the final check. The branded and filled variants use variables.organization when sent (to preview unsaved edits); otherwise they read the x-org-id organisation from Notion, which requires membership.
 url: '{{base_url}}/api/document/template/preview?draft=true'
 method: POST
 queryParams:

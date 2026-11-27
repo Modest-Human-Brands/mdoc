@@ -4,6 +4,7 @@ import notion from '~/server/utils/notion'
 import { assertDocumentAccess } from '~/server/utils/document-access'
 import { moveToIdLayout } from '~/server/utils/document-file'
 import { withUniqueName } from '~/server/utils/document-names'
+import { withDocumentLock } from '~/server/utils/routing-queue'
 
 const updateSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
@@ -20,55 +21,57 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const parsedBody = updateSchema.parse(body)
 
-    const document = (await notion.pages.retrieve({ page_id: id })) as any
+    return await withDocumentLock(id, async () => {
+      const document = (await notion.pages.retrieve({ page_id: id })) as any
 
-    assertDocumentAccess(event, document)
-    const currentStatus = document.properties.Status?.status?.name
+      assertDocumentAccess(event, document)
+      const currentStatus = document.properties.Status?.status?.name
 
-    const editable = parsedBody.name ? currentStatus === 'Draft' : ['Plan', 'Draft', 'Ready'].includes(currentStatus)
-    if (!editable) {
-      throw new HTTPError({
-        statusCode: 403,
-        statusMessage: `Document is locked. Cannot modify a document with status: ${currentStatus}`,
-      })
-    }
-
-    const properties: Record<string, any> = {}
-
-    if (parsedBody.name) {
-      properties['Name'] = {
-        title: [{ text: { content: parsedBody.name } }],
+      const editable = parsedBody.name ? currentStatus === 'Draft' : ['Plan', 'Draft', 'Ready'].includes(currentStatus)
+      if (!editable) {
+        throw new HTTPError({
+          statusCode: 403,
+          statusMessage: `Document is locked. Cannot modify a document with status: ${currentStatus}`,
+        })
       }
-    }
 
-    if (parsedBody.status) {
-      properties['Status'] = {
-        status: { name: parsedBody.status },
+      const properties: Record<string, any> = {}
+
+      if (parsedBody.name) {
+        properties['Name'] = {
+          title: [{ text: { content: parsedBody.name } }],
+        }
       }
-    }
 
-    if (Object.keys(properties).length === 0) {
-      return { success: true, message: 'No changes provided' }
-    }
+      if (parsedBody.status) {
+        properties['Status'] = {
+          status: { name: parsedBody.status },
+        }
+      }
 
-    const save = () => notion.pages.update({ page_id: id, properties })
-    const { name } = parsedBody
-    const updatedPage = name
-      ? await withUniqueName(
-          name,
-          async () => {
-            await moveToIdLayout(document)
-            return save()
-          },
-          document.id
-        )
-      : await save()
+      if (Object.keys(properties).length === 0) {
+        return { success: true, message: 'No changes provided' }
+      }
 
-    return {
-      success: true,
-      message: 'Document updated successfully',
-      id: updatedPage.id,
-    }
+      const save = () => notion.pages.update({ page_id: id, properties })
+      const { name } = parsedBody
+      const updatedPage = name
+        ? await withUniqueName(
+            name,
+            async () => {
+              await moveToIdLayout(document)
+              return save()
+            },
+            document.id
+          )
+        : await save()
+
+      return {
+        success: true,
+        message: 'Document updated successfully',
+        id: updatedPage.id,
+      }
+    })
   } catch (error: unknown) {
     if (error instanceof ZodError) {
       const validationError = new HTTPError({

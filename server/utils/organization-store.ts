@@ -31,35 +31,37 @@ export interface OrganizationProfile {
 
 const BRAND_DEFAULTS = { color: { primary: '#111827', accent: '#5945EA' }, font: 'Exo2' }
 
-export const organizationPresets: Record<string, OrganizationProfile> = {
-  'modest-human-brands': {
-    id: 'modest-human-brands',
-    name: 'Modest Human Brands',
-    legalName: 'Modest Human Brands LLP',
-    entityType: 'LLP',
-    tradeRelationship: 'Primary',
-    pan: 'ABCDE0123F',
-    address: '17 NO, N S Road,harinavi Beltola, South 24 Parganas, West Bengal, India',
-    foundedYear: 2025,
-    accountDetails: {
-      accountName: 'Modest Human Brands LLP',
-      accountNumber: 1_234_567_890,
-      bankName: 'HDFC Bank',
-      ifscCode: 'HDFC0001234',
-      upiId: 'modesthumanbrands@hdfcbank',
-    },
-    website: 'https://modesthumanbrands.com',
-    contactEmail: 'contact@modesthumanbrands.com',
-    billingEmail: 'billing@modesthumanbrands.com',
-    branding: { logo: 'https://modesthumanbrands.com/logo.svg', ...BRAND_DEFAULTS },
-    phone: '+919999999999',
-    whatsapp: '+919999999999',
-    socials: {
-      instagram: 'https://www.instagram.com/modesthumanbrands/',
-      facebook: 'https://facebook.com/modesthumanbrands',
-      linkedin: 'https://linkedin.com/company/modest-human-brands',
-      youtube: 'https://www.youtube.com/@modesthumanbrands',
-    },
+/**
+ * Placeholder values for template fields and sample renders only. They are not any organisation's real details:
+ * real profiles come from Notion (`organization-notion.ts`).
+ */
+export const sampleOrganization: OrganizationProfile = {
+  id: 'modest-human-brands',
+  name: 'Modest Human Brands',
+  legalName: 'Modest Human Brands LLP',
+  entityType: 'LLP',
+  tradeRelationship: 'Primary',
+  pan: 'ABCDE0123F',
+  address: '17 NO, N S Road,harinavi Beltola, South 24 Parganas, West Bengal, India',
+  foundedYear: 2025,
+  accountDetails: {
+    accountName: 'Modest Human Brands LLP',
+    accountNumber: 1_234_567_890,
+    bankName: 'HDFC Bank',
+    ifscCode: 'HDFC0001234',
+    upiId: 'modesthumanbrands@hdfcbank',
+  },
+  website: 'https://modesthumanbrands.com',
+  contactEmail: 'contact@modesthumanbrands.com',
+  billingEmail: 'billing@modesthumanbrands.com',
+  branding: { logo: 'https://modesthumanbrands.com/logo.svg', ...BRAND_DEFAULTS },
+  phone: '+919999999999',
+  whatsapp: '+919999999999',
+  socials: {
+    instagram: 'https://www.instagram.com/modesthumanbrands/',
+    facebook: 'https://facebook.com/modesthumanbrands',
+    linkedin: 'https://linkedin.com/company/modest-human-brands',
+    youtube: 'https://www.youtube.com/@modesthumanbrands',
   },
 }
 
@@ -79,20 +81,18 @@ export const neutralOrganization: OrganizationProfile = {
   billingEmail: 'billing@example.com',
 }
 
-export function resolveOrganization(orgInput?: string | Record<string, any>, fallbackPreset?: Record<string, any>): OrganizationProfile {
-  if (orgInput && typeof orgInput === 'object') {
-    return {
-      ...(orgInput as OrganizationProfile),
-      branding: {
-        ...orgInput.branding,
-        color: { ...BRAND_DEFAULTS.color, ...orgInput.branding?.color },
-        font: orgInput.branding?.font || BRAND_DEFAULTS.font,
-      },
-    }
-  }
+/** Completes a profile with the default colours and font. Without one, the given placeholder is used. */
+export function resolveOrganization(organization?: Record<string, any>, placeholder: Record<string, any> = sampleOrganization): OrganizationProfile {
+  if (!organization || typeof organization !== 'object') return placeholder as OrganizationProfile
 
-  const preset = typeof orgInput === 'string' ? organizationPresets[orgInput] : undefined
-  return preset ?? (fallbackPreset as OrganizationProfile | undefined) ?? organizationPresets['modest-human-brands']!
+  return {
+    ...(organization as OrganizationProfile),
+    branding: {
+      ...organization.branding,
+      color: { ...BRAND_DEFAULTS.color, ...organization.branding?.color },
+      font: organization.branding?.font || BRAND_DEFAULTS.font,
+    },
+  }
 }
 
-export const organizationFrom = (variables: Record<string, any>, fallbackPreset?: Record<string, any>) => resolveOrganization(variables.organization || variables.organizationId, fallbackPreset)
+export const organizationFrom = (variables: Record<string, any>, placeholder?: Record<string, any>) => resolveOrganization(variables.organization, placeholder)
