@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.26
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.25...v0.3.26)
+
+### 💅 Refactors
+
+- Organization handling and logo management ([4b15cef](https://github.com/Modest-Human-Brands/mdoc/commit/4b15cef))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+
 ## v0.3.25
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.24...v0.3.25)
