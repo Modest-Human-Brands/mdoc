@@ -7,6 +7,7 @@ import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
 import { Document, Page } from '@ceereals/vue-pdf'
 import { View, Text, Image, fitsOnPage } from '../_shared/pdf'
+import HeadedList from '../_shared/HeadedList.vue'
 import { dateText, isToken, money, organizationRelationshipLabel } from '../_shared/format'
 
 const props = defineProps<{
@@ -173,16 +174,21 @@ const styles = {
         </View>
       </View>
 
-      <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 24 }">MONTHLY SCOPE OF WORK</Text>
-      <View :style="styles.tableHeader">
-        <Text :style="{ width: 40, fontWeight: 'bold' as const, fontSize: 12 }">No.</Text>
-        <Text :style="{ flex: 1, fontWeight: 'bold' as const, fontSize: 12 }">Description</Text>
-      </View>
-
-      <View v-for="(item, index) in scopeOfWork" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage([item])">
-        <Text :style="{ width: 40, fontSize: 12 }">{{ String(index + 1).padStart(2, '0') }}</Text>
-        <Text :style="{ flex: 1, fontSize: 12, lineHeight: 1.4 }">{{ item }}</Text>
-      </View>
+      <HeadedList :items="scopeOfWork" :texts-of="(item) => [item]">
+        <template #heading>
+          <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 24 }">MONTHLY SCOPE OF WORK</Text>
+          <View :style="styles.tableHeader">
+            <Text :style="{ width: 40, fontWeight: 'bold' as const, fontSize: 12 }">No.</Text>
+            <Text :style="{ flex: 1, fontWeight: 'bold' as const, fontSize: 12 }">Description</Text>
+          </View>
+        </template>
+        <template #item="{ item, index }">
+          <View :style="styles.tableRow" :wrap="!fitsOnPage([item])">
+            <Text :style="{ width: 40, fontSize: 12 }">{{ String(index + 1).padStart(2, '0') }}</Text>
+            <Text :style="{ flex: 1, fontSize: 12, lineHeight: 1.4 }">{{ item }}</Text>
+          </View>
+        </template>
+      </HeadedList>
 
       <View :style="{ marginBottom: 32 }">
         <View v-if="flatMonthlyFee" :style="styles.financialRow" :wrap="false">

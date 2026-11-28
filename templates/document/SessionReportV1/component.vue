@@ -3,6 +3,7 @@ import LogoMark from '../_shared/LogoMark.vue'
 import QrCode from '../_shared/QrCode.vue'
 import { Document, Page } from '@ceereals/vue-pdf'
 import { View, Text, fitsOnPage } from '../_shared/pdf'
+import HeadedList from '../_shared/HeadedList.vue'
 import { computed } from 'vue'
 import { isToken } from '../_shared/format'
 import { upiLink, type QrTarget } from '../_shared/qr'
@@ -127,16 +128,27 @@ const styles = {
         <Text :style="styles.bold">DATE: - {{ dotDate(sessionDate) }}</Text>
       </View>
 
-      <View v-for="(section, index) in sections" :key="index" :style="styles.section">
-        <Text v-if="section.text" :style="{ fontSize: 11 }">
-          <Text :style="styles.bold">{{ section.heading }}: </Text>{{ section.text }}
-        </Text>
-        <Text v-else :style="styles.heading">{{ section.heading }}</Text>
-        <View v-for="(bullet, bIndex) in section.bullets" :key="bIndex" :style="styles.bulletRow" :wrap="!fitsOnPage([bullet])">
-          <Text :style="styles.bullet">•</Text>
-          <Text :style="styles.bulletText">{{ bullet }}</Text>
-        </View>
-      </View>
+      <HeadedList
+        v-for="(section, index) in sections"
+        :key="index"
+        :style="styles.section"
+        :items="section.bullets ?? []"
+        :texts-of="(bullet) => [bullet]"
+        :heading-texts="[`${section.heading}: ${section.text ?? ''}`]"
+        :chars-per-line="60">
+        <template #heading>
+          <Text v-if="section.text" :style="{ fontSize: 11 }">
+            <Text :style="styles.bold">{{ section.heading }}: </Text>{{ section.text }}
+          </Text>
+          <Text v-else :style="styles.heading">{{ section.heading }}</Text>
+        </template>
+        <template #item="{ item: bullet }">
+          <View :style="styles.bulletRow" :wrap="!fitsOnPage([bullet])">
+            <Text :style="styles.bullet">•</Text>
+            <Text :style="styles.bulletText">{{ bullet }}</Text>
+          </View>
+        </template>
+      </HeadedList>
     </Page>
   </Document>
 </template>

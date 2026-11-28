@@ -5,6 +5,7 @@ import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
 import { Document, Page } from '@ceereals/vue-pdf'
 import { View, Text, fitsOnPage } from '../_shared/pdf'
+import HeadedList from '../_shared/HeadedList.vue'
 import { computed } from 'vue'
 import { isToken } from '../_shared/format'
 import { upiLink, type QrTarget } from '../_shared/qr'
@@ -175,41 +176,57 @@ const styles = {
         <Text>Issued on {{ shortDate(issuedAt) }}</Text>
       </View>
 
-      <View :style="styles.section">
-        <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">PATIENT</Text>
-        <View v-for="([label, value, strong], index) in patientRows" :key="index" :style="styles.row" :wrap="!fitsOnPage([value])">
-          <Text :style="styles.key">{{ label }}</Text>
-          <Text :style="[styles.value, strong ? { fontWeight: 'bold' } : {}]">{{ value }}</Text>
-        </View>
-      </View>
+      <HeadedList :style="styles.section" :items="patientRows" :texts-of="([, value]) => [value]">
+        <template #heading>
+          <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">PATIENT</Text>
+        </template>
+        <template #item="{ item: [label, value, strong] }">
+          <View :style="styles.row" :wrap="!fitsOnPage([value])">
+            <Text :style="styles.key">{{ label }}</Text>
+            <Text :style="[styles.value, strong ? { fontWeight: 'bold' } : {}]">{{ value }}</Text>
+          </View>
+        </template>
+      </HeadedList>
 
-      <View :style="styles.section">
-        <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">APPOINTMENT</Text>
-        <View v-for="([label, value], index) in appointmentRows" :key="index" :style="styles.row" :wrap="!fitsOnPage([value])">
-          <Text :style="styles.key">{{ label }}</Text>
-          <Text :style="styles.value">{{ value }}</Text>
-        </View>
-      </View>
+      <HeadedList :style="styles.section" :items="appointmentRows" :texts-of="([, value]) => [value]">
+        <template #heading>
+          <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">APPOINTMENT</Text>
+        </template>
+        <template #item="{ item: [label, value] }">
+          <View :style="styles.row" :wrap="!fitsOnPage([value])">
+            <Text :style="styles.key">{{ label }}</Text>
+            <Text :style="styles.value">{{ value }}</Text>
+          </View>
+        </template>
+      </HeadedList>
 
-      <View :style="styles.section">
-        <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">PAYMENT</Text>
-        <View v-for="([label, value], index) in paymentRows" :key="index" :style="styles.row" :wrap="!fitsOnPage([value])">
-          <Text :style="styles.key">{{ label }}</Text>
-          <Text :style="styles.value">{{ value }}</Text>
-        </View>
+      <HeadedList :style="styles.section" :items="paymentRows" :texts-of="([, value]) => [value]">
+        <template #heading>
+          <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">PAYMENT</Text>
+        </template>
+        <template #item="{ item: [label, value] }">
+          <View :style="styles.row" :wrap="!fitsOnPage([value])">
+            <Text :style="styles.key">{{ label }}</Text>
+            <Text :style="styles.value">{{ value }}</Text>
+          </View>
+        </template>
         <View :style="{ ...styles.total, backgroundColor: paid ? '#E6F2EB' : '#FFF4E0' }" :wrap="false">
           <Text :style="{ ...styles.key, width: 150, fontWeight: 'bold', color: '#0D0D0F' }">Amount received</Text>
           <Text :style="{ ...styles.value, fontSize: 15, fontWeight: 'bold', color: '#0D0D0F' }">{{ amountText }} · {{ status }}</Text>
         </View>
-      </View>
+      </HeadedList>
 
-      <View v-if="notes.length" :style="styles.section">
-        <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">BEFORE YOUR SESSION</Text>
-        <View v-for="(note, index) in notes" :key="index" :style="styles.note">
-          <Text :style="{ width: 10 }">•</Text>
-          <Text :style="{ flex: 1 }">{{ note }}</Text>
-        </View>
-      </View>
+      <HeadedList v-if="notes.length" :style="styles.section" :items="notes" :texts-of="(note) => [note]">
+        <template #heading>
+          <Text :style="{ ...styles.heading, borderBottomColor: organizationColorAccent }">BEFORE YOUR SESSION</Text>
+        </template>
+        <template #item="{ item: note }">
+          <View :style="styles.note" :wrap="!fitsOnPage([note])">
+            <Text :style="{ width: 10 }">•</Text>
+            <Text :style="{ flex: 1 }">{{ note }}</Text>
+          </View>
+        </template>
+      </HeadedList>
 
       <Terms v-if="termSections?.length" :style="styles.section" :sections="termSections" heading="TERMS" :heading-style="{ ...styles.heading, borderBottomColor: organizationColorAccent }" />
 

@@ -5,6 +5,7 @@ import { QR_PRINT_SIZE, upiLink, type QrTarget } from '../_shared/qr'
 import type { QrStyle } from '~/server/utils/qr'
 import { Document, Page } from '@ceereals/vue-pdf'
 import { View, Text, fitsOnPage } from '../_shared/pdf'
+import HeadedList from '../_shared/HeadedList.vue'
 import { computed } from 'vue'
 import { dateText, isToken, optionalNumber } from '../_shared/format'
 
@@ -162,27 +163,32 @@ const styles = {
         <Text v-if="clientPhone" :style="styles.muted">{{ clientPhone }}</Text>
       </View>
 
-      <View :style="{ ...styles.tableHeader, borderBottomColor: organizationColorPrimary }">
-        <Text :style="{ ...styles.th, ...styles.colDesc, textAlign: 'left' }">DESCRIPTION</Text>
-        <Text :style="{ ...styles.th, ...styles.colNum }">PRICE</Text>
-        <Text :style="{ ...styles.th, ...styles.colNum }">DISCOUNT</Text>
-        <Text :style="{ ...styles.th, ...styles.colNum }">TOTAL EXCL. TAX</Text>
-        <Text :style="{ ...styles.th, ...styles.colNum }">TAX</Text>
-        <Text :style="{ ...styles.th, ...styles.colNum }">{{ isToken(currency) ? 'AMOUNT' : `AMOUNT (${currency})` }}</Text>
-      </View>
-
-      <View v-for="(row, index) in rows" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage([row.title, row.description, period(row)])">
-        <View :style="styles.colDesc">
-          <Text :style="{ fontWeight: 'bold' }">{{ row.title }}</Text>
-          <Text v-if="row.description" :style="styles.muted">{{ row.description }}</Text>
-          <Text v-if="period(row)" :style="styles.muted">{{ period(row) }}</Text>
-        </View>
-        <Text :style="{ ...styles.td, ...styles.colNum }">{{ fmt(row.gross) }}</Text>
-        <Text :style="{ ...styles.td, ...styles.colNum }">{{ row.discountShown }}</Text>
-        <Text :style="{ ...styles.td, ...styles.colNum }">{{ fmt(row.excl) }}</Text>
-        <Text :style="{ ...styles.td, ...styles.colNum }">{{ fmt(row.tax) }}</Text>
-        <Text :style="{ ...styles.td, ...styles.colNum, fontWeight: 'bold' }">{{ fmt(row.amount) }}</Text>
-      </View>
+      <HeadedList :items="rows" :texts-of="(row) => [row.title, row.description, period(row)]">
+        <template #heading>
+          <View :style="{ ...styles.tableHeader, borderBottomColor: organizationColorPrimary }">
+            <Text :style="{ ...styles.th, ...styles.colDesc, textAlign: 'left' }">DESCRIPTION</Text>
+            <Text :style="{ ...styles.th, ...styles.colNum }">PRICE</Text>
+            <Text :style="{ ...styles.th, ...styles.colNum }">DISCOUNT</Text>
+            <Text :style="{ ...styles.th, ...styles.colNum }">TOTAL EXCL. TAX</Text>
+            <Text :style="{ ...styles.th, ...styles.colNum }">TAX</Text>
+            <Text :style="{ ...styles.th, ...styles.colNum }">{{ isToken(currency) ? 'AMOUNT' : `AMOUNT (${currency})` }}</Text>
+          </View>
+        </template>
+        <template #item="{ item: row }">
+          <View :style="styles.tableRow" :wrap="!fitsOnPage([row.title, row.description, period(row)])">
+            <View :style="styles.colDesc">
+              <Text :style="{ fontWeight: 'bold' }">{{ row.title }}</Text>
+              <Text v-if="row.description" :style="styles.muted">{{ row.description }}</Text>
+              <Text v-if="period(row)" :style="styles.muted">{{ period(row) }}</Text>
+            </View>
+            <Text :style="{ ...styles.td, ...styles.colNum }">{{ fmt(row.gross) }}</Text>
+            <Text :style="{ ...styles.td, ...styles.colNum }">{{ row.discountShown }}</Text>
+            <Text :style="{ ...styles.td, ...styles.colNum }">{{ fmt(row.excl) }}</Text>
+            <Text :style="{ ...styles.td, ...styles.colNum }">{{ fmt(row.tax) }}</Text>
+            <Text :style="{ ...styles.td, ...styles.colNum, fontWeight: 'bold' }">{{ fmt(row.amount) }}</Text>
+          </View>
+        </template>
+      </HeadedList>
 
       <View :style="styles.totals" :wrap="false">
         <View :style="styles.totalRow">

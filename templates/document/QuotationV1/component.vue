@@ -7,6 +7,7 @@ import Terms from '../_shared/Terms.vue'
 import type { TermSection } from '../_shared/terms'
 import { Document, Page } from '@ceereals/vue-pdf'
 import { View, Text, Image, fitsOnPage } from '../_shared/pdf'
+import HeadedList from '../_shared/HeadedList.vue'
 import { computed } from 'vue'
 import { dateText, money, optionalNumber, organizationRelationshipLabel } from '../_shared/format'
 
@@ -171,35 +172,40 @@ const styles = {
         </View>
       </View>
 
-      <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">DELIVERABLES</Text>
-      <View :style="styles.tableHeader">
-        <Text :style="styles.colName">{{ pricingModel === 'day' ? 'Phase' : 'Name of Service' }}</Text>
-        <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
-        <Text :style="{ ...styles.colRate, fontWeight: 'bold', fontSize: 12 }">
-          {{ pricingModel === 'day' ? 'Day Rate' : 'Unit Price' }}
-        </Text>
-        <Text :style="{ ...styles.colQty, fontWeight: 'bold', fontSize: 12 }">
-          {{ pricingModel === 'day' ? 'Days' : 'Qty' }}
-        </Text>
-        <Text :style="styles.colAmount">Amount</Text>
-      </View>
-
-      <View v-for="(item, index) in computedDeliverables" :key="index" :style="styles.tableRow" :wrap="!fitsOnPage(item.points.length ? item.points : [item.description])">
-        <Text :style="styles.colName">{{ item.title }}</Text>
-        <View :style="styles.colDesc">
-          <View v-if="item.points.length">
-            <View v-for="(point, pIndex) in item.points" :key="pIndex" :style="styles.bulletRow">
-              <Text :style="styles.bulletText">• {{ point }}</Text>
+      <HeadedList :items="computedDeliverables" :texts-of="(item) => (item.points.length ? item.points : [item.description])">
+        <template #heading>
+          <Text :style="{ ...styles.sectionTitle, marginTop: 24, marginBottom: 32 }">DELIVERABLES</Text>
+          <View :style="styles.tableHeader">
+            <Text :style="styles.colName">{{ pricingModel === 'day' ? 'Phase' : 'Name of Service' }}</Text>
+            <Text :style="{ ...styles.colDesc, fontWeight: 'bold', fontSize: 12 }">Description</Text>
+            <Text :style="{ ...styles.colRate, fontWeight: 'bold', fontSize: 12 }">
+              {{ pricingModel === 'day' ? 'Day Rate' : 'Unit Price' }}
+            </Text>
+            <Text :style="{ ...styles.colQty, fontWeight: 'bold', fontSize: 12 }">
+              {{ pricingModel === 'day' ? 'Days' : 'Qty' }}
+            </Text>
+            <Text :style="styles.colAmount">Amount</Text>
+          </View>
+        </template>
+        <template #item="{ item }">
+          <View :style="styles.tableRow" :wrap="!fitsOnPage(item.points.length ? item.points : [item.description])">
+            <Text :style="styles.colName">{{ item.title }}</Text>
+            <View :style="styles.colDesc">
+              <View v-if="item.points.length">
+                <View v-for="(point, pIndex) in item.points" :key="pIndex" :style="styles.bulletRow">
+                  <Text :style="styles.bulletText">• {{ point }}</Text>
+                </View>
+              </View>
+              <View v-else>
+                <Text :style="styles.bulletText">{{ item.description }}</Text>
+              </View>
             </View>
+            <Text :style="styles.colRate">{{ item.rate }}</Text>
+            <Text :style="styles.colQty">{{ item.quantity }}</Text>
+            <Text :style="styles.colAmount">{{ plain(item.amount) }}</Text>
           </View>
-          <View v-else>
-            <Text :style="styles.bulletText">{{ item.description }}</Text>
-          </View>
-        </View>
-        <Text :style="styles.colRate">{{ item.rate }}</Text>
-        <Text :style="styles.colQty">{{ item.quantity }}</Text>
-        <Text :style="styles.colAmount">{{ plain(item.amount) }}</Text>
-      </View>
+        </template>
+      </HeadedList>
 
       <View :style="styles.financialRow" :wrap="false">
         <Text :style="{ ...styles.colLeftSpan, fontWeight: 'bold', fontSize: 12 }">Subtotal</Text>
