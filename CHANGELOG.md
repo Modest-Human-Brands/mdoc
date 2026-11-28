@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.3.29
+
+[compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.27...v0.3.29)
+
+### 🚀 Enhancements
+
+- Add HeadedList component for structured item display with dynamic heading ([b3de2f7](https://github.com/Modest-Human-Brands/mdoc/commit/b3de2f7))
+
+### 🩹 Fixes
+
+- Adjust LogoWatermark position and improve style handling ([b3c39c1](https://github.com/Modest-Human-Brands/mdoc/commit/b3c39c1))
+
+### 🤖 CI
+
+- **release:** Update version ([c169e01](https://github.com/Modest-Human-Brands/mdoc/commit/c169e01))
+- **release:** Update version ([41716bf](https://github.com/Modest-Human-Brands/mdoc/commit/41716bf))
+
+### ❤️ Contributors
+
+- Shirsendu Bairagi ([@shba007](https://github.com/shba007))
+- Shba007 ([@shba007](https://github.com/shba007))
+
 ## v0.3.28
 
 [compare changes](https://github.com/Modest-Human-Brands/mdoc/compare/v0.3.27...v0.3.28)
